@@ -57,7 +57,7 @@ function makeSignal(params: {
 export function deriveFollowUpSignals({
   households,
   events,
-  now = new Date("2025-04-04T09:00:00.000Z")
+  now = new Date()
 }: BuildSignalsInput): FollowUpSignal[] {
   const signals: FollowUpSignal[] = [];
 

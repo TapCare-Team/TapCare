@@ -26,7 +26,7 @@ function openedByType(events, stickerType) {
   );
 }
 
-function deriveFollowUpSignals({ households, events, now = new Date("2025-04-04T09:00:00.000Z") }) {
+function deriveFollowUpSignals({ households, events, now = new Date() }) {
   const signals = [];
 
   for (const household of households) {
@@ -163,7 +163,8 @@ const mockInteractionEvents = [
 test("creates repeated emergency usage signal from simple sticker-open events", () => {
   const signals = deriveFollowUpSignals({
     households: [mockHouseholds[0]],
-    events: mockInteractionEvents.filter((event) => event.householdId === "household-1")
+    events: mockInteractionEvents.filter((event) => event.householdId === "household-1"),
+    now: new Date("2025-04-04T09:00:00.000Z")
   });
 
   assert.equal(signals.some((signal) => signal.signalType === "REPEATED_EMERGENCY_USAGE"), true);
@@ -172,7 +173,8 @@ test("creates repeated emergency usage signal from simple sticker-open events", 
 test("creates inactivity signal only when there is a baseline and no recent sticker activity", () => {
   const signals = deriveFollowUpSignals({
     households: [mockHouseholds[1]],
-    events: mockInteractionEvents.filter((event) => event.householdId === "household-2")
+    events: mockInteractionEvents.filter((event) => event.householdId === "household-2"),
+    now: new Date("2025-04-04T09:00:00.000Z")
   });
 
   assert.equal(signals.some((signal) => signal.signalType === "SUDDEN_INACTIVITY"), true);
@@ -181,8 +183,19 @@ test("creates inactivity signal only when there is a baseline and no recent stic
 test("creates no-active-critical-sticker signal when critical stickers are disabled", () => {
   const signals = deriveFollowUpSignals({
     households: [mockHouseholds[1]],
-    events: mockInteractionEvents.filter((event) => event.householdId === "household-2")
+    events: mockInteractionEvents.filter((event) => event.householdId === "household-2"),
+    now: new Date("2025-04-04T09:00:00.000Z")
   });
 
   assert.equal(signals.some((signal) => signal.signalType === "NO_ACTIVE_CRITICAL_STICKER"), true);
+});
+
+test("does not surface seeded April 2025 emergency usage as recent when evaluated much later", () => {
+  const signals = deriveFollowUpSignals({
+    households: [mockHouseholds[0]],
+    events: mockInteractionEvents.filter((event) => event.householdId === "household-1"),
+    now: new Date("2025-06-01T09:00:00.000Z")
+  });
+
+  assert.equal(signals.some((signal) => signal.signalType === "REPEATED_EMERGENCY_USAGE"), false);
 });
