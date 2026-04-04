@@ -2,12 +2,14 @@ import Link from "next/link";
 import { AppShell } from "@/components/shared/app-shell";
 import { Panel } from "@/components/shared/panel";
 import { SignalBadge } from "@/components/shared/signal-badge";
+import { requireUserWithRole } from "@/lib/auth";
 import { getOfficerHouseholds } from "@/modules/households/services/household-analytics.service";
 
 export const dynamic = "force-dynamic";
 
 export default async function HouseholdsPage() {
-  const households = await getOfficerHouseholds("site-sgo-bedok");
+  const user = await requireUserWithRole(["OFFICER", "ADMIN"]);
+  const households = await getOfficerHouseholds(user.siteIds[0] ?? "site-sgo-bedok");
 
   return (
     <AppShell

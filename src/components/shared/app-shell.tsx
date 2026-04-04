@@ -21,17 +21,27 @@ export function AppShell({ title, subtitle, children, nav, homeHref = "/" }: App
             <h1 className="text-2xl font-semibold">{title}</h1>
             <p className="text-sm text-muted">{subtitle}</p>
           </div>
-          <nav className="flex flex-wrap gap-3 text-sm">
-            {nav.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="rounded-full border border-accent/20 bg-accentSoft px-4 py-2 text-accent transition hover:bg-white"
+          <div className="flex flex-wrap items-center gap-3 text-sm">
+            <nav className="flex flex-wrap gap-3">
+              {nav.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="rounded-full border border-accent/20 bg-accentSoft px-4 py-2 text-accent transition hover:bg-white"
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
+            <form action="/api/auth/logout" method="post">
+              <button
+                type="submit"
+                className="rounded-full border border-black/10 px-4 py-2 text-muted transition hover:bg-white"
               >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
+                Log out
+              </button>
+            </form>
+          </div>
         </div>
       </header>
       <main className="mx-auto flex max-w-7xl flex-col gap-6 px-6 py-8">{children}</main>

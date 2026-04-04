@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { AppShell } from "@/components/shared/app-shell";
 import { Panel } from "@/components/shared/panel";
 import { SignalBadge } from "@/components/shared/signal-badge";
-import { getCurrentUser } from "@/lib/auth";
+import { requireUserWithRole } from "@/lib/auth";
 import { getHouseholdDetail } from "@/modules/households/services/household-analytics.service";
 
 export const dynamic = "force-dynamic";
@@ -13,7 +13,7 @@ export default async function CaregiverHouseholdPage({
   params: { householdId: string };
 }) {
   const { householdId } = params;
-  const user = await getCurrentUser("caregiver");
+  const user = await requireUserWithRole(["CAREGIVER", "ADMIN"]);
   const detail = await getHouseholdDetail(user, householdId);
 
   if (!detail) {
@@ -25,6 +25,7 @@ export default async function CaregiverHouseholdPage({
       title={detail.household.displayAddress}
       subtitle="Read-only household usage summary for assigned caregivers."
       nav={[{ href: "/caregiver", label: "Back to caregiver view" }]}
+      homeHref="/caregiver"
     >
       <Panel title="Follow-up signals" eyebrow="Read only">
         <div className="space-y-3">

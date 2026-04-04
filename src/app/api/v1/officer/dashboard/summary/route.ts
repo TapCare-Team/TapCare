@@ -1,7 +1,17 @@
 import { NextResponse } from "next/server";
+import { getCurrentUser } from "@/lib/auth";
+import { canAccessOfficerSurface } from "@/modules/auth/services/access-control.service";
 import { getOfficerDashboardSummary } from "@/modules/households/services/household-analytics.service";
 
 export async function GET() {
-  const summary = await getOfficerDashboardSummary("site-sgo-bedok");
+  const user = await getCurrentUser();
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (!canAccessOfficerSurface(user)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const summary = await getOfficerDashboardSummary(user.siteIds[0] ?? "site-sgo-bedok");
   return NextResponse.json(summary);
 }

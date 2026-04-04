@@ -10,6 +10,17 @@ const stickerInclude = {
 type CreateStickerInput = Omit<Sticker, "id"> & { householdId: string; siteId: string };
 
 export class PrismaStickersRepository {
+  async getScopeById(stickerId: string) {
+    return prisma.sticker.findUnique({
+      where: { id: stickerId },
+      select: {
+        id: true,
+        householdId: true,
+        siteId: true
+      }
+    });
+  }
+
   async listByHouseholdId(householdId: string) {
     const stickers = await prisma.sticker.findMany({
       where: { householdId },

@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { AppShell } from "@/components/shared/app-shell";
 import { Panel } from "@/components/shared/panel";
 import { SignalBadge } from "@/components/shared/signal-badge";
-import { getCurrentUser } from "@/lib/auth";
+import { requireUserWithRole } from "@/lib/auth";
 import { getHouseholdDetail } from "@/modules/households/services/household-analytics.service";
 import { labelForStickerType } from "@/modules/analytics/services/feature-analytics.service";
 
@@ -14,7 +14,7 @@ export default async function HouseholdDetailPage({
   params: { householdId: string };
 }) {
   const { householdId } = params;
-  const user = await getCurrentUser("officer");
+  const user = await requireUserWithRole(["OFFICER", "ADMIN"]);
   const detail = await getHouseholdDetail(user, householdId);
 
   if (!detail) {

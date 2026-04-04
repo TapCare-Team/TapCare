@@ -1,5 +1,2 @@
-import { mockUsers } from "@/lib/mock-data";
-
-export async function getCurrentUser(role: "officer" | "caregiver" | "admin" = "officer") {
-  return mockUsers[role];
-}
+export { getCurrentUser, listLoginUsers, requireUser, requireUserWithRole } from "@/modules/auth/services/session.service";
+export { SESSION_COOKIE_NAME } from "@/modules/auth/domain/session";

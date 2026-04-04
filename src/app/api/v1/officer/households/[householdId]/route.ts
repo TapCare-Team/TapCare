@@ -1,12 +1,20 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
+import { canAccessOfficerSurface } from "@/modules/auth/services/access-control.service";
 import { getHouseholdDetail } from "@/modules/households/services/household-analytics.service";
 
 export async function GET(
   _request: Request,
   { params }: { params: { householdId: string } }
 ) {
-  const user = await getCurrentUser("officer");
+  const user = await getCurrentUser();
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (!canAccessOfficerSurface(user)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const detail = await getHouseholdDetail(user, params.householdId);
 
   if (!detail) {

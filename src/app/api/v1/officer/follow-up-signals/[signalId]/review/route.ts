@@ -8,7 +8,10 @@ export async function POST(
   request: Request,
   { params }: { params: { signalId: string } }
 ) {
-  const user = await getCurrentUser("officer");
+  const user = await getCurrentUser();
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   if (!canReviewSignals(user)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }

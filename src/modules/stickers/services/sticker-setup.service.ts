@@ -52,3 +52,11 @@ export async function assignStickerToHousehold(stickerId: string, householdId: s
 
   return stickersRepository.assignHousehold(stickerId, householdId, household.siteId);
 }
+
+export async function getStickerScope(stickerId: string) {
+  if (!isDatabaseConfigured()) {
+    throw new Error("DATABASE_URL is required for setup APIs");
+  }
+
+  return stickersRepository.getScopeById(stickerId);
+}
