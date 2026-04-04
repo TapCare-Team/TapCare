@@ -3,6 +3,11 @@ import type { SessionUser } from "@/modules/auth/domain/access";
 import { canViewHousehold } from "@/modules/auth/services/access-control.service";
 import { MockAnalyticsRepository } from "@/modules/analytics/repositories/mock-analytics.repository";
 import { PrismaAnalyticsRepository } from "@/modules/analytics/repositories/prisma-analytics.repository";
+import {
+  type HouseholdDetailFilters,
+  resolveActivityWindow,
+  toActivityWindowFormValues
+} from "@/modules/households/domain/activity-range";
 import { MockHouseholdsRepository } from "@/modules/households/repositories/mock-households.repository";
 import { PrismaHouseholdsRepository } from "@/modules/households/repositories/prisma-households.repository";
 import { deriveFollowUpSignals } from "@/modules/signals/services/follow-up-signal.service";
@@ -139,7 +144,7 @@ export async function getSignalsForHouseholds(householdIds: string[]) {
   return deriveFollowUpSignals({ households, events });
 }
 
-export async function getHouseholdDetail(user: SessionUser, householdId: string) {
+export async function getHouseholdDetail(user: SessionUser, householdId: string, filters?: HouseholdDetailFilters) {
   const household = await getHouseholdById(householdId);
   if (!household || !canViewHousehold(user, household.id, household.siteId)) {
     return null;
@@ -147,13 +152,40 @@ export async function getHouseholdDetail(user: SessionUser, householdId: string)
 
   const householdEvents = await listEventsByHouseholdIds([householdId]);
   const signals = deriveFollowUpSignals({ households: [household], events: householdEvents });
+  const sortedEvents = householdEvents.sort(
+    (left, right) => new Date(right.occurredAt).getTime() - new Date(left.occurredAt).getTime()
+  );
+  const anchorDate = sortedEvents[0] ? new Date(sortedEvents[0].occurredAt) : new Date();
+  const earliestEventDate = sortedEvents[sortedEvents.length - 1]
+    ? new Date(sortedEvents[sortedEvents.length - 1].occurredAt)
+    : null;
+  const activityWindow = resolveActivityWindow(filters, anchorDate);
+  const recentEvents = sortedEvents.filter((event) => {
+    const occurredAt = new Date(event.occurredAt).getTime();
+
+    if (activityWindow.startAt && occurredAt < activityWindow.startAt.getTime()) {
+      return false;
+    }
+
+    if (activityWindow.endAt && occurredAt > activityWindow.endAt.getTime()) {
+      return false;
+    }
+
+    return true;
+  });
 
   return {
     household,
-    recentEvents: householdEvents
-      .sort((left, right) => new Date(right.occurredAt).getTime() - new Date(left.occurredAt).getTime())
-      .slice(0, 12),
+    recentEvents,
     signals,
-    featureSnapshots: buildFeatureSnapshots(householdEvents)
+    featureSnapshots: buildFeatureSnapshots(householdEvents),
+    activityWindow: {
+      preset: activityWindow.preset,
+      ...toActivityWindowFormValues(activityWindow)
+    },
+    activityBounds: {
+      earliest: earliestEventDate?.toISOString().slice(0, 10) ?? "",
+      latest: sortedEvents[0]?.occurredAt.slice(0, 10) ?? ""
+    }
   };
 }
