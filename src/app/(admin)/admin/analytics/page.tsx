@@ -3,6 +3,8 @@ import { Panel } from "@/components/shared/panel";
 import { FeatureSnapshotGrid } from "@/components/officer/feature-snapshot-grid";
 import { getOfficerDashboardSummary } from "@/modules/households/services/household-analytics.service";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminAnalyticsPage() {
   const summary = await getOfficerDashboardSummary("site-sgo-bedok");
 

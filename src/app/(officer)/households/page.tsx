@@ -4,6 +4,8 @@ import { Panel } from "@/components/shared/panel";
 import { SignalBadge } from "@/components/shared/signal-badge";
 import { getOfficerHouseholds } from "@/modules/households/services/household-analytics.service";
 
+export const dynamic = "force-dynamic";
+
 export default async function HouseholdsPage() {
   const households = await getOfficerHouseholds("site-sgo-bedok");
 

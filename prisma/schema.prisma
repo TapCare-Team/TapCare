@@ -96,6 +96,8 @@ model Sticker {
   publicCode          String            @unique
   householdId         String
   siteId              String
+  name                String
+  isCritical          Boolean           @default(false)
   stickerType         StickerType
   runtimeMode         RuntimeMode
   status              StickerStatus     @default(ACTIVE)

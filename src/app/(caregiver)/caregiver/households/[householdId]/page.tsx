@@ -5,6 +5,8 @@ import { SignalBadge } from "@/components/shared/signal-badge";
 import { getCurrentUser } from "@/lib/auth";
 import { getHouseholdDetail } from "@/modules/households/services/household-analytics.service";
 
+export const dynamic = "force-dynamic";
+
 export default async function CaregiverHouseholdPage({
   params
 }: {

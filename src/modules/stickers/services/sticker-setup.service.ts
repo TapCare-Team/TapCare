@@ -1,19 +1,54 @@
-import { mockHouseholds } from "@/lib/mock-data";
-import type { Sticker } from "@/modules/households/domain/household";
+import type { Sticker } from "@/modules/stickers/domain/sticker";
+import { PrismaHouseholdsRepository } from "@/modules/households/repositories/prisma-households.repository";
+import { PrismaStickersRepository } from "@/modules/stickers/repositories/prisma-stickers.repository";
+import { isDatabaseConfigured } from "@/lib/db/database-mode";
 
 type CreateStickerInput = Omit<Sticker, "id"> & { householdId: string };
 
+const householdsRepository = new PrismaHouseholdsRepository();
+const stickersRepository = new PrismaStickersRepository();
+
 export async function listHouseholdStickers(householdId: string) {
-  return mockHouseholds.find((household) => household.id === householdId)?.stickers ?? [];
+  if (!isDatabaseConfigured()) {
+    throw new Error("DATABASE_URL is required for setup APIs");
+  }
+
+  return stickersRepository.listByHouseholdId(householdId);
 }
 
 export async function createSticker(input: CreateStickerInput) {
-  return {
+  if (!isDatabaseConfigured()) {
+    throw new Error("DATABASE_URL is required for setup APIs");
+  }
+
+  const household = await householdsRepository.getById(input.householdId);
+  if (!household) {
+    throw new Error("Household not found");
+  }
+
+  return stickersRepository.create({
     ...input,
-    id: `sticker-${input.publicCode.toLowerCase()}`
-  };
+    siteId: household.siteId
+  });
 }
 
 export async function updateSticker(stickerId: string, patch: Partial<Sticker>) {
-  return { stickerId, ...patch };
+  if (!isDatabaseConfigured()) {
+    throw new Error("DATABASE_URL is required for setup APIs");
+  }
+
+  return stickersRepository.update(stickerId, patch);
+}
+
+export async function assignStickerToHousehold(stickerId: string, householdId: string) {
+  if (!isDatabaseConfigured()) {
+    throw new Error("DATABASE_URL is required for setup APIs");
+  }
+
+  const household = await householdsRepository.getById(householdId);
+  if (!household) {
+    throw new Error("Household not found");
+  }
+
+  return stickersRepository.assignHousehold(stickerId, householdId, household.siteId);
 }

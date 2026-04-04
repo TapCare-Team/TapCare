@@ -98,6 +98,8 @@ CREATE TABLE "Sticker" (
   "publicCode" TEXT NOT NULL UNIQUE,
   "householdId" TEXT NOT NULL REFERENCES "Household"("id") ON DELETE RESTRICT ON UPDATE CASCADE,
   "siteId" TEXT NOT NULL REFERENCES "Site"("id") ON DELETE RESTRICT ON UPDATE CASCADE,
+  "name" TEXT NOT NULL,
+  "isCritical" BOOLEAN NOT NULL DEFAULT FALSE,
   "stickerType" "StickerType" NOT NULL,
   "runtimeMode" "RuntimeMode" NOT NULL,
   "status" "StickerStatus" NOT NULL DEFAULT 'ACTIVE',

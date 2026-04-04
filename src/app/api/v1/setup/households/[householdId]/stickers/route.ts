@@ -5,6 +5,13 @@ export async function GET(
   _request: Request,
   { params }: { params: { householdId: string } }
 ) {
-  const stickers = await listHouseholdStickers(params.householdId);
-  return NextResponse.json(stickers);
+  try {
+    const stickers = await listHouseholdStickers(params.householdId);
+    return NextResponse.json(stickers);
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Unable to list stickers" },
+      { status: 400 }
+    );
+  }
 }

@@ -10,6 +10,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid sticker payload" }, { status: 400 });
   }
 
-  const sticker = await createSticker(parsed.data);
-  return NextResponse.json(sticker, { status: 201 });
+  try {
+    const sticker = await createSticker(parsed.data);
+    return NextResponse.json(sticker, { status: 201 });
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Unable to create sticker" },
+      { status: 400 }
+    );
+  }
 }

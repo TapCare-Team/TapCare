@@ -13,6 +13,17 @@ export async function PATCH(
     return NextResponse.json({ error: "Invalid sticker update payload" }, { status: 400 });
   }
 
-  const sticker = await updateSticker(params.stickerId, parsed.data);
-  return NextResponse.json(sticker);
+  try {
+    const sticker = await updateSticker(params.stickerId, parsed.data);
+    if (!sticker) {
+      return NextResponse.json({ error: "Sticker not found" }, { status: 404 });
+    }
+
+    return NextResponse.json(sticker);
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Unable to update sticker" },
+      { status: 400 }
+    );
+  }
 }

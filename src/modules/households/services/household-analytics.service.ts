@@ -2,16 +2,93 @@ import { buildFeatureSnapshots } from "@/modules/analytics/services/feature-anal
 import type { SessionUser } from "@/modules/auth/domain/access";
 import { canViewHousehold } from "@/modules/auth/services/access-control.service";
 import { MockAnalyticsRepository } from "@/modules/analytics/repositories/mock-analytics.repository";
+import { PrismaAnalyticsRepository } from "@/modules/analytics/repositories/prisma-analytics.repository";
 import { MockHouseholdsRepository } from "@/modules/households/repositories/mock-households.repository";
+import { PrismaHouseholdsRepository } from "@/modules/households/repositories/prisma-households.repository";
 import { deriveFollowUpSignals } from "@/modules/signals/services/follow-up-signal.service";
+import { logger } from "@/lib/logging/logger";
+import { isDatabaseConfigured } from "@/lib/db/database-mode";
 
-const analyticsRepository = new MockAnalyticsRepository();
-const householdsRepository = new MockHouseholdsRepository();
+const mockAnalyticsRepository = new MockAnalyticsRepository();
+const prismaAnalyticsRepository = new PrismaAnalyticsRepository();
+const mockHouseholdsRepository = new MockHouseholdsRepository();
+const prismaHouseholdsRepository = new PrismaHouseholdsRepository();
+
+async function listHouseholdsBySite(siteId: string) {
+  if (!isDatabaseConfigured()) {
+    return mockHouseholdsRepository.listBySite(siteId);
+  }
+
+  try {
+    return await prismaHouseholdsRepository.listBySite(siteId);
+  } catch (error) {
+    logger.warn("households_read_fallback_to_mock", { siteId, error: error instanceof Error ? error.message : "unknown" });
+    return mockHouseholdsRepository.listBySite(siteId);
+  }
+}
+
+async function listHouseholdsByIds(householdIds: string[]) {
+  if (!isDatabaseConfigured()) {
+    return mockHouseholdsRepository.listByIds(householdIds);
+  }
+
+  try {
+    return await prismaHouseholdsRepository.listByIds(householdIds);
+  } catch (error) {
+    logger.warn("households_read_fallback_to_mock", {
+      householdIds: householdIds.join(","),
+      error: error instanceof Error ? error.message : "unknown"
+    });
+    return mockHouseholdsRepository.listByIds(householdIds);
+  }
+}
+
+async function getHouseholdById(householdId: string) {
+  if (!isDatabaseConfigured()) {
+    return mockHouseholdsRepository.getById(householdId);
+  }
+
+  try {
+    return await prismaHouseholdsRepository.getById(householdId);
+  } catch (error) {
+    logger.warn("household_read_fallback_to_mock", { householdId, error: error instanceof Error ? error.message : "unknown" });
+    return mockHouseholdsRepository.getById(householdId);
+  }
+}
+
+async function listEventsBySite(siteId: string) {
+  if (!isDatabaseConfigured()) {
+    return mockAnalyticsRepository.listEventsBySite(siteId);
+  }
+
+  try {
+    return await prismaAnalyticsRepository.listEventsBySite(siteId);
+  } catch (error) {
+    logger.warn("interaction_events_read_fallback_to_mock", { siteId, error: error instanceof Error ? error.message : "unknown" });
+    return mockAnalyticsRepository.listEventsBySite(siteId);
+  }
+}
+
+async function listEventsByHouseholdIds(householdIds: string[]) {
+  if (!isDatabaseConfigured()) {
+    return mockAnalyticsRepository.listEventsByHouseholdIds(householdIds);
+  }
+
+  try {
+    return await prismaAnalyticsRepository.listEventsByHouseholdIds(householdIds);
+  } catch (error) {
+    logger.warn("interaction_events_read_fallback_to_mock", {
+      householdIds: householdIds.join(","),
+      error: error instanceof Error ? error.message : "unknown"
+    });
+    return mockAnalyticsRepository.listEventsByHouseholdIds(householdIds);
+  }
+}
 
 export async function getOfficerDashboardSummary(siteId: string) {
   const [households, events] = await Promise.all([
-    householdsRepository.listBySite(siteId),
-    analyticsRepository.listEventsBySite(siteId)
+    listHouseholdsBySite(siteId),
+    listEventsBySite(siteId)
   ]);
 
   const signals = deriveFollowUpSignals({ households, events });
@@ -31,8 +108,8 @@ export async function getOfficerDashboardSummary(siteId: string) {
 
 export async function getOfficerHouseholds(siteId: string) {
   const [households, events] = await Promise.all([
-    householdsRepository.listBySite(siteId),
-    analyticsRepository.listEventsBySite(siteId)
+    listHouseholdsBySite(siteId),
+    listEventsBySite(siteId)
   ]);
 
   const signals = deriveFollowUpSignals({ households, events });
@@ -46,8 +123,8 @@ export async function getOfficerHouseholds(siteId: string) {
 
 export async function getSignalsForSite(siteId: string) {
   const [households, events] = await Promise.all([
-    householdsRepository.listBySite(siteId),
-    analyticsRepository.listEventsBySite(siteId)
+    listHouseholdsBySite(siteId),
+    listEventsBySite(siteId)
   ]);
 
   return deriveFollowUpSignals({ households, events });
@@ -55,20 +132,20 @@ export async function getSignalsForSite(siteId: string) {
 
 export async function getSignalsForHouseholds(householdIds: string[]) {
   const [households, events] = await Promise.all([
-    householdsRepository.listByIds(householdIds),
-    analyticsRepository.listEventsByHouseholdIds(householdIds)
+    listHouseholdsByIds(householdIds),
+    listEventsByHouseholdIds(householdIds)
   ]);
 
   return deriveFollowUpSignals({ households, events });
 }
 
 export async function getHouseholdDetail(user: SessionUser, householdId: string) {
-  const household = await householdsRepository.getById(householdId);
+  const household = await getHouseholdById(householdId);
   if (!household || !canViewHousehold(user, household.id, household.siteId)) {
     return null;
   }
 
-  const householdEvents = await analyticsRepository.listEventsByHouseholdIds([householdId]);
+  const householdEvents = await listEventsByHouseholdIds([householdId]);
   const signals = deriveFollowUpSignals({ households: [household], events: householdEvents });
 
   return {

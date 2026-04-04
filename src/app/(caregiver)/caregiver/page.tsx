@@ -5,6 +5,8 @@ import { CaseloadTable } from "@/components/caregiver/caseload-table";
 import { getCurrentUser } from "@/lib/auth";
 import { getOfficerHouseholds } from "@/modules/households/services/household-analytics.service";
 
+export const dynamic = "force-dynamic";
+
 export default async function CaregiverDashboardPage() {
   const user = await getCurrentUser("caregiver");
   const households = (await getOfficerHouseholds("site-sgo-bedok")).filter((household) =>

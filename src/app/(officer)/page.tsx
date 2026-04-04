@@ -5,6 +5,8 @@ import { FeatureSnapshotGrid } from "@/components/officer/feature-snapshot-grid"
 import { FollowUpList } from "@/components/officer/follow-up-list";
 import { getOfficerDashboardSummary } from "@/modules/households/services/household-analytics.service";
 
+export const dynamic = "force-dynamic";
+
 export default async function OfficerDashboardPage() {
   const summary = await getOfficerDashboardSummary("site-sgo-bedok");
 

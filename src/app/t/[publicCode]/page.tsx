@@ -1,7 +1,8 @@
 import { notFound, redirect } from "next/navigation";
 import Script from "next/script";
-import { resolvePublicSticker } from "@/modules/stickers/services/sticker-runtime.service";
-import { logger } from "@/lib/logging/logger";
+import { recordPageRendered, resolvePublicSticker } from "@/modules/stickers/services/sticker-runtime.service";
+
+export const dynamic = "force-dynamic";
 
 function TelRedirectPage({ href }: { href: string }) {
   return (
@@ -51,12 +52,7 @@ export default async function PublicStickerPage({
 
   const { sticker, household } = resolution;
   const page = sticker.page;
-  logger.info("page_rendered", {
-    publicCode: resolution.publicCode,
-    householdId: household.id,
-    stickerId: sticker.id,
-    pageType: page?.pageType
-  });
+  await recordPageRendered(resolution);
 
   return (
     <div className="mx-auto flex min-h-screen max-w-3xl flex-col gap-6 px-6 py-10">
