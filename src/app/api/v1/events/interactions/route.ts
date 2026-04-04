@@ -15,7 +15,7 @@ export async function POST(request: Request) {
 
   logger.info("interaction_event_received", {
     siteId: parsed.data.siteId,
-    routeType: parsed.data.routeType,
+    eventType: parsed.data.eventType,
     outcome: parsed.data.outcome
   });
 

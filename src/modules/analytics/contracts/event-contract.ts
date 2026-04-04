@@ -1,12 +1,14 @@
 import { z } from "zod";
 
-export const templateKeySchema = z.enum([
-  "emergency_contact",
-  "frequent_contacts",
-  "reminder_checklist",
-  "resource_links",
-  "help_profile"
+export const stickerTypeSchema = z.enum([
+  "EMERGENCY_CONTACT",
+  "FREQUENT_CONTACT",
+  "CHECKLIST_REMINDER",
+  "HELP_PROFILE",
+  "CURATED_RESOURCES"
 ]);
+
+export const runtimeModeSchema = z.enum(["DIRECT_REDIRECT", "RENDER_PAGE"]);
 
 export const interactionEventSchema = z.object({
   eventId: z.string().min(1),
@@ -14,26 +16,27 @@ export const interactionEventSchema = z.object({
   siteId: z.string().min(1),
   householdId: z.string().min(1).optional(),
   seniorProfileId: z.string().min(1).optional(),
-  artifactId: z.string().min(1).optional(),
-  templateKey: templateKeySchema,
-  interactionType: z.enum(["tap", "qr_scan", "page_view", "action_click"]),
-  routeType: templateKeySchema,
-  outcome: z.enum(["success", "failed", "abandoned"]),
+  stickerId: z.string().min(1).optional(),
+  publicCode: z.string().min(1).optional(),
+  stickerType: stickerTypeSchema.optional(),
+  runtimeMode: runtimeModeSchema.optional(),
+  eventType: z.enum(["STICKER_OPENED", "REDIRECT_ISSUED", "PAGE_RENDERED", "PAGE_ACTION_CLICKED"]),
+  outcome: z.enum(["SUCCESS", "FAILED"]),
+  destinationType: z.enum(["WHATSAPP", "PHONE", "EXTERNAL_URL"]).optional(),
   failureReason: z
     .enum([
-      "invalid_code",
-      "expired_route",
-      "permission_denied",
-      "broken_link",
-      "network_error",
-      "unknown"
+      "INVALID_CODE",
+      "DISABLED_STICKER",
+      "INVALID_DESTINATION",
+      "MISSING_CONFIGURATION",
+      "BROKEN_LINK",
+      "UNKNOWN"
     ])
     .optional(),
   sessionTokenHash: z.string().min(1).optional(),
   metadata: z
     .object({
-      actionKey: z.enum(["call", "whatsapp", "open_link", "check_item"]).optional(),
-      checklistItemCount: z.number().int().nonnegative().optional()
+      actionKey: z.enum(["open_link", "call", "whatsapp"]).optional()
     })
     .optional()
 });

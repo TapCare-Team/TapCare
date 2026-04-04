@@ -13,7 +13,6 @@ export default async function HouseholdsPage() {
       subtitle="Operational household list with activation state and follow-up context."
       nav={[
         { href: "/", label: "Dashboard" },
-        { href: "/households", label: "Households" },
         { href: "/follow-up", label: "Follow-up queue" }
       ]}
     >
@@ -23,7 +22,7 @@ export default async function HouseholdsPage() {
             <div key={household.id} className="rounded-2xl border border-black/5 bg-white p-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <p className="font-semibold">{household.displayLabel}</p>
+                  <p className="font-semibold">{household.displayAddress}</p>
                   <p className="text-sm text-muted">
                     {household.seniorAliases.join(", ")} | {household.siteName}
                   </p>

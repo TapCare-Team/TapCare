@@ -15,12 +15,14 @@ export async function getOfficerDashboardSummary(siteId: string) {
   ]);
 
   const signals = deriveFollowUpSignals({ households, events });
-  const activatedHouseholds = households.filter((household) => household.activatedAt).length;
+  const activeStickerHouseholds = households.filter((household) =>
+    household.stickers.some((sticker) => sticker.status === "ACTIVE")
+  ).length;
   const inactiveCandidates = signals.filter((signal) => signal.signalType === "SUDDEN_INACTIVITY").length;
 
   return {
     followUpCandidates: signals.length,
-    activatedHouseholds,
+    activeStickerHouseholds,
     inactiveCandidates,
     featureSnapshots: buildFeatureSnapshots(events),
     signals: signals.slice(0, 6)

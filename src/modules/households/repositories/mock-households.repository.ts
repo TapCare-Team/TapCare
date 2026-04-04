@@ -12,4 +12,12 @@ export class MockHouseholdsRepository {
   async getById(householdId: string) {
     return mockHouseholds.find((household) => household.id === householdId) ?? null;
   }
+
+  async getByStickerPublicCode(publicCode: string) {
+    return (
+      mockHouseholds.find((household) =>
+        household.stickers.some((sticker) => sticker.publicCode === publicCode)
+      ) ?? null
+    );
+  }
 }

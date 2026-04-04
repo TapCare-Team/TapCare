@@ -20,12 +20,9 @@ export default async function CaregiverHouseholdPage({
 
   return (
     <AppShell
-      title={detail.household.displayLabel}
+      title={detail.household.displayAddress}
       subtitle="Read-only household usage summary for assigned caregivers."
-      nav={[
-        { href: "/caregiver", label: "Back to caregiver view" },
-        { href: "/", label: "Officer dashboard" }
-      ]}
+      nav={[{ href: "/caregiver", label: "Back to caregiver view" }]}
     >
       <Panel title="Follow-up signals" eyebrow="Read only">
         <div className="space-y-3">

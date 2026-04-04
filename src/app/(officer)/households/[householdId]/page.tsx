@@ -4,7 +4,7 @@ import { Panel } from "@/components/shared/panel";
 import { SignalBadge } from "@/components/shared/signal-badge";
 import { getCurrentUser } from "@/lib/auth";
 import { getHouseholdDetail } from "@/modules/households/services/household-analytics.service";
-import { labelForTemplateKey } from "@/modules/analytics/services/feature-analytics.service";
+import { labelForStickerType } from "@/modules/analytics/services/feature-analytics.service";
 
 export default async function HouseholdDetailPage({
   params
@@ -21,7 +21,7 @@ export default async function HouseholdDetailPage({
 
   return (
     <AppShell
-      title={detail.household.displayLabel}
+      title={detail.household.displayAddress}
       subtitle="Household activity, NFC asset status, and explainable outreach signals."
       nav={[
         { href: "/", label: "Dashboard" },
@@ -47,13 +47,13 @@ export default async function HouseholdDetailPage({
           </div>
         </Panel>
 
-        <Panel title="NFC asset status" eyebrow="Artifacts">
+        <Panel title="Sticker status" eyebrow="Runtime">
           <div className="space-y-3">
-            {detail.household.artifacts.map((artifact) => (
-              <div key={artifact.id} className="rounded-2xl border border-black/5 bg-white p-4">
-                <p className="font-medium">{artifact.name}</p>
+            {detail.household.stickers.map((sticker) => (
+              <div key={sticker.id} className="rounded-2xl border border-black/5 bg-white p-4">
+                <p className="font-medium">{sticker.name}</p>
                 <p className="text-sm text-muted">
-                  {artifact.activationState} | Issued {new Date(artifact.issuedAt).toLocaleDateString()}
+                  {sticker.status} | {sticker.runtimeMode} | {sticker.stickerType.replaceAll("_", " ")}
                 </p>
               </div>
             ))}
@@ -66,11 +66,13 @@ export default async function HouseholdDetailPage({
           {detail.recentEvents.map((event) => (
             <div key={event.id} className="rounded-2xl border border-black/5 bg-white p-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="font-medium">{labelForTemplateKey(event.templateKey)}</p>
+                <p className="font-medium">
+                  {event.stickerType ? labelForStickerType(event.stickerType) : "Unknown sticker"}
+                </p>
                 <p className="text-sm text-muted">{new Date(event.occurredAt).toLocaleString()}</p>
               </div>
               <p className="text-sm text-muted">
-                {event.interactionType} | {event.outcome}
+                {event.eventType} | {event.outcome}
                 {event.failureReason ? ` | ${event.failureReason}` : ""}
               </p>
             </div>

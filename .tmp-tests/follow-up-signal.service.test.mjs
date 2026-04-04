@@ -17,22 +17,13 @@ function uniqueDayCount(events) {
   return new Set(events.map((event) => event.occurredAt.slice(0, 10))).size;
 }
 
-function makeSignal(params) {
-  return {
-    id: `${params.household.id}-${params.signalType}`,
-    householdId: params.household.id,
-    siteId: params.household.siteId,
-    signalType: params.signalType,
-    status: "ACTIVE",
-    explanation: params.explanation,
-    firstObservedAt: params.firstObservedAt,
-    lastObservedAt: params.lastObservedAt,
-    evidence: params.evidence
-  };
-}
-
-function byTemplate(events, templateKey) {
-  return events.filter((event) => event.templateKey === templateKey && event.outcome === "success");
+function openedByType(events, stickerType) {
+  return events.filter(
+    (event) =>
+      event.stickerType === stickerType &&
+      event.eventType === "STICKER_OPENED" &&
+      event.outcome === "SUCCESS"
+  );
 }
 
 function deriveFollowUpSignals({ households, events, now = new Date("2025-04-04T09:00:00.000Z") }) {
@@ -41,39 +32,35 @@ function deriveFollowUpSignals({ households, events, now = new Date("2025-04-04T
   for (const household of households) {
     const householdEvents = events.filter((event) => event.householdId === household.id);
     const recentEvents = householdEvents.filter((event) => withinDays(new Date(event.occurredAt), now, 7));
-    const recentByTemplate = (templateKey) => byTemplate(recentEvents, templateKey);
 
-    const emergencyEvents = recentByTemplate("emergency_contact");
-    if (emergencyEvents.length >= 3) {
-      signals.push(
-        makeSignal({
-          household,
-          signalType: "REPEATED_EMERGENCY_USAGE",
-          explanation: `Emergency contact sticker opened ${emergencyEvents.length} times in 7 days.`,
-          firstObservedAt: emergencyEvents[0].occurredAt,
-          lastObservedAt: emergencyEvents[emergencyEvents.length - 1].occurredAt,
-          evidence: { eventCount: emergencyEvents.length, windowDays: 7 }
-        })
-      );
+    if (openedByType(recentEvents, "EMERGENCY_CONTACT").length >= 3) {
+      signals.push({ signalType: "REPEATED_EMERGENCY_USAGE" });
     }
 
     const baselineEvents = householdEvents.filter((event) => {
       const age = daysBetween(now, new Date(event.occurredAt));
-      return age >= 10 && age < 40;
+      return event.eventType === "STICKER_OPENED" && age >= 10 && age < 40 && event.outcome === "SUCCESS";
     });
     const baselineActiveDays = uniqueDayCount(baselineEvents);
-    const inactiveRecentEvents = householdEvents.filter((event) => withinDays(new Date(event.occurredAt), now, 10));
+    const inactiveRecentEvents = householdEvents.filter(
+      (event) =>
+        event.eventType === "STICKER_OPENED" &&
+        event.outcome === "SUCCESS" &&
+        withinDays(new Date(event.occurredAt), now, 10)
+    );
+
     if (baselineActiveDays >= 8 && inactiveRecentEvents.length === 0 && household.lastActiveAt) {
-      signals.push(
-        makeSignal({
-          household,
-          signalType: "SUDDEN_INACTIVITY",
-          explanation: `Household was active on ${baselineActiveDays} days last month and has had no activity for 10 days.`,
-          firstObservedAt: household.lastActiveAt,
-          lastObservedAt: household.lastActiveAt,
-          evidence: { baselineDays: baselineActiveDays, inactiveDays: 10 }
-        })
-      );
+      signals.push({ signalType: "SUDDEN_INACTIVITY" });
+    }
+
+    const hasActiveCriticalSticker = household.stickers.some(
+      (sticker) =>
+        sticker.status === "ACTIVE" &&
+        (sticker.stickerType === "EMERGENCY_CONTACT" || sticker.stickerType === "HELP_PROFILE")
+    );
+
+    if (!hasActiveCriticalSticker) {
+      signals.push({ signalType: "NO_ACTIVE_CRITICAL_STICKER" });
     }
   }
 
@@ -83,92 +70,97 @@ function deriveFollowUpSignals({ households, events, now = new Date("2025-04-04T
 const mockHouseholds = [
   {
     id: "household-1",
-    siteId: "site-sgo-bedok",
-    lastActiveAt: "2025-04-03T10:00:00.000Z"
+    lastActiveAt: "2025-04-03T10:00:00.000Z",
+    stickers: [{ stickerType: "EMERGENCY_CONTACT", status: "ACTIVE" }]
   },
   {
     id: "household-2",
-    siteId: "site-sgo-bedok",
-    lastActiveAt: "2025-03-22T08:00:00.000Z"
+    lastActiveAt: "2025-03-22T08:00:00.000Z",
+    stickers: [{ stickerType: "EMERGENCY_CONTACT", status: "DISABLED" }]
   }
 ];
 
 const mockInteractionEvents = [
   {
     householdId: "household-1",
-    templateKey: "emergency_contact",
+    stickerType: "EMERGENCY_CONTACT",
+    eventType: "STICKER_OPENED",
     occurredAt: "2025-03-30T08:00:00.000Z",
-    outcome: "success"
+    outcome: "SUCCESS"
   },
   {
     householdId: "household-1",
-    templateKey: "emergency_contact",
+    stickerType: "EMERGENCY_CONTACT",
+    eventType: "STICKER_OPENED",
     occurredAt: "2025-04-01T08:15:00.000Z",
-    outcome: "success"
+    outcome: "SUCCESS"
   },
   {
     householdId: "household-1",
-    templateKey: "emergency_contact",
+    stickerType: "EMERGENCY_CONTACT",
+    eventType: "STICKER_OPENED",
     occurredAt: "2025-04-03T10:00:00.000Z",
-    outcome: "success"
+    outcome: "SUCCESS"
   },
   {
     householdId: "household-2",
-    templateKey: "help_profile",
+    stickerType: "CURATED_RESOURCES",
+    eventType: "STICKER_OPENED",
     occurredAt: "2025-03-05T08:00:00.000Z",
-    outcome: "success"
+    outcome: "SUCCESS"
   },
   {
     householdId: "household-2",
-    templateKey: "help_profile",
+    stickerType: "CURATED_RESOURCES",
+    eventType: "STICKER_OPENED",
     occurredAt: "2025-03-08T08:00:00.000Z",
-    outcome: "success"
+    outcome: "SUCCESS"
   },
   {
     householdId: "household-2",
-    templateKey: "resource_links",
+    stickerType: "CURATED_RESOURCES",
+    eventType: "STICKER_OPENED",
     occurredAt: "2025-03-12T08:00:00.000Z",
-    outcome: "success"
+    outcome: "SUCCESS"
   },
   {
     householdId: "household-2",
-    templateKey: "frequent_contacts",
+    stickerType: "CURATED_RESOURCES",
+    eventType: "STICKER_OPENED",
     occurredAt: "2025-03-14T08:00:00.000Z",
-    outcome: "success"
+    outcome: "SUCCESS"
   },
   {
     householdId: "household-2",
-    templateKey: "frequent_contacts",
+    stickerType: "CURATED_RESOURCES",
+    eventType: "STICKER_OPENED",
     occurredAt: "2025-03-16T08:00:00.000Z",
-    outcome: "success"
+    outcome: "SUCCESS"
   },
   {
     householdId: "household-2",
-    templateKey: "reminder_checklist",
+    stickerType: "CURATED_RESOURCES",
+    eventType: "STICKER_OPENED",
     occurredAt: "2025-03-18T08:00:00.000Z",
-    outcome: "success"
+    outcome: "SUCCESS"
   },
   {
     householdId: "household-2",
-    templateKey: "resource_links",
+    stickerType: "CURATED_RESOURCES",
+    eventType: "STICKER_OPENED",
     occurredAt: "2025-03-20T08:00:00.000Z",
-    outcome: "success"
+    outcome: "SUCCESS"
   },
   {
     householdId: "household-2",
-    templateKey: "help_profile",
+    stickerType: "CURATED_RESOURCES",
+    eventType: "STICKER_OPENED",
     occurredAt: "2025-03-21T08:00:00.000Z",
-    outcome: "success"
-  },
-  {
-    householdId: "household-2",
-    templateKey: "resource_links",
-    occurredAt: "2025-03-22T08:00:00.000Z",
-    outcome: "success"
+    outcome: "SUCCESS"
   }
 ];
 
-test("creates repeated emergency usage signal from simple event counts", () => {
+test("creates repeated emergency usage signal from simple sticker-open events", () => {
   const signals = deriveFollowUpSignals({
     households: [mockHouseholds[0]],
     events: mockInteractionEvents.filter((event) => event.householdId === "household-1")
@@ -177,11 +169,20 @@ test("creates repeated emergency usage signal from simple event counts", () => {
   assert.equal(signals.some((signal) => signal.signalType === "REPEATED_EMERGENCY_USAGE"), true);
 });
 
-test("creates inactivity signal only when there is a baseline and no recent activity", () => {
+test("creates inactivity signal only when there is a baseline and no recent sticker activity", () => {
   const signals = deriveFollowUpSignals({
     households: [mockHouseholds[1]],
     events: mockInteractionEvents.filter((event) => event.householdId === "household-2")
   });
 
   assert.equal(signals.some((signal) => signal.signalType === "SUDDEN_INACTIVITY"), true);
+});
+
+test("creates no-active-critical-sticker signal when critical stickers are disabled", () => {
+  const signals = deriveFollowUpSignals({
+    households: [mockHouseholds[1]],
+    events: mockInteractionEvents.filter((event) => event.householdId === "household-2")
+  });
+
+  assert.equal(signals.some((signal) => signal.signalType === "NO_ACTIVE_CRITICAL_STICKER"), true);
 });

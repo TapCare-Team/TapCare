@@ -15,10 +15,7 @@ export default async function CaregiverDashboardPage() {
     <AppShell
       title="Caregiver View"
       subtitle="Read-only caseload view for households you are responsible for."
-      nav={[
-        { href: "/", label: "Officer dashboard" },
-        { href: "/caregiver", label: "Caregiver view" }
-      ]}
+      nav={[]}
     >
       <div className="grid gap-4 md:grid-cols-3">
         <StatCard
@@ -32,9 +29,16 @@ export default async function CaregiverDashboardPage() {
           hint="Read-only visibility into existing follow-up signals."
         />
         <StatCard
-          label="Activation gaps"
-          value={households.filter((household) => household.artifacts.some((artifact) => artifact.activationState !== "ACTIVATED")).length}
-          hint="Assigned households with unactivated or archived artifacts."
+          label="Disabled critical stickers"
+          value={
+            households.filter((household) =>
+              household.stickers.some(
+                (sticker) =>
+                  sticker.isCritical && sticker.status === "DISABLED"
+              )
+            ).length
+          }
+          hint="Assigned households missing an active emergency or help-profile sticker."
         />
       </div>
 

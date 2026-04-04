@@ -10,10 +10,7 @@ export default async function AdminAnalyticsPage() {
     <AppShell
       title="Admin Analytics"
       subtitle="System health and feature adoption are separated from officer triage."
-      nav={[
-        { href: "/", label: "Officer dashboard" },
-        { href: "/admin/analytics", label: "Admin analytics" }
-      ]}
+      nav={[{ href: "/", label: "Officer dashboard" }]}
     >
       <Panel title="Feature adoption" eyebrow="Cross-cutting">
         <FeatureSnapshotGrid snapshots={summary.featureSnapshots} />

@@ -1,21 +1,27 @@
-export const templateKeys = [
-  "emergency_contact",
-  "frequent_contacts",
-  "reminder_checklist",
-  "resource_links",
-  "help_profile"
+export const stickerTypes = [
+  "EMERGENCY_CONTACT",
+  "FREQUENT_CONTACT",
+  "CHECKLIST_REMINDER",
+  "HELP_PROFILE",
+  "CURATED_RESOURCES"
 ] as const;
 
-export type TemplateKey = (typeof templateKeys)[number];
-export type InteractionType = "tap" | "qr_scan" | "page_view" | "action_click";
-export type EventOutcome = "success" | "failed" | "abandoned";
+export type StickerType = (typeof stickerTypes)[number];
+export type RuntimeMode = "DIRECT_REDIRECT" | "RENDER_PAGE";
+export type EventOutcome = "SUCCESS" | "FAILED";
+export type DestinationType = "WHATSAPP" | "PHONE" | "EXTERNAL_URL";
+export type InteractionEventType =
+  | "STICKER_OPENED"
+  | "REDIRECT_ISSUED"
+  | "PAGE_RENDERED"
+  | "PAGE_ACTION_CLICKED";
 export type FailureReason =
-  | "invalid_code"
-  | "expired_route"
-  | "permission_denied"
-  | "broken_link"
-  | "network_error"
-  | "unknown";
+  | "INVALID_CODE"
+  | "DISABLED_STICKER"
+  | "INVALID_DESTINATION"
+  | "MISSING_CONFIGURATION"
+  | "BROKEN_LINK"
+  | "UNKNOWN";
 
 export type InteractionEvent = {
   id: string;
@@ -23,21 +29,22 @@ export type InteractionEvent = {
   siteId: string;
   householdId?: string;
   seniorProfileId?: string;
-  artifactId?: string;
-  templateKey: TemplateKey;
-  interactionType: InteractionType;
-  routeType: TemplateKey;
+  stickerId?: string;
+  publicCode?: string;
+  stickerType?: StickerType;
+  runtimeMode?: RuntimeMode;
+  eventType: InteractionEventType;
   outcome: EventOutcome;
+  destinationType?: DestinationType;
   failureReason?: FailureReason;
   sessionTokenHash?: string;
   metadata?: {
-    actionKey?: "call" | "whatsapp" | "open_link" | "check_item";
-    checklistItemCount?: number;
+    actionKey?: "open_link" | "call" | "whatsapp";
   };
 };
 
 export type FeatureSnapshot = {
-  templateKey: TemplateKey;
+  stickerType: StickerType;
   totalEvents: number;
   successfulEvents: number;
   uniqueHouseholds: number;

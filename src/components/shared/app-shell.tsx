@@ -6,15 +6,18 @@ type AppShellProps = {
   subtitle: string;
   children: ReactNode;
   nav: { href: string; label: string }[];
+  homeHref?: string;
 };
 
-export function AppShell({ title, subtitle, children, nav }: AppShellProps) {
+export function AppShell({ title, subtitle, children, nav, homeHref = "/" }: AppShellProps) {
   return (
     <div className="min-h-screen">
       <header className="border-b border-black/5 bg-white/70 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
           <div>
-            <p className="text-sm uppercase tracking-[0.3em] text-muted">TapCare</p>
+            <Link href={homeHref} className="text-sm uppercase tracking-[0.3em] text-muted">
+              TapCare
+            </Link>
             <h1 className="text-2xl font-semibold">{title}</h1>
             <p className="text-sm text-muted">{subtitle}</p>
           </div>

@@ -13,7 +13,6 @@ export default async function OfficerDashboardPage() {
       title="Outreach Dashboard"
       subtitle="Who may need follow-up, and which NFC journeys are useful in the field."
       nav={[
-        { href: "/", label: "Dashboard" },
         { href: "/households", label: "Households" },
         { href: "/follow-up", label: "Follow-up queue" },
         { href: "/caregiver", label: "Caregiver view" },
@@ -27,9 +26,9 @@ export default async function OfficerDashboardPage() {
           hint="Explainable signals generated from recent event patterns."
         />
         <StatCard
-          label="Activated households"
-          value={summary.activatedHouseholds}
-          hint="Households with at least one activated NFC artifact."
+          label="Households with active stickers"
+          value={summary.activeStickerHouseholds}
+          hint="Households with at least one active sticker."
         />
         <StatCard
           label="Sudden inactivity"

@@ -12,8 +12,7 @@ export default async function FollowUpQueuePage() {
       subtitle="Read explainable signals first, then decide whether outreach is appropriate."
       nav={[
         { href: "/", label: "Dashboard" },
-        { href: "/households", label: "Households" },
-        { href: "/follow-up", label: "Follow-up queue" }
+        { href: "/households", label: "Households" }
       ]}
     >
       <Panel title="Active signals" eyebrow="Operational triage">

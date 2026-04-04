@@ -17,7 +17,7 @@ export function CaseloadTable({ households }: { households: AwaitedHouseholdList
           {households.map((household) => (
             <tr key={household.id}>
               <td className="px-4 py-4">
-                <p className="font-medium">{household.displayLabel}</p>
+                <p className="font-medium">{household.displayAddress}</p>
                 <p className="text-sm text-muted">{household.seniorAliases.join(", ")}</p>
               </td>
               <td className="px-4 py-4 text-sm text-muted">

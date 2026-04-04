@@ -1,5 +1,5 @@
-import type { InteractionEvent, TemplateKey } from "@/modules/analytics/domain/analytics";
 import type { Household } from "@/modules/households/domain/household";
+import type { InteractionEvent, StickerType } from "@/modules/analytics/domain/analytics";
 import type { FollowUpSignal, SignalType } from "@/modules/signals/domain/follow-up-signal";
 
 type BuildSignalsInput = {
@@ -24,6 +24,15 @@ function uniqueDayCount(events: InteractionEvent[]) {
   return new Set(events.map((event) => event.occurredAt.slice(0, 10))).size;
 }
 
+function openedByType(events: InteractionEvent[], stickerType: StickerType) {
+  return events.filter(
+    (event) =>
+      event.stickerType === stickerType &&
+      event.eventType === "STICKER_OPENED" &&
+      event.outcome === "SUCCESS"
+  );
+}
+
 function makeSignal(params: {
   household: Household;
   signalType: SignalType;
@@ -45,10 +54,6 @@ function makeSignal(params: {
   };
 }
 
-function byTemplate(events: InteractionEvent[], templateKey: TemplateKey) {
-  return events.filter((event) => event.templateKey === templateKey && event.outcome === "success");
-}
-
 export function deriveFollowUpSignals({
   households,
   events,
@@ -59,9 +64,8 @@ export function deriveFollowUpSignals({
   for (const household of households) {
     const householdEvents = events.filter((event) => event.householdId === household.id);
     const recentEvents = householdEvents.filter((event) => withinDays(new Date(event.occurredAt), now, 7));
-    const recentByTemplate = (templateKey: TemplateKey) => byTemplate(recentEvents, templateKey);
 
-    const emergencyEvents = recentByTemplate("emergency_contact");
+    const emergencyEvents = openedByType(recentEvents, "EMERGENCY_CONTACT");
     if (emergencyEvents.length >= 3) {
       signals.push(
         makeSignal({
@@ -75,13 +79,13 @@ export function deriveFollowUpSignals({
       );
     }
 
-    const helpEvents = recentByTemplate("help_profile");
+    const helpEvents = openedByType(recentEvents, "HELP_PROFILE");
     if (helpEvents.length >= 4) {
       signals.push(
         makeSignal({
           household,
           signalType: "REPEATED_HELP_PROFILE_USAGE",
-          explanation: `Help profile page opened ${helpEvents.length} times in 7 days.`,
+          explanation: `Help profile sticker opened ${helpEvents.length} times in 7 days.`,
           firstObservedAt: helpEvents[0].occurredAt,
           lastObservedAt: helpEvents[helpEvents.length - 1].occurredAt,
           evidence: { eventCount: helpEvents.length, windowDays: 7 }
@@ -89,13 +93,13 @@ export function deriveFollowUpSignals({
       );
     }
 
-    const contactEvents = recentByTemplate("frequent_contacts");
+    const contactEvents = openedByType(recentEvents, "FREQUENT_CONTACT");
     const contactDays = uniqueDayCount(contactEvents);
     if (contactEvents.length >= 10 && contactDays >= 3) {
       signals.push(
         makeSignal({
           household,
-          signalType: "HIGH_CONTACT_DEPENDENCE",
+          signalType: "HIGH_CONTACT_USAGE",
           explanation: `Contact sticker used ${contactEvents.length} times across ${contactDays} days in the last week.`,
           firstObservedAt: contactEvents[0].occurredAt,
           lastObservedAt: contactEvents[contactEvents.length - 1].occurredAt,
@@ -104,7 +108,7 @@ export function deriveFollowUpSignals({
       );
     }
 
-    const reminderEvents = recentByTemplate("reminder_checklist");
+    const reminderEvents = openedByType(recentEvents, "CHECKLIST_REMINDER");
     const reminderByDay = reminderEvents.reduce<Record<string, number>>((acc, event) => {
       acc[event.occurredAt.slice(0, 10)] = (acc[event.occurredAt.slice(0, 10)] ?? 0) + 1;
       return acc;
@@ -114,7 +118,7 @@ export function deriveFollowUpSignals({
       signals.push(
         makeSignal({
           household,
-          signalType: "HIGH_REMINDER_DEPENDENCE",
+          signalType: "HIGH_REMINDER_USAGE",
           explanation: `Reminder sticker used repeatedly on ${reminderHeavyDays} days this week.`,
           firstObservedAt: reminderEvents[0]?.occurredAt ?? now.toISOString(),
           lastObservedAt: reminderEvents[reminderEvents.length - 1]?.occurredAt ?? now.toISOString(),
@@ -125,16 +129,21 @@ export function deriveFollowUpSignals({
 
     const baselineEvents = householdEvents.filter((event) => {
       const age = daysBetween(now, new Date(event.occurredAt));
-      return age >= 10 && age < 40;
+      return event.eventType === "STICKER_OPENED" && age >= 10 && age < 40 && event.outcome === "SUCCESS";
     });
     const baselineActiveDays = uniqueDayCount(baselineEvents);
-    const inactiveRecentEvents = householdEvents.filter((event) => withinDays(new Date(event.occurredAt), now, 10));
+    const inactiveRecentEvents = householdEvents.filter(
+      (event) =>
+        event.eventType === "STICKER_OPENED" &&
+        event.outcome === "SUCCESS" &&
+        withinDays(new Date(event.occurredAt), now, 10)
+    );
     if (baselineActiveDays >= 8 && inactiveRecentEvents.length === 0 && household.lastActiveAt) {
       signals.push(
         makeSignal({
           household,
           signalType: "SUDDEN_INACTIVITY",
-          explanation: `Household was active on ${baselineActiveDays} days last month and has had no activity for 10 days.`,
+          explanation: `Household was active on ${baselineActiveDays} days last month and has had no sticker activity for 10 days.`,
           firstObservedAt: household.lastActiveAt,
           lastObservedAt: household.lastActiveAt,
           evidence: { baselineDays: baselineActiveDays, inactiveDays: 10 }
@@ -142,47 +151,26 @@ export function deriveFollowUpSignals({
       );
     }
 
-    for (const artifact of household.artifacts.filter((item) => item.isKeySticker)) {
-      const issuedAge = daysBetween(now, new Date(artifact.issuedAt));
-      const artifactEvents = householdEvents.filter((event) => event.templateKey === artifact.templateKey);
-      const recentArtifactEvents = artifactEvents.filter((event) =>
-        withinDays(new Date(event.occurredAt), now, 30)
+    const hasActiveCriticalSticker = household.stickers.some(
+      (sticker) =>
+        sticker.status === "ACTIVE" &&
+        (sticker.stickerType === "EMERGENCY_CONTACT" || sticker.stickerType === "HELP_PROFILE")
+    );
+    if (!hasActiveCriticalSticker) {
+      signals.push(
+        makeSignal({
+          household,
+          signalType: "NO_ACTIVE_CRITICAL_STICKER",
+          explanation: "Household does not currently have an active emergency contact or help profile sticker.",
+          firstObservedAt: now.toISOString(),
+          lastObservedAt: now.toISOString(),
+          evidence: { activeCriticalStickers: 0 }
+        })
       );
-
-      if (artifact.activationState === "PROVISIONED" && issuedAge > 14) {
-        signals.push(
-          makeSignal({
-            household,
-            signalType: "NEVER_ACTIVATED_KEY_STICKER",
-            explanation: `${artifact.name} issued ${issuedAge} days ago has not been activated.`,
-            firstObservedAt: artifact.issuedAt,
-            lastObservedAt: artifact.issuedAt,
-            evidence: { issuedAgeDays: issuedAge }
-          })
-        );
-      }
-
-      if (
-        artifact.activationState === "ACTIVATED" &&
-        artifactEvents.some((event) => event.outcome === "success") &&
-        recentArtifactEvents.length === 0
-      ) {
-        const lastEvent = artifactEvents[artifactEvents.length - 1];
-        signals.push(
-          makeSignal({
-            household,
-            signalType: "STOPPED_USING_KEY_STICKER",
-            explanation: `${artifact.name} was previously used and has not been used in the last 30 days.`,
-            firstObservedAt: lastEvent.occurredAt,
-            lastObservedAt: lastEvent.occurredAt,
-            evidence: { inactiveDays: 30 }
-          })
-        );
-      }
     }
 
-    const failedEvents = recentEvents.filter((event) => event.outcome === "failed");
-    const attempts = recentEvents.length;
+    const failedEvents = recentEvents.filter((event) => event.outcome === "FAILED");
+    const attempts = recentEvents.filter((event) => event.eventType === "STICKER_OPENED").length;
     const failureRate = attempts === 0 ? 0 : failedEvents.length / attempts;
     if (failedEvents.length >= 3 || (attempts >= 5 && failureRate > 0.4)) {
       signals.push(

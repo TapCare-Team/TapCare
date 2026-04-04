@@ -1,24 +1,44 @@
-import type { TemplateKey } from "@/modules/analytics/domain/analytics";
+import type { DestinationType, RuntimeMode, StickerType } from "@/modules/analytics/domain/analytics";
 
-export type CareArtifact = {
+export type DestinationConfig = {
+  type: DestinationType;
+  value: string;
+  label?: string;
+};
+
+export type PageConfig = {
+  pageType: "CHECKLIST" | "HELP_PROFILE" | "RESOURCES";
+  title: string;
+  content: {
+    checklistItems?: string[];
+    helpFields?: Array<{ label: string; value: string }>;
+    links?: Array<{ label: string; href: string }>;
+  };
+};
+
+export type Sticker = {
   id: string;
-  templateKey: TemplateKey;
+  publicCode: string;
+  stickerType: StickerType;
+  runtimeMode: RuntimeMode;
+  status: "ACTIVE" | "DISABLED";
   name: string;
-  isKeySticker: boolean;
-  activationState: "PROVISIONED" | "ACTIVATED" | "ARCHIVED";
-  issuedAt: string;
-  activatedAt?: string;
+  isCritical: boolean;
+  destination?: DestinationConfig;
+  page?: PageConfig;
 };
 
 export type Household = {
   id: string;
-  publicCode: string;
   siteId: string;
   siteName: string;
-  displayLabel: string;
-  activatedAt?: string;
+  addressLine1: string;
+  addressLine2?: string;
+  unitNumber?: string;
+  postalCode?: string;
+  displayAddress: string;
   lastActiveAt?: string;
   seniorAliases: string[];
   caregiverIds: string[];
-  artifacts: CareArtifact[];
+  stickers: Sticker[];
 };
