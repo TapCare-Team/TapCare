@@ -1,17 +1,8 @@
 import type { Household } from "@/modules/households/domain/household";
 import type { Sticker } from "@/modules/stickers/domain/sticker";
-import { MockHouseholdsRepository } from "@/modules/households/repositories/mock-households.repository";
-import { PrismaHouseholdsRepository } from "@/modules/households/repositories/prisma-households.repository";
-import { MockAnalyticsRepository } from "@/modules/analytics/repositories/mock-analytics.repository";
-import { PrismaAnalyticsRepository } from "@/modules/analytics/repositories/prisma-analytics.repository";
 import type { DestinationType, FailureReason, InteractionEventType } from "@/modules/analytics/domain/analytics";
+import { getStickerRuntimeRepositories } from "@/modules/stickers/repositories/sticker-runtime.repository-provider";
 import { logger } from "@/lib/logging/logger";
-import { isDatabaseConfigured } from "@/lib/db/database-mode";
-
-const mockHouseholdsRepository = new MockHouseholdsRepository();
-const prismaHouseholdsRepository = new PrismaHouseholdsRepository();
-const mockAnalyticsRepository = new MockAnalyticsRepository();
-const prismaAnalyticsRepository = new PrismaAnalyticsRepository();
 
 export type RuntimeResolution =
   | {
@@ -39,23 +30,7 @@ export type RuntimeResolution =
     };
 
 function normalizePublicCode(publicCode: string) {
-  return publicCode.trim().toUpperCase();
-}
-
-async function getHouseholdByStickerPublicCode(publicCode: string) {
-  if (!isDatabaseConfigured()) {
-    return mockHouseholdsRepository.getByStickerPublicCode(publicCode);
-  }
-
-  try {
-    return await prismaHouseholdsRepository.getByStickerPublicCode(publicCode);
-  } catch (error) {
-    logger.warn("public_sticker_read_fallback_to_mock", {
-      publicCode,
-      error: error instanceof Error ? error.message : "unknown"
-    });
-    return mockHouseholdsRepository.getByStickerPublicCode(publicCode);
-  }
+  return publicCode.trim().toLowerCase();
 }
 
 async function persistRuntimeEvent(params: {
@@ -67,6 +42,7 @@ async function persistRuntimeEvent(params: {
   destinationType?: DestinationType;
   failureReason?: FailureReason;
 }) {
+  const { eventsRepository } = getStickerRuntimeRepositories();
   const event = {
     id: crypto.randomUUID(),
     occurredAt: new Date().toISOString(),
@@ -82,25 +58,13 @@ async function persistRuntimeEvent(params: {
     failureReason: params.failureReason
   } as const;
 
-  if (!isDatabaseConfigured()) {
-    return mockAnalyticsRepository.createEvent(event);
-  }
-
-  try {
-    return await prismaAnalyticsRepository.createEvent(event);
-  } catch (error) {
-    logger.warn("runtime_event_persist_fallback_to_mock", {
-      publicCode: params.publicCode,
-      eventType: params.eventType,
-      error: error instanceof Error ? error.message : "unknown"
-    });
-    return mockAnalyticsRepository.createEvent(event);
-  }
+  return eventsRepository.createEvent(event);
 }
 
 export async function resolvePublicSticker(publicCode: string): Promise<RuntimeResolution> {
+  const { householdsRepository } = getStickerRuntimeRepositories();
   const normalized = normalizePublicCode(publicCode);
-  const household = await getHouseholdByStickerPublicCode(normalized);
+  const household = await householdsRepository.getByStickerPublicCode(normalized);
 
   if (!household) {
     logger.warn("sticker_opened", { publicCode: normalized, outcome: "NOT_FOUND" });
