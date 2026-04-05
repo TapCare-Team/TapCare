@@ -3,6 +3,15 @@ import type { InteractionEvent } from "@/modules/analytics/domain/analytics";
 import { mapPrismaInteractionEvent } from "@/modules/households/repositories/prisma-mappers";
 
 export class PrismaAnalyticsRepository {
+  async listEventsBySiteIds(siteIds: string[]) {
+    const events = await prisma.interactionEvent.findMany({
+      where: { siteId: { in: siteIds } },
+      orderBy: { occurredAt: "desc" }
+    });
+
+    return events.map(mapPrismaInteractionEvent);
+  }
+
   async listEventsBySite(siteId: string) {
     const events = await prisma.interactionEvent.findMany({
       where: { siteId },

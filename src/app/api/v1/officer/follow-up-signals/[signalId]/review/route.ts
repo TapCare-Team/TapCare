@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { followUpReviewRequestSchema } from "@/modules/households/contracts/review.contract";
 import { getCurrentUser } from "@/lib/auth";
 import { canReviewSignals } from "@/modules/auth/services/access-control.service";
-import { logger } from "@/lib/logging/logger";
+import { reviewFollowUpSignal } from "@/modules/signals/services/follow-up-review.service";
 
 export async function POST(
   request: Request,
@@ -22,16 +22,20 @@ export async function POST(
     return NextResponse.json({ error: "Invalid review payload" }, { status: 400 });
   }
 
-  logger.info("follow_up_signal_reviewed", {
-    actorUserId: user.id,
-    signalId: params.signalId,
-    status: parsed.data.status
-  });
+  try {
+    const result = await reviewFollowUpSignal(user, params.signalId, parsed.data);
+    return NextResponse.json(result);
+  } catch (error) {
+    if (error instanceof Error && error.message === "Signal not found") {
+      return NextResponse.json({ error: error.message }, { status: 404 });
+    }
+    if (error instanceof Error && error.message === "Forbidden") {
+      return NextResponse.json({ error: error.message }, { status: 403 });
+    }
 
-  return NextResponse.json({
-    ok: true,
-    signalId: params.signalId,
-    reviewerId: user.id,
-    ...parsed.data
-  });
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Unable to review follow-up signal" },
+      { status: 400 }
+    );
+  }
 }

@@ -17,7 +17,15 @@ export const followUpSignalDtoSchema = z.object({
   explanation: z.string(),
   firstObservedAt: z.string().datetime(),
   lastObservedAt: z.string().datetime(),
-  evidence: z.record(z.union([z.string(), z.number()]))
+  evidence: z.record(z.union([z.string(), z.number()])),
+  review: z
+    .object({
+      status: z.enum(["REVIEWED", "DISMISSED", "RESOLVED", "SNOOZED"]),
+      note: z.string().optional(),
+      reviewedAt: z.string().datetime().optional(),
+      snoozedUntil: z.string().datetime().optional()
+    })
+    .optional()
 });
 
 export type FollowUpSignalDto = z.infer<typeof followUpSignalDtoSchema>;

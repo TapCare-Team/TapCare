@@ -1,6 +1,10 @@
 import { mockHouseholds } from "@/lib/mock-data";
 
 export class MockHouseholdsRepository {
+  async listBySiteIds(siteIds: string[]) {
+    return mockHouseholds.filter((household) => siteIds.includes(household.siteId));
+  }
+
   async listBySite(siteId: string) {
     return mockHouseholds.filter((household) => household.siteId === siteId);
   }

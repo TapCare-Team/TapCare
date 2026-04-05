@@ -10,6 +10,13 @@ export const signalTypes = [
 
 export type SignalType = (typeof signalTypes)[number];
 
+export type FollowUpReviewState = {
+  status: "REVIEWED" | "DISMISSED" | "RESOLVED" | "SNOOZED";
+  note?: string;
+  reviewedAt?: string;
+  snoozedUntil?: string;
+};
+
 export type FollowUpSignal = {
   id: string;
   householdId: string;
@@ -20,4 +27,5 @@ export type FollowUpSignal = {
   firstObservedAt: string;
   lastObservedAt: string;
   evidence: Record<string, number | string>;
+  review?: FollowUpReviewState;
 };

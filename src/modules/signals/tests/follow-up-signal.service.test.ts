@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { InteractionEvent } from "@/modules/analytics/domain/analytics";
 import type { Household } from "@/modules/households/domain/household";
-import { deriveFollowUpSignals } from "@/modules/signals/services/follow-up-signal.service";
+import {
+  deriveFollowUpSignals,
+  isSignalActionable,
+  mergePersistedSignalState
+} from "@/modules/signals/services/follow-up-signal.service";
 
 const mockHouseholds: Household[] = [
   {
@@ -191,5 +195,63 @@ describe("deriveFollowUpSignals", () => {
     });
 
     expect(signals.some((signal) => signal.signalType === "REPEATED_EMERGENCY_USAGE")).toBe(false);
+  });
+
+  it("merges persisted review state back into derived signals", () => {
+    const derivedSignals = deriveFollowUpSignals({
+      households: [mockHouseholds[0]],
+      events: mockInteractionEvents.filter((event) => event.householdId === "household-1"),
+      now: new Date("2025-04-04T09:00:00.000Z")
+    });
+
+    const mergedSignals = mergePersistedSignalState(
+      derivedSignals,
+      [{ id: "household-1-REPEATED_EMERGENCY_USAGE", status: "REVIEWED" }],
+      [
+        {
+          signalId: "household-1-REPEATED_EMERGENCY_USAGE",
+          review: {
+            status: "REVIEWED",
+            reviewedAt: "2025-04-04T12:00:00.000Z",
+            note: "Reviewed by officer"
+          }
+        }
+      ]
+    );
+
+    expect(mergedSignals[0]?.status).toBe("REVIEWED");
+    expect(mergedSignals[0]?.review?.note).toBe("Reviewed by officer");
+  });
+
+  it("treats future snoozed signals as non-actionable until the snooze expires", () => {
+    const mergedSignals = mergePersistedSignalState(
+      [
+        {
+          id: "household-1-REPEATED_EMERGENCY_USAGE",
+          householdId: "household-1",
+          siteId: "site-sgo-bedok",
+          signalType: "REPEATED_EMERGENCY_USAGE",
+          status: "ACTIVE",
+          explanation: "Emergency contact sticker opened 3 times in 7 days.",
+          firstObservedAt: "2025-03-30T08:00:00.000Z",
+          lastObservedAt: "2025-04-03T10:00:00.000Z",
+          evidence: { eventCount: 3, windowDays: 7 }
+        }
+      ],
+      [{ id: "household-1-REPEATED_EMERGENCY_USAGE", status: "REVIEWED" }],
+      [
+        {
+          signalId: "household-1-REPEATED_EMERGENCY_USAGE",
+          review: {
+            status: "SNOOZED",
+            reviewedAt: "2025-04-04T12:00:00.000Z",
+            snoozedUntil: "2025-04-10T12:00:00.000Z"
+          }
+        }
+      ]
+    );
+
+    expect(isSignalActionable(mergedSignals[0], new Date("2025-04-05T12:00:00.000Z"))).toBe(false);
+    expect(isSignalActionable(mergedSignals[0], new Date("2025-04-11T12:00:00.000Z"))).toBe(true);
   });
 });

@@ -190,3 +190,43 @@ export function deriveFollowUpSignals({
     (left, right) => new Date(right.lastObservedAt).getTime() - new Date(left.lastObservedAt).getTime()
   );
 }
+
+type PersistedSignalState = Pick<FollowUpSignal, "id" | "status">;
+
+type LatestSignalReview = {
+  signalId: string;
+  review: NonNullable<FollowUpSignal["review"]>;
+};
+
+export function mergePersistedSignalState(
+  signals: FollowUpSignal[],
+  persistedSignalStates: PersistedSignalState[],
+  latestReviews: LatestSignalReview[]
+) {
+  const persistedSignalsById = new Map(persistedSignalStates.map((signal) => [signal.id, signal]));
+  const latestReviewsBySignalId = new Map(latestReviews.map((entry) => [entry.signalId, entry.review]));
+
+  return signals.map((signal) => {
+    const persistedSignal = persistedSignalsById.get(signal.id);
+    const latestReview = latestReviewsBySignalId.get(signal.id);
+    const mergedStatus = persistedSignal?.status ?? signal.status;
+    const mergedReview =
+      latestReview && (mergedStatus === "DISMISSED" || mergedStatus === "RESOLVED")
+        ? { ...latestReview, status: mergedStatus }
+        : latestReview;
+
+    return {
+      ...signal,
+      status: mergedStatus,
+      review: mergedReview
+    };
+  });
+}
+
+export function isSignalActionable(signal: FollowUpSignal, now = new Date()) {
+  if (signal.review?.status === "SNOOZED" && signal.review.snoozedUntil) {
+    return new Date(signal.review.snoozedUntil).getTime() <= now.getTime();
+  }
+
+  return signal.status === "ACTIVE";
+}

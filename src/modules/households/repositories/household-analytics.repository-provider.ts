@@ -9,12 +9,12 @@ import { logger } from "@/lib/logging/logger";
 
 export type HouseholdAnalyticsHouseholdsRepository = Pick<
   PrismaHouseholdsRepository,
-  "listBySite" | "listByIds" | "getById"
+  "listBySite" | "listBySiteIds" | "listByIds" | "getById"
 >;
 
 export type HouseholdAnalyticsEventsRepository = Pick<
   PrismaAnalyticsRepository,
-  "listEventsBySite" | "listEventsByHouseholdIds"
+  "listEventsBySite" | "listEventsBySiteIds" | "listEventsByHouseholdIds"
 >;
 
 const mockAnalyticsRepository = new MockAnalyticsRepository();
@@ -49,17 +49,25 @@ function buildFallbackReadRepository<TArgs extends unknown[], TResult>(
 
 export function getHouseholdAnalyticsRepositories(): {
   householdsRepository: {
+    listBySiteIds(siteIds: string[]): Promise<Household[]>;
     listBySite(siteId: string): Promise<Household[]>;
     listByIds(householdIds: string[]): Promise<Household[]>;
     getById(householdId: string): Promise<Household | null>;
   };
   eventsRepository: {
+    listEventsBySiteIds(siteIds: string[]): Promise<InteractionEvent[]>;
     listEventsBySite(siteId: string): Promise<InteractionEvent[]>;
     listEventsByHouseholdIds(householdIds: string[]): Promise<InteractionEvent[]>;
   };
 } {
   return {
     householdsRepository: {
+      listBySiteIds: buildFallbackReadRepository({
+        logKey: "households_read_fallback_to_mock",
+        invokePrisma: (siteIds: string[]) => prismaHouseholdsRepository.listBySiteIds(siteIds),
+        invokeMock: (siteIds: string[]) => mockHouseholdsRepository.listBySiteIds(siteIds),
+        buildLogContext: (siteIds: string[]) => ({ siteIds: siteIds.join(",") })
+      }),
       listBySite: buildFallbackReadRepository({
         logKey: "households_read_fallback_to_mock",
         invokePrisma: (siteId: string) => prismaHouseholdsRepository.listBySite(siteId),
@@ -80,6 +88,12 @@ export function getHouseholdAnalyticsRepositories(): {
       })
     },
     eventsRepository: {
+      listEventsBySiteIds: buildFallbackReadRepository({
+        logKey: "interaction_events_read_fallback_to_mock",
+        invokePrisma: (siteIds: string[]) => prismaAnalyticsRepository.listEventsBySiteIds(siteIds),
+        invokeMock: (siteIds: string[]) => mockAnalyticsRepository.listEventsBySiteIds(siteIds),
+        buildLogContext: (siteIds: string[]) => ({ siteIds: siteIds.join(",") })
+      }),
       listEventsBySite: buildFallbackReadRepository({
         logKey: "interaction_events_read_fallback_to_mock",
         invokePrisma: (siteId: string) => prismaAnalyticsRepository.listEventsBySite(siteId),
