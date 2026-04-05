@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { StickerType } from "@/modules/analytics/domain/analytics";
 import { PrismaStickersRepository } from "@/modules/stickers/repositories/prisma-stickers.repository";
+import { setupMessages } from "@/modules/shared/messages";
 
 const stickersRepository = new PrismaStickersRepository();
 
@@ -28,7 +29,7 @@ export async function generateDisplayCode(householdId: string, stickerType: Stic
     }
   }
 
-  throw new Error("Unable to generate a unique sticker reference code");
+  throw new Error(setupMessages.uniqueDisplayCodeFailed);
 }
 
 export function generatePublicCode() {

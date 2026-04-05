@@ -1,3 +1,5 @@
+import { commonMessages } from "@/modules/shared/messages";
+
 export class DomainError extends Error {
   constructor(
     message: string,
@@ -10,7 +12,7 @@ export class DomainError extends Error {
 }
 
 export class ForbiddenError extends DomainError {
-  constructor(message = "Forbidden") {
+  constructor(message = commonMessages.forbidden) {
     super(message, 403, "FORBIDDEN");
   }
 }
