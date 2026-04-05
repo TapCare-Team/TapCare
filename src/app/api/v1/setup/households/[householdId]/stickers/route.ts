@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
+import { toSetupRouteErrorResponse } from "@/modules/stickers/services/sticker-setup-route.service";
 import { listHouseholdStickersForUser } from "@/modules/stickers/services/sticker-setup.service";
 
 export async function GET(
@@ -15,16 +16,6 @@ export async function GET(
     const stickers = await listHouseholdStickersForUser(user, params.householdId);
     return NextResponse.json(stickers);
   } catch (error) {
-    if (error instanceof Error && error.message === "Household not found") {
-      return NextResponse.json({ error: error.message }, { status: 404 });
-    }
-    if (error instanceof Error && error.message === "Forbidden") {
-      return NextResponse.json({ error: error.message }, { status: 403 });
-    }
-
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Unable to list stickers" },
-      { status: 400 }
-    );
+    return toSetupRouteErrorResponse(error, "Unable to list stickers");
   }
 }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { updateStickerSchema } from "@/modules/stickers/contracts/sticker-setup.contract";
+import { toSetupRouteErrorResponse } from "@/modules/stickers/services/sticker-setup-route.service";
 import { updateStickerForUser } from "@/modules/stickers/services/sticker-setup.service";
 
 export async function PATCH(
@@ -23,16 +24,6 @@ export async function PATCH(
     const sticker = await updateStickerForUser(user, params.stickerId, parsed.data);
     return NextResponse.json(sticker);
   } catch (error) {
-    if (error instanceof Error && error.message === "Sticker not found") {
-      return NextResponse.json({ error: error.message }, { status: 404 });
-    }
-    if (error instanceof Error && error.message === "Forbidden") {
-      return NextResponse.json({ error: error.message }, { status: 403 });
-    }
-
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Unable to update sticker" },
-      { status: 400 }
-    );
+    return toSetupRouteErrorResponse(error, "Unable to update sticker");
   }
 }

@@ -5,6 +5,12 @@ import { PrismaHouseholdsRepository } from "@/modules/households/repositories/pr
 import { PrismaStickersRepository } from "@/modules/stickers/repositories/prisma-stickers.repository";
 import { generateDisplayCode, generatePublicCode } from "@/modules/stickers/services/sticker-code.service";
 import { isDatabaseConfigured } from "@/lib/db/database-mode";
+import {
+  ConfigurationError,
+  ConflictError,
+  ForbiddenError,
+  NotFoundError
+} from "@/modules/shared/errors";
 
 type CreateStickerInput = Omit<Sticker, "id" | "displayCode" | "publicCode"> & {
   householdId: string;
@@ -33,7 +39,7 @@ function isDisplayCodeConflict(error: unknown) {
 
 export async function listHouseholdStickers(householdId: string) {
   if (!isDatabaseConfigured()) {
-    throw new Error("DATABASE_URL is required for setup APIs");
+    throw new ConfigurationError("DATABASE_URL is required for setup APIs", "SETUP_DATABASE_UNAVAILABLE");
   }
 
   return stickersRepository.listByHouseholdId(householdId);
@@ -42,11 +48,11 @@ export async function listHouseholdStickers(householdId: string) {
 async function getManageableHousehold(user: SessionUser, householdId: string) {
   const household = await householdsRepository.getById(householdId);
   if (!household) {
-    throw new Error("Household not found");
+    throw new NotFoundError("Household not found", "HOUSEHOLD_NOT_FOUND");
   }
 
   if (!canManageHousehold(user, household.id, household.siteId)) {
-    throw new Error("Forbidden");
+    throw new ForbiddenError();
   }
 
   return household;
@@ -55,11 +61,11 @@ async function getManageableHousehold(user: SessionUser, householdId: string) {
 async function getManageableStickerScope(user: SessionUser, stickerId: string) {
   const scope = await getStickerScope(stickerId);
   if (!scope) {
-    throw new Error("Sticker not found");
+    throw new NotFoundError("Sticker not found", "STICKER_NOT_FOUND");
   }
 
   if (!canManageHousehold(user, scope.householdId, scope.siteId)) {
-    throw new Error("Forbidden");
+    throw new ForbiddenError();
   }
 
   return scope;
@@ -72,12 +78,12 @@ export async function listHouseholdStickersForUser(user: SessionUser, householdI
 
 export async function createSticker(input: CreateStickerInput) {
   if (!isDatabaseConfigured()) {
-    throw new Error("DATABASE_URL is required for setup APIs");
+    throw new ConfigurationError("DATABASE_URL is required for setup APIs", "SETUP_DATABASE_UNAVAILABLE");
   }
 
   const household = await householdsRepository.getById(input.householdId);
   if (!household) {
-    throw new Error("Household not found");
+    throw new NotFoundError("Household not found", "HOUSEHOLD_NOT_FOUND");
   }
 
   const maxAttempts = 5;
@@ -102,7 +108,7 @@ export async function createSticker(input: CreateStickerInput) {
     }
   }
 
-  throw new Error("Unable to create sticker after retrying display code generation");
+  throw new ConflictError("Unable to create sticker after retrying display code generation", "DISPLAY_CODE_CONFLICT");
 }
 
 export async function createStickerForUser(user: SessionUser, input: CreateStickerInput) {
@@ -112,7 +118,7 @@ export async function createStickerForUser(user: SessionUser, input: CreateStick
 
 export async function updateSticker(stickerId: string, patch: Partial<Sticker>) {
   if (!isDatabaseConfigured()) {
-    throw new Error("DATABASE_URL is required for setup APIs");
+    throw new ConfigurationError("DATABASE_URL is required for setup APIs", "SETUP_DATABASE_UNAVAILABLE");
   }
 
   return stickersRepository.update(stickerId, patch);
@@ -122,7 +128,7 @@ export async function updateStickerForUser(user: SessionUser, stickerId: string,
   await getManageableStickerScope(user, stickerId);
   const sticker = await updateSticker(stickerId, patch);
   if (!sticker) {
-    throw new Error("Sticker not found");
+    throw new NotFoundError("Sticker not found", "STICKER_NOT_FOUND");
   }
 
   return sticker;
@@ -130,12 +136,12 @@ export async function updateStickerForUser(user: SessionUser, stickerId: string,
 
 export async function assignStickerToHousehold(stickerId: string, householdId: string) {
   if (!isDatabaseConfigured()) {
-    throw new Error("DATABASE_URL is required for setup APIs");
+    throw new ConfigurationError("DATABASE_URL is required for setup APIs", "SETUP_DATABASE_UNAVAILABLE");
   }
 
   const household = await householdsRepository.getById(householdId);
   if (!household) {
-    throw new Error("Household not found");
+    throw new NotFoundError("Household not found", "HOUSEHOLD_NOT_FOUND");
   }
 
   return stickersRepository.assignHousehold(stickerId, householdId, household.siteId);
@@ -149,7 +155,7 @@ export async function assignStickerToHouseholdForUser(user: SessionUser, sticker
 
 export async function getStickerScope(stickerId: string) {
   if (!isDatabaseConfigured()) {
-    throw new Error("DATABASE_URL is required for setup APIs");
+    throw new ConfigurationError("DATABASE_URL is required for setup APIs", "SETUP_DATABASE_UNAVAILABLE");
   }
 
   return stickersRepository.getScopeById(stickerId);

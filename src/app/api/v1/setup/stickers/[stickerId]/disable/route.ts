@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
+import { toSetupRouteErrorResponse } from "@/modules/stickers/services/sticker-setup-route.service";
 import { setStickerStatusForUser } from "@/modules/stickers/services/sticker-setup.service";
 
 export async function POST(
@@ -14,16 +15,6 @@ export async function POST(
     const sticker = await setStickerStatusForUser(user, params.stickerId, "DISABLED");
     return NextResponse.json(sticker);
   } catch (error) {
-    if (error instanceof Error && error.message === "Sticker not found") {
-      return NextResponse.json({ error: error.message }, { status: 404 });
-    }
-    if (error instanceof Error && error.message === "Forbidden") {
-      return NextResponse.json({ error: error.message }, { status: 403 });
-    }
-
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Unable to disable sticker" },
-      { status: 400 }
-    );
+    return toSetupRouteErrorResponse(error, "Unable to disable sticker");
   }
 }

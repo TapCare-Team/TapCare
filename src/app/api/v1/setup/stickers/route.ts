@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { createStickerSchema } from "@/modules/stickers/contracts/sticker-setup.contract";
+import { toSetupRouteErrorResponse } from "@/modules/stickers/services/sticker-setup-route.service";
 import { createStickerForUser } from "@/modules/stickers/services/sticker-setup.service";
 
 export async function POST(request: Request) {
@@ -20,16 +21,6 @@ export async function POST(request: Request) {
     const sticker = await createStickerForUser(user, parsed.data);
     return NextResponse.json(sticker, { status: 201 });
   } catch (error) {
-    if (error instanceof Error && error.message === "Household not found") {
-      return NextResponse.json({ error: error.message }, { status: 404 });
-    }
-    if (error instanceof Error && error.message === "Forbidden") {
-      return NextResponse.json({ error: error.message }, { status: 403 });
-    }
-
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Unable to create sticker" },
-      { status: 400 }
-    );
+    return toSetupRouteErrorResponse(error, "Unable to create sticker");
   }
 }
