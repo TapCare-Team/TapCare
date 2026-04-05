@@ -25,6 +25,18 @@ function toSiteScope(siteIds: string | string[]) {
   return normalizeSiteIds(Array.isArray(siteIds) ? siteIds : [siteIds]);
 }
 
+async function derivePersistedSignals(households: Household[], events: InteractionEvent[]) {
+  const derivedSignals = deriveFollowUpSignals({ households, events });
+  const repository = getFollowUpStateRepository();
+  await repository.syncDerivedSignals(derivedSignals);
+  const [persistedSignals, latestReviews] = await Promise.all([
+    repository.listSignalStatesByIds(derivedSignals.map((signal) => signal.id)),
+    repository.listLatestReviewsBySignalIds(derivedSignals.map((signal) => signal.id))
+  ]);
+
+  return mergePersistedSignalState(derivedSignals, persistedSignals, latestReviews);
+}
+
 async function deriveScopedSignals(siteIds: string | string[]) {
   const normalizedSiteIds = toSiteScope(siteIds);
   const { householdsRepository, eventsRepository } = getHouseholdAnalyticsRepositories();
@@ -36,18 +48,10 @@ async function deriveScopedSignals(siteIds: string | string[]) {
           eventsRepository.listEventsBySiteIds(normalizedSiteIds)
         ]);
 
-  const derivedSignals = deriveFollowUpSignals({ households, events });
-  const repository = getFollowUpStateRepository();
-  await repository.syncDerivedSignals(derivedSignals);
-  const [persistedSignals, latestReviews] = await Promise.all([
-    repository.listSignalStatesByIds(derivedSignals.map((signal) => signal.id)),
-    repository.listLatestReviewsBySignalIds(derivedSignals.map((signal) => signal.id))
-  ]);
-
   return {
     households,
     events,
-    signals: mergePersistedSignalState(derivedSignals, persistedSignals, latestReviews)
+    signals: await derivePersistedSignals(households, events)
   } satisfies {
     households: Household[];
     events: InteractionEvent[];
@@ -112,15 +116,7 @@ export async function getSignalsForHouseholds(householdIds: string[]) {
     eventsRepository.listEventsByHouseholdIds(householdIds)
   ]);
 
-  const derivedSignals = deriveFollowUpSignals({ households, events });
-  const repository = getFollowUpStateRepository();
-  await repository.syncDerivedSignals(derivedSignals);
-  const [persistedSignals, latestReviews] = await Promise.all([
-    repository.listSignalStatesByIds(derivedSignals.map((signal) => signal.id)),
-    repository.listLatestReviewsBySignalIds(derivedSignals.map((signal) => signal.id))
-  ]);
-
-  return mergePersistedSignalState(derivedSignals, persistedSignals, latestReviews);
+  return derivePersistedSignals(households, events);
 }
 
 export async function getHouseholdDetail(user: SessionUser, householdId: string, filters?: HouseholdDetailFilters) {
@@ -131,14 +127,7 @@ export async function getHouseholdDetail(user: SessionUser, householdId: string,
   }
 
   const householdEvents = await eventsRepository.listEventsByHouseholdIds([householdId]);
-  const derivedSignals = deriveFollowUpSignals({ households: [household], events: householdEvents });
-  const repository = getFollowUpStateRepository();
-  await repository.syncDerivedSignals(derivedSignals);
-  const [persistedSignals, latestReviews] = await Promise.all([
-    repository.listSignalStatesByIds(derivedSignals.map((signal) => signal.id)),
-    repository.listLatestReviewsBySignalIds(derivedSignals.map((signal) => signal.id))
-  ]);
-  const signals = mergePersistedSignalState(derivedSignals, persistedSignals, latestReviews);
+  const signals = await derivePersistedSignals([household], householdEvents);
   const sortedEvents = householdEvents.sort(
     (left, right) => new Date(right.occurredAt).getTime() - new Date(left.occurredAt).getTime()
   );

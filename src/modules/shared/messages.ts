@@ -21,6 +21,7 @@ export const setupMessages = {
 } as const;
 
 export const signalMessages = {
+  databaseUnavailable: "DATABASE_URL is required for signal reviews",
   invalidReviewPayload: "Invalid review payload",
   reviewFailed: "Unable to review follow-up signal",
   signalNotFound: "Signal not found"

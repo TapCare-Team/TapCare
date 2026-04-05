@@ -2,13 +2,13 @@ import { isDatabaseConfigured } from "@/lib/db/database-mode";
 import type { SessionUser } from "@/modules/auth/domain/access";
 import { canViewHousehold } from "@/modules/auth/services/access-control.service";
 import type { FollowUpReviewRequest } from "@/modules/households/contracts/review.contract";
-import { ForbiddenError, NotFoundError } from "@/modules/shared/errors";
+import { ConfigurationError, ForbiddenError, NotFoundError } from "@/modules/shared/errors";
 import { signalMessages } from "@/modules/shared/messages";
 import { getFollowUpStateRepository } from "@/modules/signals/repositories/follow-up-state.repository-provider";
 
 export async function reviewFollowUpSignal(user: SessionUser, signalId: string, input: FollowUpReviewRequest) {
   if (!isDatabaseConfigured()) {
-    throw new Error("DATABASE_URL is required for signal reviews");
+    throw new ConfigurationError(signalMessages.databaseUnavailable, "SIGNAL_REVIEW_DATABASE_UNAVAILABLE");
   }
 
   const repository = getFollowUpStateRepository();
@@ -22,17 +22,21 @@ export async function reviewFollowUpSignal(user: SessionUser, signalId: string, 
   }
 
   const reviewedAt = new Date().toISOString();
+  const reviewStatusByRequestStatus = {
+    SNOOZED: "SNOOZED",
+    REVIEWED: "REVIEWED",
+    DISMISSED: "CLOSED",
+    RESOLVED: "CLOSED"
+  } as const;
+  const signalStatusByRequestStatus = {
+    SNOOZED: "REVIEWED",
+    REVIEWED: "REVIEWED",
+    DISMISSED: "DISMISSED",
+    RESOLVED: "RESOLVED"
+  } as const;
 
-  const reviewStatus =
-    input.status === "SNOOZED" ? "SNOOZED" : input.status === "REVIEWED" ? "REVIEWED" : "CLOSED";
-  const signalStatus =
-    input.status === "DISMISSED"
-      ? "DISMISSED"
-      : input.status === "RESOLVED"
-        ? "RESOLVED"
-        : input.status === "REVIEWED"
-          ? "REVIEWED"
-          : "REVIEWED";
+  const reviewStatus = reviewStatusByRequestStatus[input.status];
+  const signalStatus = signalStatusByRequestStatus[input.status];
 
   await repository.applyReview({
     signalId,

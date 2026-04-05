@@ -5,7 +5,6 @@ import { MockHouseholdsRepository } from "@/modules/households/repositories/mock
 import { PrismaAnalyticsRepository } from "@/modules/analytics/repositories/prisma-analytics.repository";
 import { PrismaHouseholdsRepository } from "@/modules/households/repositories/prisma-households.repository";
 import { isDatabaseConfigured } from "@/lib/db/database-mode";
-import { logger } from "@/lib/logging/logger";
 
 export type HouseholdAnalyticsHouseholdsRepository = Pick<
   PrismaHouseholdsRepository,
@@ -22,12 +21,10 @@ const prismaAnalyticsRepository = new PrismaAnalyticsRepository();
 const mockHouseholdsRepository = new MockHouseholdsRepository();
 const prismaHouseholdsRepository = new PrismaHouseholdsRepository();
 
-function buildFallbackReadRepository<TArgs extends unknown[], TResult>(
+function buildReadRepository<TArgs extends unknown[], TResult>(
   params: {
-    logKey: string;
     invokePrisma: (...args: TArgs) => Promise<TResult>;
     invokeMock: (...args: TArgs) => Promise<TResult>;
-    buildLogContext: (...args: TArgs) => Record<string, string>;
   }
 ) {
   return async (...args: TArgs) => {
@@ -35,15 +32,7 @@ function buildFallbackReadRepository<TArgs extends unknown[], TResult>(
       return params.invokeMock(...args);
     }
 
-    try {
-      return await params.invokePrisma(...args);
-    } catch (error) {
-      logger.warn(params.logKey, {
-        ...params.buildLogContext(...args),
-        error: error instanceof Error ? error.message : "unknown"
-      });
-      return params.invokeMock(...args);
-    }
+    return params.invokePrisma(...args);
   };
 }
 
@@ -62,49 +51,35 @@ export function getHouseholdAnalyticsRepositories(): {
 } {
   return {
     householdsRepository: {
-      listBySiteIds: buildFallbackReadRepository({
-        logKey: "households_read_fallback_to_mock",
+      listBySiteIds: buildReadRepository({
         invokePrisma: (siteIds: string[]) => prismaHouseholdsRepository.listBySiteIds(siteIds),
-        invokeMock: (siteIds: string[]) => mockHouseholdsRepository.listBySiteIds(siteIds),
-        buildLogContext: (siteIds: string[]) => ({ siteIds: siteIds.join(",") })
+        invokeMock: (siteIds: string[]) => mockHouseholdsRepository.listBySiteIds(siteIds)
       }),
-      listBySite: buildFallbackReadRepository({
-        logKey: "households_read_fallback_to_mock",
+      listBySite: buildReadRepository({
         invokePrisma: (siteId: string) => prismaHouseholdsRepository.listBySite(siteId),
-        invokeMock: (siteId: string) => mockHouseholdsRepository.listBySite(siteId),
-        buildLogContext: (siteId: string) => ({ siteId })
+        invokeMock: (siteId: string) => mockHouseholdsRepository.listBySite(siteId)
       }),
-      listByIds: buildFallbackReadRepository({
-        logKey: "households_read_fallback_to_mock",
+      listByIds: buildReadRepository({
         invokePrisma: (householdIds: string[]) => prismaHouseholdsRepository.listByIds(householdIds),
-        invokeMock: (householdIds: string[]) => mockHouseholdsRepository.listByIds(householdIds),
-        buildLogContext: (householdIds: string[]) => ({ householdIds: householdIds.join(",") })
+        invokeMock: (householdIds: string[]) => mockHouseholdsRepository.listByIds(householdIds)
       }),
-      getById: buildFallbackReadRepository({
-        logKey: "household_read_fallback_to_mock",
+      getById: buildReadRepository({
         invokePrisma: (householdId: string) => prismaHouseholdsRepository.getById(householdId),
-        invokeMock: (householdId: string) => mockHouseholdsRepository.getById(householdId),
-        buildLogContext: (householdId: string) => ({ householdId })
+        invokeMock: (householdId: string) => mockHouseholdsRepository.getById(householdId)
       })
     },
     eventsRepository: {
-      listEventsBySiteIds: buildFallbackReadRepository({
-        logKey: "interaction_events_read_fallback_to_mock",
+      listEventsBySiteIds: buildReadRepository({
         invokePrisma: (siteIds: string[]) => prismaAnalyticsRepository.listEventsBySiteIds(siteIds),
-        invokeMock: (siteIds: string[]) => mockAnalyticsRepository.listEventsBySiteIds(siteIds),
-        buildLogContext: (siteIds: string[]) => ({ siteIds: siteIds.join(",") })
+        invokeMock: (siteIds: string[]) => mockAnalyticsRepository.listEventsBySiteIds(siteIds)
       }),
-      listEventsBySite: buildFallbackReadRepository({
-        logKey: "interaction_events_read_fallback_to_mock",
+      listEventsBySite: buildReadRepository({
         invokePrisma: (siteId: string) => prismaAnalyticsRepository.listEventsBySite(siteId),
-        invokeMock: (siteId: string) => mockAnalyticsRepository.listEventsBySite(siteId),
-        buildLogContext: (siteId: string) => ({ siteId })
+        invokeMock: (siteId: string) => mockAnalyticsRepository.listEventsBySite(siteId)
       }),
-      listEventsByHouseholdIds: buildFallbackReadRepository({
-        logKey: "interaction_events_read_fallback_to_mock",
+      listEventsByHouseholdIds: buildReadRepository({
         invokePrisma: (householdIds: string[]) => prismaAnalyticsRepository.listEventsByHouseholdIds(householdIds),
-        invokeMock: (householdIds: string[]) => mockAnalyticsRepository.listEventsByHouseholdIds(householdIds),
-        buildLogContext: (householdIds: string[]) => ({ householdIds: householdIds.join(",") })
+        invokeMock: (householdIds: string[]) => mockAnalyticsRepository.listEventsByHouseholdIds(householdIds)
       })
     }
   };
