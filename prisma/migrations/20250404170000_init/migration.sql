@@ -95,6 +95,7 @@ CREATE TABLE "PageConfig" (
 
 CREATE TABLE "Sticker" (
   "id" TEXT PRIMARY KEY,
+  "displayCode" TEXT NOT NULL,
   "publicCode" TEXT NOT NULL UNIQUE,
   "householdId" TEXT NOT NULL REFERENCES "Household"("id") ON DELETE RESTRICT ON UPDATE CASCADE,
   "siteId" TEXT NOT NULL REFERENCES "Site"("id") ON DELETE RESTRICT ON UPDATE CASCADE,
@@ -165,6 +166,7 @@ CREATE INDEX "HouseholdAssignment_caregiverId_endedAt_idx" ON "HouseholdAssignme
 CREATE INDEX "HouseholdAssignment_householdId_endedAt_idx" ON "HouseholdAssignment"("householdId", "endedAt");
 CREATE INDEX "Sticker_householdId_status_idx" ON "Sticker"("householdId", "status");
 CREATE INDEX "Sticker_siteId_status_idx" ON "Sticker"("siteId", "status");
+CREATE UNIQUE INDEX "Sticker_householdId_displayCode_key" ON "Sticker"("householdId", "displayCode");
 CREATE INDEX "InteractionEvent_siteId_occurredAt_idx" ON "InteractionEvent"("siteId", "occurredAt");
 CREATE INDEX "InteractionEvent_householdId_occurredAt_idx" ON "InteractionEvent"("householdId", "occurredAt");
 CREATE INDEX "InteractionEvent_stickerId_occurredAt_idx" ON "InteractionEvent"("stickerId", "occurredAt");

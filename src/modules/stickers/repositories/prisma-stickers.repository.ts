@@ -10,6 +10,33 @@ const stickerInclude = {
 type CreateStickerInput = Omit<Sticker, "id"> & { householdId: string; siteId: string };
 
 export class PrismaStickersRepository {
+  async existsByDisplayCode(householdId: string, displayCode: string) {
+    const sticker = await prisma.sticker.findFirst({
+      where: { householdId, displayCode },
+      select: { id: true }
+    });
+
+    return Boolean(sticker);
+  }
+
+  async listDisplayCodesByHouseholdAndStickerType(householdId: string, stickerType: Sticker["stickerType"]) {
+    const stickers = await prisma.sticker.findMany({
+      where: { householdId, stickerType },
+      select: { displayCode: true }
+    });
+
+    return stickers.map((sticker) => sticker.displayCode);
+  }
+
+  async existsByPublicCode(publicCode: string) {
+    const sticker = await prisma.sticker.findUnique({
+      where: { publicCode },
+      select: { id: true }
+    });
+
+    return Boolean(sticker);
+  }
+
   async getScopeById(stickerId: string) {
     return prisma.sticker.findUnique({
       where: { id: stickerId },
@@ -55,6 +82,7 @@ export class PrismaStickersRepository {
 
       return tx.sticker.create({
         data: {
+          displayCode: input.displayCode,
           publicCode: input.publicCode,
           householdId: input.householdId,
           siteId: input.siteId,
@@ -137,6 +165,7 @@ export class PrismaStickersRepository {
       return tx.sticker.update({
         where: { id: stickerId },
         data: {
+          displayCode: patch.displayCode,
           publicCode: patch.publicCode,
           name: patch.name,
           isCritical: patch.isCritical,

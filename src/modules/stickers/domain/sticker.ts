@@ -6,18 +6,35 @@ export type DestinationConfig = {
   label?: string;
 };
 
-export type PageConfig = {
-  pageType: "CHECKLIST" | "HELP_PROFILE" | "RESOURCES";
+export type ChecklistPageConfig = {
+  pageType: "CHECKLIST";
   title: string;
   content: {
-    checklistItems?: string[];
-    helpFields?: Array<{ label: string; value: string }>;
-    links?: Array<{ label: string; href: string }>;
+    checklistItems: string[];
   };
 };
 
+export type HelpProfilePageConfig = {
+  pageType: "HELP_PROFILE";
+  title: string;
+  content: {
+    helpFields: Array<{ label: string; value: string }>;
+  };
+};
+
+export type ResourcesPageConfig = {
+  pageType: "RESOURCES";
+  title: string;
+  content: {
+    links: Array<{ label: string; href: string }>;
+  };
+};
+
+export type PageConfig = ChecklistPageConfig | HelpProfilePageConfig | ResourcesPageConfig;
+
 export type Sticker = {
   id: string;
+  displayCode: string;
   publicCode: string;
   stickerType: StickerType;
   runtimeMode: RuntimeMode;

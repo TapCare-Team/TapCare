@@ -34,17 +34,100 @@ type PrismaHouseholdRecord = Prisma.HouseholdGetPayload<{
 
 type PrismaInteractionEventRecord = Prisma.InteractionEventGetPayload<{}>;
 
-function mapPageContent(content: Prisma.JsonValue): PageConfig["content"] {
+function mapPageContent(pageType: "CHECKLIST", content: Prisma.JsonValue): Extract<PageConfig, { pageType: "CHECKLIST" }>["content"];
+function mapPageContent(
+  pageType: "HELP_PROFILE",
+  content: Prisma.JsonValue
+): Extract<PageConfig, { pageType: "HELP_PROFILE" }>["content"];
+function mapPageContent(pageType: "RESOURCES", content: Prisma.JsonValue): Extract<PageConfig, { pageType: "RESOURCES" }>["content"];
+function mapPageContent(pageType: PageConfig["pageType"], content: Prisma.JsonValue): PageConfig["content"] {
   if (!content || typeof content !== "object" || Array.isArray(content)) {
-    return {};
+    if (pageType === "CHECKLIST") {
+      return { checklistItems: [] };
+    }
+    if (pageType === "HELP_PROFILE") {
+      return { helpFields: [] };
+    }
+    return { links: [] };
   }
 
-  return content as PageConfig["content"];
+  if (pageType === "CHECKLIST") {
+    return {
+      checklistItems: Array.isArray((content as { checklistItems?: unknown }).checklistItems)
+        ? ((content as { checklistItems: unknown[] }).checklistItems.filter(
+            (item): item is string => typeof item === "string"
+          ) as string[])
+        : []
+    };
+  }
+
+  if (pageType === "HELP_PROFILE") {
+    return {
+      helpFields: Array.isArray((content as { helpFields?: unknown }).helpFields)
+        ? ((content as { helpFields: unknown[] }).helpFields
+            .filter(
+              (item): item is { label: string; value: string } =>
+                item !== null &&
+                typeof item === "object" &&
+                "label" in item &&
+                "value" in item &&
+                typeof item.label === "string" &&
+                typeof item.value === "string"
+            )
+            .map((item) => ({ label: item.label, value: item.value })) as Array<{ label: string; value: string }>)
+        : []
+    };
+  }
+
+  return {
+    links: Array.isArray((content as { links?: unknown }).links)
+      ? ((content as { links: unknown[] }).links
+          .filter(
+            (item): item is { label: string; href: string } =>
+              item !== null &&
+              typeof item === "object" &&
+              "label" in item &&
+              "href" in item &&
+              typeof item.label === "string" &&
+              typeof item.href === "string"
+          )
+          .map((item) => ({ label: item.label, href: item.href })) as Array<{ label: string; href: string }>)
+      : []
+  };
+}
+
+function mapPageConfig(pageConfig: PrismaStickerRecord["pageConfig"]): PageConfig | undefined {
+  if (!pageConfig) {
+    return undefined;
+  }
+
+  if (pageConfig.pageType === "CHECKLIST") {
+    return {
+      pageType: "CHECKLIST",
+      title: pageConfig.title,
+      content: mapPageContent("CHECKLIST", pageConfig.content)
+    };
+  }
+
+  if (pageConfig.pageType === "HELP_PROFILE") {
+    return {
+      pageType: "HELP_PROFILE",
+      title: pageConfig.title,
+      content: mapPageContent("HELP_PROFILE", pageConfig.content)
+    };
+  }
+
+  return {
+    pageType: "RESOURCES",
+    title: pageConfig.title,
+    content: mapPageContent("RESOURCES", pageConfig.content)
+  };
 }
 
 export function mapPrismaSticker(sticker: PrismaStickerRecord): Sticker {
   return {
     id: sticker.id,
+    displayCode: sticker.displayCode,
     publicCode: sticker.publicCode,
     stickerType: sticker.stickerType as StickerType,
     runtimeMode: sticker.runtimeMode as RuntimeMode,
@@ -58,13 +141,7 @@ export function mapPrismaSticker(sticker: PrismaStickerRecord): Sticker {
           label: sticker.destinationConfig.label ?? undefined
         }
       : undefined,
-    page: sticker.pageConfig
-      ? {
-          pageType: sticker.pageConfig.pageType,
-          title: sticker.pageConfig.title,
-          content: mapPageContent(sticker.pageConfig.content)
-        }
-      : undefined
+    page: mapPageConfig(sticker.pageConfig)
   };
 }
 

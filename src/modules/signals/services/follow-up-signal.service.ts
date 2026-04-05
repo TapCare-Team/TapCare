@@ -33,6 +33,23 @@ function openedByType(events: InteractionEvent[], stickerType: StickerType) {
   );
 }
 
+function groupEventsByHouseholdId(events: InteractionEvent[]) {
+  return events.reduce<Map<string, InteractionEvent[]>>((acc, event) => {
+    if (!event.householdId) {
+      return acc;
+    }
+
+    const householdEvents = acc.get(event.householdId);
+    if (householdEvents) {
+      householdEvents.push(event);
+    } else {
+      acc.set(event.householdId, [event]);
+    }
+
+    return acc;
+  }, new Map());
+}
+
 function makeSignal(params: {
   household: Household;
   signalType: SignalType;
@@ -60,9 +77,10 @@ export function deriveFollowUpSignals({
   now = new Date()
 }: BuildSignalsInput): FollowUpSignal[] {
   const signals: FollowUpSignal[] = [];
+  const eventsByHouseholdId = groupEventsByHouseholdId(events);
 
   for (const household of households) {
-    const householdEvents = events.filter((event) => event.householdId === household.id);
+    const householdEvents = eventsByHouseholdId.get(household.id) ?? [];
     const recentEvents = householdEvents.filter((event) => withinDays(new Date(event.occurredAt), now, 7));
 
     const emergencyEvents = openedByType(recentEvents, "EMERGENCY_CONTACT");
@@ -189,4 +207,44 @@ export function deriveFollowUpSignals({
   return signals.sort(
     (left, right) => new Date(right.lastObservedAt).getTime() - new Date(left.lastObservedAt).getTime()
   );
+}
+
+type PersistedSignalState = Pick<FollowUpSignal, "id" | "status">;
+
+type LatestSignalReview = {
+  signalId: string;
+  review: NonNullable<FollowUpSignal["review"]>;
+};
+
+export function mergePersistedSignalState(
+  signals: FollowUpSignal[],
+  persistedSignalStates: PersistedSignalState[],
+  latestReviews: LatestSignalReview[]
+) {
+  const persistedSignalsById = new Map(persistedSignalStates.map((signal) => [signal.id, signal]));
+  const latestReviewsBySignalId = new Map(latestReviews.map((entry) => [entry.signalId, entry.review]));
+
+  return signals.map((signal) => {
+    const persistedSignal = persistedSignalsById.get(signal.id);
+    const latestReview = latestReviewsBySignalId.get(signal.id);
+    const mergedStatus = persistedSignal?.status ?? signal.status;
+    const mergedReview =
+      latestReview && (mergedStatus === "DISMISSED" || mergedStatus === "RESOLVED")
+        ? { ...latestReview, status: mergedStatus }
+        : latestReview;
+
+    return {
+      ...signal,
+      status: mergedStatus,
+      review: mergedReview
+    };
+  });
+}
+
+export function isSignalActionable(signal: FollowUpSignal, now = new Date()) {
+  if (signal.review?.status === "SNOOZED" && signal.review.snoozedUntil) {
+    return new Date(signal.review.snoozedUntil).getTime() <= now.getTime();
+  }
+
+  return signal.status === "ACTIVE";
 }

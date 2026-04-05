@@ -2,6 +2,12 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
+const householdIds = {
+  lee: "cmah1a8xk0001q9m7bedok12",
+  goh: "cmah1a8xk0002q9m7bedok18",
+  noor: "cmah1a8xk0003q9m7chaiche4"
+};
+
 const site = {
   id: "site-sgo-bedok",
   code: "SGO-BEDOK",
@@ -32,7 +38,7 @@ const users = [
 
 const households = [
   {
-    id: "household-1",
+    id: householdIds.lee,
     siteId: site.id,
     addressLine1: "12 Bedok North Street 2",
     unitNumber: "#03-145",
@@ -41,7 +47,7 @@ const households = [
     lastActiveAt: new Date("2025-04-03T10:00:00.000Z")
   },
   {
-    id: "household-2",
+    id: householdIds.goh,
     siteId: site.id,
     addressLine1: "18 Bedok South Avenue 1",
     unitNumber: "#06-212",
@@ -50,7 +56,7 @@ const households = [
     lastActiveAt: new Date("2025-03-22T08:00:00.000Z")
   },
   {
-    id: "household-3",
+    id: householdIds.noor,
     siteId: site.id,
     addressLine1: "4 Chai Chee Road",
     unitNumber: "#02-88",
@@ -61,21 +67,21 @@ const households = [
 ];
 
 const seniors = [
-  { id: "senior-1", householdId: "household-1", displayAlias: "Mdm Lee" },
-  { id: "senior-2", householdId: "household-2", displayAlias: "Mr Goh" },
-  { id: "senior-3", householdId: "household-3", displayAlias: "Mdm Noor" }
+  { id: "senior-1", householdId: householdIds.lee, displayAlias: "Mdm Lee" },
+  { id: "senior-2", householdId: householdIds.goh, displayAlias: "Mr Goh" },
+  { id: "senior-3", householdId: householdIds.noor, displayAlias: "Mdm Noor" }
 ];
 
 const assignments = [
   {
     id: "assignment-1",
-    householdId: "household-1",
+    householdId: householdIds.lee,
     caregiverId: "user-caregiver-1",
     assignedAt: new Date("2025-03-01T08:00:00.000Z")
   },
   {
     id: "assignment-2",
-    householdId: "household-3",
+    householdId: householdIds.noor,
     caregiverId: "user-caregiver-1",
     assignedAt: new Date("2025-03-10T08:00:00.000Z")
   }
@@ -139,8 +145,9 @@ const pageConfigs = [
 const stickers = [
   {
     id: "sticker-1",
-    publicCode: "AB12CD",
-    householdId: "household-1",
+    displayCode: "EC-0001",
+    publicCode: "550e8400-e29b-41d4-a716-446655440001",
+    householdId: householdIds.lee,
     siteId: site.id,
     name: "Bathroom emergency sticker",
     isCritical: true,
@@ -151,8 +158,9 @@ const stickers = [
   },
   {
     id: "sticker-2",
-    publicCode: "HP11AA",
-    householdId: "household-1",
+    displayCode: "HP-0001",
+    publicCode: "550e8400-e29b-41d4-a716-446655440002",
+    householdId: householdIds.lee,
     siteId: site.id,
     name: "Wearable help profile tag",
     isCritical: true,
@@ -163,8 +171,9 @@ const stickers = [
   },
   {
     id: "sticker-3",
-    publicCode: "RS88QQ",
-    householdId: "household-2",
+    displayCode: "RS-0001",
+    publicCode: "550e8400-e29b-41d4-a716-446655440003",
+    householdId: householdIds.goh,
     siteId: site.id,
     name: "Resources sticker",
     isCritical: false,
@@ -175,8 +184,9 @@ const stickers = [
   },
   {
     id: "sticker-4",
-    publicCode: "EC55LM",
-    householdId: "household-2",
+    displayCode: "EC-0002",
+    publicCode: "550e8400-e29b-41d4-a716-446655440004",
+    householdId: householdIds.goh,
     siteId: site.id,
     name: "Emergency contact sticker",
     isCritical: true,
@@ -187,8 +197,9 @@ const stickers = [
   },
   {
     id: "sticker-5",
-    publicCode: "CL44RT",
-    householdId: "household-3",
+    displayCode: "CL-0001",
+    publicCode: "550e8400-e29b-41d4-a716-446655440005",
+    householdId: householdIds.noor,
     siteId: site.id,
     name: "Daily reminders sticker",
     isCritical: false,
@@ -199,8 +210,9 @@ const stickers = [
   },
   {
     id: "sticker-6",
-    publicCode: "FC66UV",
-    householdId: "household-3",
+    displayCode: "FC-0001",
+    publicCode: "550e8400-e29b-41d4-a716-446655440006",
+    householdId: householdIds.noor,
     siteId: site.id,
     name: "Frequent contact sticker",
     isCritical: false,
@@ -212,37 +224,37 @@ const stickers = [
 ];
 
 const interactionEvents = [
-  ["event-1", "2025-03-30T08:00:00.000Z", "household-1", "sticker-1", "AB12CD", "EMERGENCY_CONTACT", "DIRECT_REDIRECT", "STICKER_OPENED", "SUCCESS", "WHATSAPP", null],
-  ["event-2", "2025-03-30T08:00:01.000Z", "household-1", "sticker-1", "AB12CD", "EMERGENCY_CONTACT", "DIRECT_REDIRECT", "REDIRECT_ISSUED", "SUCCESS", "WHATSAPP", null],
-  ["event-3", "2025-04-01T08:15:00.000Z", "household-1", "sticker-1", "AB12CD", "EMERGENCY_CONTACT", "DIRECT_REDIRECT", "STICKER_OPENED", "SUCCESS", "WHATSAPP", null],
-  ["event-4", "2025-04-03T10:00:00.000Z", "household-1", "sticker-1", "AB12CD", "EMERGENCY_CONTACT", "DIRECT_REDIRECT", "STICKER_OPENED", "SUCCESS", "WHATSAPP", null],
-  ["event-5", "2025-04-01T11:00:00.000Z", "household-1", "sticker-2", "HP11AA", "HELP_PROFILE", "RENDER_PAGE", "STICKER_OPENED", "SUCCESS", null, null],
-  ["event-6", "2025-04-01T11:00:01.000Z", "household-1", "sticker-2", "HP11AA", "HELP_PROFILE", "RENDER_PAGE", "PAGE_RENDERED", "SUCCESS", null, null],
-  ["event-7", "2025-04-02T11:00:00.000Z", "household-1", "sticker-2", "HP11AA", "HELP_PROFILE", "RENDER_PAGE", "STICKER_OPENED", "SUCCESS", null, null],
-  ["event-8", "2025-04-03T11:00:00.000Z", "household-1", "sticker-2", "HP11AA", "HELP_PROFILE", "RENDER_PAGE", "STICKER_OPENED", "SUCCESS", null, null],
-  ["event-9", "2025-04-04T08:00:00.000Z", "household-1", "sticker-2", "HP11AA", "HELP_PROFILE", "RENDER_PAGE", "STICKER_OPENED", "SUCCESS", null, null],
-  ["event-10", "2025-03-05T08:00:00.000Z", "household-2", "sticker-3", "RS88QQ", "CURATED_RESOURCES", "RENDER_PAGE", "STICKER_OPENED", "SUCCESS", null, null],
-  ["event-11", "2025-03-08T08:00:00.000Z", "household-2", "sticker-3", "RS88QQ", "CURATED_RESOURCES", "RENDER_PAGE", "STICKER_OPENED", "SUCCESS", null, null],
-  ["event-12", "2025-03-12T08:00:00.000Z", "household-2", "sticker-3", "RS88QQ", "CURATED_RESOURCES", "RENDER_PAGE", "STICKER_OPENED", "SUCCESS", null, null],
-  ["event-13", "2025-03-14T08:00:00.000Z", "household-2", "sticker-3", "RS88QQ", "CURATED_RESOURCES", "RENDER_PAGE", "STICKER_OPENED", "SUCCESS", null, null],
-  ["event-14", "2025-03-16T08:00:00.000Z", "household-2", "sticker-3", "RS88QQ", "CURATED_RESOURCES", "RENDER_PAGE", "STICKER_OPENED", "SUCCESS", null, null],
-  ["event-15", "2025-03-18T08:00:00.000Z", "household-2", "sticker-3", "RS88QQ", "CURATED_RESOURCES", "RENDER_PAGE", "STICKER_OPENED", "SUCCESS", null, null],
-  ["event-16", "2025-03-20T08:00:00.000Z", "household-2", "sticker-3", "RS88QQ", "CURATED_RESOURCES", "RENDER_PAGE", "STICKER_OPENED", "SUCCESS", null, null],
-  ["event-17", "2025-03-21T08:00:00.000Z", "household-2", "sticker-3", "RS88QQ", "CURATED_RESOURCES", "RENDER_PAGE", "STICKER_OPENED", "SUCCESS", null, null],
-  ["event-18", "2025-03-22T08:00:00.000Z", "household-2", "sticker-4", "EC55LM", "EMERGENCY_CONTACT", "DIRECT_REDIRECT", "STICKER_OPENED", "FAILED", "PHONE", "DISABLED_STICKER"],
-  ["event-19", "2025-03-30T08:00:00.000Z", "household-3", "sticker-5", "CL44RT", "CHECKLIST_REMINDER", "RENDER_PAGE", "STICKER_OPENED", "SUCCESS", null, null],
-  ["event-20", "2025-03-30T17:00:00.000Z", "household-3", "sticker-5", "CL44RT", "CHECKLIST_REMINDER", "RENDER_PAGE", "STICKER_OPENED", "SUCCESS", null, null],
-  ["event-21", "2025-03-31T08:00:00.000Z", "household-3", "sticker-5", "CL44RT", "CHECKLIST_REMINDER", "RENDER_PAGE", "STICKER_OPENED", "SUCCESS", null, null],
-  ["event-22", "2025-03-31T19:00:00.000Z", "household-3", "sticker-5", "CL44RT", "CHECKLIST_REMINDER", "RENDER_PAGE", "STICKER_OPENED", "SUCCESS", null, null],
-  ["event-23", "2025-04-01T08:00:00.000Z", "household-3", "sticker-5", "CL44RT", "CHECKLIST_REMINDER", "RENDER_PAGE", "STICKER_OPENED", "SUCCESS", null, null],
-  ["event-24", "2025-04-01T19:00:00.000Z", "household-3", "sticker-5", "CL44RT", "CHECKLIST_REMINDER", "RENDER_PAGE", "STICKER_OPENED", "SUCCESS", null, null],
-  ["event-25", "2025-04-02T08:00:00.000Z", "household-3", "sticker-5", "CL44RT", "CHECKLIST_REMINDER", "RENDER_PAGE", "STICKER_OPENED", "SUCCESS", null, null],
-  ["event-26", "2025-04-02T19:00:00.000Z", "household-3", "sticker-5", "CL44RT", "CHECKLIST_REMINDER", "RENDER_PAGE", "STICKER_OPENED", "SUCCESS", null, null],
-  ["event-27", "2025-04-03T08:00:00.000Z", "household-3", "sticker-5", "CL44RT", "CHECKLIST_REMINDER", "RENDER_PAGE", "STICKER_OPENED", "SUCCESS", null, null],
-  ["event-28", "2025-04-03T19:00:00.000Z", "household-3", "sticker-5", "CL44RT", "CHECKLIST_REMINDER", "RENDER_PAGE", "STICKER_OPENED", "SUCCESS", null, null],
-  ["event-29", "2025-04-01T09:00:00.000Z", "household-3", "sticker-5", "CL44RT", "CHECKLIST_REMINDER", "RENDER_PAGE", "PAGE_RENDERED", "FAILED", null, "BROKEN_LINK"],
-  ["event-30", "2025-04-02T09:00:00.000Z", "household-3", "sticker-5", "CL44RT", "CHECKLIST_REMINDER", "RENDER_PAGE", "PAGE_RENDERED", "FAILED", null, "BROKEN_LINK"],
-  ["event-31", "2025-04-03T09:00:00.000Z", "household-3", "sticker-5", "CL44RT", "CHECKLIST_REMINDER", "RENDER_PAGE", "PAGE_RENDERED", "FAILED", null, "BROKEN_LINK"]
+  ["event-1", "2025-03-30T08:00:00.000Z", householdIds.lee, "sticker-1", "550e8400-e29b-41d4-a716-446655440001", "EMERGENCY_CONTACT", "DIRECT_REDIRECT", "STICKER_OPENED", "SUCCESS", "WHATSAPP", null],
+  ["event-2", "2025-03-30T08:00:01.000Z", householdIds.lee, "sticker-1", "550e8400-e29b-41d4-a716-446655440001", "EMERGENCY_CONTACT", "DIRECT_REDIRECT", "REDIRECT_ISSUED", "SUCCESS", "WHATSAPP", null],
+  ["event-3", "2025-04-01T08:15:00.000Z", householdIds.lee, "sticker-1", "550e8400-e29b-41d4-a716-446655440001", "EMERGENCY_CONTACT", "DIRECT_REDIRECT", "STICKER_OPENED", "SUCCESS", "WHATSAPP", null],
+  ["event-4", "2025-04-03T10:00:00.000Z", householdIds.lee, "sticker-1", "550e8400-e29b-41d4-a716-446655440001", "EMERGENCY_CONTACT", "DIRECT_REDIRECT", "STICKER_OPENED", "SUCCESS", "WHATSAPP", null],
+  ["event-5", "2025-04-01T11:00:00.000Z", householdIds.lee, "sticker-2", "550e8400-e29b-41d4-a716-446655440002", "HELP_PROFILE", "RENDER_PAGE", "STICKER_OPENED", "SUCCESS", null, null],
+  ["event-6", "2025-04-01T11:00:01.000Z", householdIds.lee, "sticker-2", "550e8400-e29b-41d4-a716-446655440002", "HELP_PROFILE", "RENDER_PAGE", "PAGE_RENDERED", "SUCCESS", null, null],
+  ["event-7", "2025-04-02T11:00:00.000Z", householdIds.lee, "sticker-2", "550e8400-e29b-41d4-a716-446655440002", "HELP_PROFILE", "RENDER_PAGE", "STICKER_OPENED", "SUCCESS", null, null],
+  ["event-8", "2025-04-03T11:00:00.000Z", householdIds.lee, "sticker-2", "550e8400-e29b-41d4-a716-446655440002", "HELP_PROFILE", "RENDER_PAGE", "STICKER_OPENED", "SUCCESS", null, null],
+  ["event-9", "2025-04-04T08:00:00.000Z", householdIds.lee, "sticker-2", "550e8400-e29b-41d4-a716-446655440002", "HELP_PROFILE", "RENDER_PAGE", "STICKER_OPENED", "SUCCESS", null, null],
+  ["event-10", "2025-03-05T08:00:00.000Z", householdIds.goh, "sticker-3", "550e8400-e29b-41d4-a716-446655440003", "CURATED_RESOURCES", "RENDER_PAGE", "STICKER_OPENED", "SUCCESS", null, null],
+  ["event-11", "2025-03-08T08:00:00.000Z", householdIds.goh, "sticker-3", "550e8400-e29b-41d4-a716-446655440003", "CURATED_RESOURCES", "RENDER_PAGE", "STICKER_OPENED", "SUCCESS", null, null],
+  ["event-12", "2025-03-12T08:00:00.000Z", householdIds.goh, "sticker-3", "550e8400-e29b-41d4-a716-446655440003", "CURATED_RESOURCES", "RENDER_PAGE", "STICKER_OPENED", "SUCCESS", null, null],
+  ["event-13", "2025-03-14T08:00:00.000Z", householdIds.goh, "sticker-3", "550e8400-e29b-41d4-a716-446655440003", "CURATED_RESOURCES", "RENDER_PAGE", "STICKER_OPENED", "SUCCESS", null, null],
+  ["event-14", "2025-03-16T08:00:00.000Z", householdIds.goh, "sticker-3", "550e8400-e29b-41d4-a716-446655440003", "CURATED_RESOURCES", "RENDER_PAGE", "STICKER_OPENED", "SUCCESS", null, null],
+  ["event-15", "2025-03-18T08:00:00.000Z", householdIds.goh, "sticker-3", "550e8400-e29b-41d4-a716-446655440003", "CURATED_RESOURCES", "RENDER_PAGE", "STICKER_OPENED", "SUCCESS", null, null],
+  ["event-16", "2025-03-20T08:00:00.000Z", householdIds.goh, "sticker-3", "550e8400-e29b-41d4-a716-446655440003", "CURATED_RESOURCES", "RENDER_PAGE", "STICKER_OPENED", "SUCCESS", null, null],
+  ["event-17", "2025-03-21T08:00:00.000Z", householdIds.goh, "sticker-3", "550e8400-e29b-41d4-a716-446655440003", "CURATED_RESOURCES", "RENDER_PAGE", "STICKER_OPENED", "SUCCESS", null, null],
+  ["event-18", "2025-03-22T08:00:00.000Z", householdIds.goh, "sticker-4", "550e8400-e29b-41d4-a716-446655440004", "EMERGENCY_CONTACT", "DIRECT_REDIRECT", "STICKER_OPENED", "FAILED", "PHONE", "DISABLED_STICKER"],
+  ["event-19", "2025-03-30T08:00:00.000Z", householdIds.noor, "sticker-5", "550e8400-e29b-41d4-a716-446655440005", "CHECKLIST_REMINDER", "RENDER_PAGE", "STICKER_OPENED", "SUCCESS", null, null],
+  ["event-20", "2025-03-30T17:00:00.000Z", householdIds.noor, "sticker-5", "550e8400-e29b-41d4-a716-446655440005", "CHECKLIST_REMINDER", "RENDER_PAGE", "STICKER_OPENED", "SUCCESS", null, null],
+  ["event-21", "2025-03-31T08:00:00.000Z", householdIds.noor, "sticker-5", "550e8400-e29b-41d4-a716-446655440005", "CHECKLIST_REMINDER", "RENDER_PAGE", "STICKER_OPENED", "SUCCESS", null, null],
+  ["event-22", "2025-03-31T19:00:00.000Z", householdIds.noor, "sticker-5", "550e8400-e29b-41d4-a716-446655440005", "CHECKLIST_REMINDER", "RENDER_PAGE", "STICKER_OPENED", "SUCCESS", null, null],
+  ["event-23", "2025-04-01T08:00:00.000Z", householdIds.noor, "sticker-5", "550e8400-e29b-41d4-a716-446655440005", "CHECKLIST_REMINDER", "RENDER_PAGE", "STICKER_OPENED", "SUCCESS", null, null],
+  ["event-24", "2025-04-01T19:00:00.000Z", householdIds.noor, "sticker-5", "550e8400-e29b-41d4-a716-446655440005", "CHECKLIST_REMINDER", "RENDER_PAGE", "STICKER_OPENED", "SUCCESS", null, null],
+  ["event-25", "2025-04-02T08:00:00.000Z", householdIds.noor, "sticker-5", "550e8400-e29b-41d4-a716-446655440005", "CHECKLIST_REMINDER", "RENDER_PAGE", "STICKER_OPENED", "SUCCESS", null, null],
+  ["event-26", "2025-04-02T19:00:00.000Z", householdIds.noor, "sticker-5", "550e8400-e29b-41d4-a716-446655440005", "CHECKLIST_REMINDER", "RENDER_PAGE", "STICKER_OPENED", "SUCCESS", null, null],
+  ["event-27", "2025-04-03T08:00:00.000Z", householdIds.noor, "sticker-5", "550e8400-e29b-41d4-a716-446655440005", "CHECKLIST_REMINDER", "RENDER_PAGE", "STICKER_OPENED", "SUCCESS", null, null],
+  ["event-28", "2025-04-03T19:00:00.000Z", householdIds.noor, "sticker-5", "550e8400-e29b-41d4-a716-446655440005", "CHECKLIST_REMINDER", "RENDER_PAGE", "STICKER_OPENED", "SUCCESS", null, null],
+  ["event-29", "2025-04-01T09:00:00.000Z", householdIds.noor, "sticker-5", "550e8400-e29b-41d4-a716-446655440005", "CHECKLIST_REMINDER", "RENDER_PAGE", "PAGE_RENDERED", "FAILED", null, "BROKEN_LINK"],
+  ["event-30", "2025-04-02T09:00:00.000Z", householdIds.noor, "sticker-5", "550e8400-e29b-41d4-a716-446655440005", "CHECKLIST_REMINDER", "RENDER_PAGE", "PAGE_RENDERED", "FAILED", null, "BROKEN_LINK"],
+  ["event-31", "2025-04-03T09:00:00.000Z", householdIds.noor, "sticker-5", "550e8400-e29b-41d4-a716-446655440005", "CHECKLIST_REMINDER", "RENDER_PAGE", "PAGE_RENDERED", "FAILED", null, "BROKEN_LINK"]
 ];
 
 async function main() {

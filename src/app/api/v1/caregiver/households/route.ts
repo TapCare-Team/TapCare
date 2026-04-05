@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { canAccessCaregiverSurface } from "@/modules/auth/services/access-control.service";
-import { getOfficerHouseholds } from "@/modules/households/services/household-analytics.service";
+import { getHouseholdsByIds } from "@/modules/households/services/household-analytics.service";
 
 export async function GET() {
   const user = await getCurrentUser();
@@ -12,9 +12,7 @@ export async function GET() {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const households = (await getOfficerHouseholds(user.siteIds[0] ?? "site-sgo-bedok")).filter((household) =>
-    user.householdIds.includes(household.id)
-  );
+  const households = await getHouseholdsByIds(user.householdIds);
 
   return NextResponse.json(households);
 }

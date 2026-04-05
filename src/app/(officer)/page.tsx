@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 
 export default async function OfficerDashboardPage() {
   const user = await requireUserWithRole(["OFFICER", "ADMIN"]);
-  const summary = await getOfficerDashboardSummary(user.siteIds[0] ?? "site-sgo-bedok");
+  const summary = await getOfficerDashboardSummary(user.siteIds);
   const nav = [
     { href: "/households", label: "Households" },
     { href: "/follow-up", label: "Follow-up queue" }
@@ -26,32 +26,32 @@ export default async function OfficerDashboardPage() {
   return (
     <AppShell
       title="Outreach Dashboard"
-      subtitle="Who may need follow-up, and which NFC journeys are useful in the field."
+      subtitle="See which households may need follow-up and which stickers are being used."
       nav={nav}
     >
       <div className="grid gap-4 md:grid-cols-3">
         <StatCard
-          label="Possible outreach candidates"
+          label="Households that may need follow-up"
           value={summary.followUpCandidates}
-          hint="Explainable signals generated from recent event patterns."
+          hint="Based on recent sticker activity patterns that may need a closer look."
         />
         <StatCard
           label="Households with active stickers"
           value={summary.activeStickerHouseholds}
-          hint="Households with at least one active sticker."
+          hint="Households that currently have at least one active sticker."
         />
         <StatCard
-          label="Sudden inactivity"
+          label="Households with no recent activity"
           value={summary.inactiveCandidates}
-          hint="Previously active households with 10 days of inactivity."
+          hint="Previously active households with no sticker activity in the last 10 days."
         />
       </div>
 
-      <Panel eyebrow="Triage" title="Recent follow-up signals">
+      <Panel eyebrow="Review and act" title="Recent follow-up reasons">
         <FollowUpList signals={summary.signals} />
       </Panel>
 
-      <Panel eyebrow="Usefulness" title="Feature usefulness snapshot">
+      <Panel eyebrow="Sticker usage" title="What people are using">
         <FeatureSnapshotGrid snapshots={summary.featureSnapshots} />
       </Panel>
     </AppShell>

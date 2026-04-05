@@ -1,10 +1,8 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
-import { canManageHousehold } from "@/modules/auth/services/access-control.service";
-import { PrismaHouseholdsRepository } from "@/modules/households/repositories/prisma-households.repository";
-import { listHouseholdStickers } from "@/modules/stickers/services/sticker-setup.service";
-
-const householdsRepository = new PrismaHouseholdsRepository();
+import { commonMessages, setupMessages } from "@/modules/shared/messages";
+import { toSetupRouteErrorResponse } from "@/modules/stickers/services/sticker-setup-route.service";
+import { listHouseholdStickersForUser } from "@/modules/stickers/services/sticker-setup.service";
 
 export async function GET(
   _request: Request,
@@ -13,22 +11,12 @@ export async function GET(
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    const household = await householdsRepository.getById(params.householdId);
-    if (!household) {
-      return NextResponse.json({ error: "Household not found" }, { status: 404 });
-    }
-    if (!canManageHousehold(user, household.id, household.siteId)) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      return NextResponse.json({ error: commonMessages.unauthorized }, { status: 401 });
     }
 
-    const stickers = await listHouseholdStickers(params.householdId);
+    const stickers = await listHouseholdStickersForUser(user, params.householdId);
     return NextResponse.json(stickers);
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Unable to list stickers" },
-      { status: 400 }
-    );
+    return toSetupRouteErrorResponse(error, setupMessages.listFailed);
   }
 }

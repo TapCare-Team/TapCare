@@ -9,6 +9,7 @@ Privacy-safe operational analytics dashboard for TapCare's NFC and QR support sy
 - Tailwind CSS
 - Prisma + PostgreSQL
 - Vitest
+- ESLint
 
 ## Product shape
 
@@ -26,6 +27,16 @@ Privacy-safe operational analytics dashboard for TapCare's NFC and QR support sy
 5. Apply migrations with `npm run prisma:migrate`.
 6. Seed demo data with `npm run db:seed`.
 7. Run the app with `npm run dev`.
+
+## Verification
+
+Run these before pushing changes:
+
+```bash
+npm test
+npm run lint
+npm run build
+```
 
 ## Seeding
 
@@ -56,5 +67,5 @@ Notes:
 
 ## Notes
 
-- The current UI is scaffolded with mock-backed services so the product flow can be reviewed before database wiring is completed.
+- Read paths can fall back to mock data when `DATABASE_URL` is not configured, but setup APIs require Postgres.
 - Prisma schema and initial migration are included for the production data model.

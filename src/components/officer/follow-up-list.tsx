@@ -13,10 +13,10 @@ export function FollowUpList({ signals }: { signals: FollowUpSignal[] }) {
               <p className="font-medium">{signal.explanation}</p>
             </div>
             <Link href={`/households/${signal.householdId}`} className="text-sm font-medium">
-              View household
+              Open household
             </Link>
           </div>
-          <p className="mt-2 text-sm text-muted">Last observed {new Date(signal.lastObservedAt).toLocaleString()}</p>
+          <p className="mt-2 text-sm text-muted">Last activity seen {new Date(signal.lastObservedAt).toLocaleString()}</p>
         </div>
       ))}
     </div>

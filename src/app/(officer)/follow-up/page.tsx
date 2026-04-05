@@ -8,18 +8,18 @@ export const dynamic = "force-dynamic";
 
 export default async function FollowUpQueuePage() {
   const user = await requireUserWithRole(["OFFICER", "ADMIN"]);
-  const summary = await getOfficerDashboardSummary(user.siteIds[0] ?? "site-sgo-bedok");
+  const summary = await getOfficerDashboardSummary(user.siteIds);
 
   return (
     <AppShell
       title="Follow-up Queue"
-      subtitle="Read explainable signals first, then decide whether outreach is appropriate."
+      subtitle="Review the recent reasons for follow-up, then decide whether outreach is needed."
       nav={[
         { href: "/", label: "Dashboard" },
         { href: "/households", label: "Households" }
       ]}
     >
-      <Panel title="Active signals" eyebrow="Operational triage">
+      <Panel title="Households needing review" eyebrow="Follow-up">
         <FollowUpList signals={summary.signals} />
       </Panel>
     </AppShell>

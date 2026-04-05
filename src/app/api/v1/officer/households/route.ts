@@ -12,6 +12,6 @@ export async function GET() {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const households = await getOfficerHouseholds(user.siteIds[0] ?? "site-sgo-bedok");
+  const households = await getOfficerHouseholds(user.siteIds);
   return NextResponse.json(households);
 }

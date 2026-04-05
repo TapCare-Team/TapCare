@@ -33,8 +33,11 @@ export default async function CaregiverHouseholdPage({
   return (
     <AppShell
       title={detail.household.displayAddress}
-      subtitle="Read-only household usage summary for assigned caregivers."
-      nav={[{ href: "/caregiver", label: "Back to caregiver view" }]}
+      subtitle="Household usage summary and sticker setup access for assigned caregivers."
+      nav={[
+        { href: "/caregiver", label: "Back to caregiver view" },
+        { href: `/caregiver/households/${detail.household.id}/stickers`, label: "Manage stickers" }
+      ]}
       homeHref="/caregiver"
     >
       <Panel title="Follow-up signals" eyebrow="Read only">

@@ -2,7 +2,9 @@ import { NextResponse } from "next/server";
 import { followUpReviewRequestSchema } from "@/modules/households/contracts/review.contract";
 import { getCurrentUser } from "@/lib/auth";
 import { canReviewSignals } from "@/modules/auth/services/access-control.service";
-import { logger } from "@/lib/logging/logger";
+import { commonMessages, signalMessages } from "@/modules/shared/messages";
+import { isDomainError } from "@/modules/shared/errors";
+import { reviewFollowUpSignal } from "@/modules/signals/services/follow-up-review.service";
 
 export async function POST(
   request: Request,
@@ -10,28 +12,29 @@ export async function POST(
 ) {
   const user = await getCurrentUser();
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: commonMessages.unauthorized }, { status: 401 });
   }
   if (!canReviewSignals(user)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return NextResponse.json({ error: commonMessages.forbidden }, { status: 403 });
   }
 
   const body = await request.json();
   const parsed = followUpReviewRequestSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid review payload" }, { status: 400 });
+    return NextResponse.json({ error: signalMessages.invalidReviewPayload }, { status: 400 });
   }
 
-  logger.info("follow_up_signal_reviewed", {
-    actorUserId: user.id,
-    signalId: params.signalId,
-    status: parsed.data.status
-  });
+  try {
+    const result = await reviewFollowUpSignal(user, params.signalId, parsed.data);
+    return NextResponse.json(result);
+  } catch (error) {
+    if (isDomainError(error)) {
+      return NextResponse.json({ error: error.message, code: error.code }, { status: error.statusCode });
+    }
 
-  return NextResponse.json({
-    ok: true,
-    signalId: params.signalId,
-    reviewerId: user.id,
-    ...parsed.data
-  });
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : signalMessages.reviewFailed },
+      { status: 400 }
+    );
+  }
 }

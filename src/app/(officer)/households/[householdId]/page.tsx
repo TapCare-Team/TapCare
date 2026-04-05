@@ -33,18 +33,19 @@ export default async function HouseholdDetailPage({
   return (
     <AppShell
       title={detail.household.displayAddress}
-      subtitle="Household activity, NFC asset status, and explainable outreach signals."
+      subtitle="Review household activity, sticker status, and reasons this household may need follow-up."
       nav={[
         { href: "/", label: "Dashboard" },
         { href: "/households", label: "Back to households" },
+        { href: `/households/${detail.household.id}/stickers`, label: "Manage stickers" },
         { href: "/follow-up", label: "Follow-up queue" }
       ]}
     >
       <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
-        <Panel title="Follow-up context" eyebrow="Signals">
+        <Panel title="Why this household may need follow-up" eyebrow="Follow-up">
           <div className="space-y-4">
             {detail.signals.length === 0 ? (
-              <p className="text-sm text-muted">No active follow-up signals for this household.</p>
+              <p className="text-sm text-muted">There are no active follow-up reasons for this household.</p>
             ) : (
               detail.signals.map((signal) => (
                 <div key={signal.id} className="rounded-2xl border border-black/5 bg-white p-4">
@@ -58,13 +59,13 @@ export default async function HouseholdDetailPage({
           </div>
         </Panel>
 
-        <Panel title="Sticker status" eyebrow="Runtime">
+        <Panel title="Sticker status" eyebrow="Current setup">
           <div className="space-y-3">
             {detail.household.stickers.map((sticker) => (
               <div key={sticker.id} className="rounded-2xl border border-black/5 bg-white p-4">
                 <p className="font-medium">{sticker.name}</p>
                 <p className="text-sm text-muted">
-                  {sticker.status} | {sticker.runtimeMode} | {sticker.stickerType.replaceAll("_", " ")}
+                  {sticker.displayCode} | {sticker.status} | {sticker.runtimeMode} | {sticker.stickerType.replaceAll("_", " ")}
                 </p>
               </div>
             ))}
@@ -72,7 +73,7 @@ export default async function HouseholdDetailPage({
         </Panel>
       </div>
 
-      <Panel title="Recent activity" eyebrow={`${detail.recentEvents.length} events in selected range`}>
+      <Panel title="Recent activity" eyebrow={`${detail.recentEvents.length} activities in selected range`}>
         <RecentActivityFilter
           basePath={`/households/${detail.household.id}`}
           preset={detail.activityWindow.preset}
@@ -83,7 +84,7 @@ export default async function HouseholdDetailPage({
         />
         <div className="space-y-3">
           {detail.recentEvents.length === 0 ? (
-            <p className="text-sm text-muted">No activity matched the selected date range.</p>
+            <p className="text-sm text-muted">No activity was recorded in the selected date range.</p>
           ) : (
             detail.recentEvents.map((event) => (
               <div key={event.id} className="rounded-2xl border border-black/5 bg-white p-4">

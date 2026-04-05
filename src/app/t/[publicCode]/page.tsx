@@ -1,6 +1,9 @@
 import { notFound, redirect } from "next/navigation";
 import Script from "next/script";
-import { recordPageRendered, resolvePublicSticker } from "@/modules/stickers/services/sticker-runtime.service";
+import {
+  acknowledgeRenderedRuntimePage,
+  loadPublicRuntime
+} from "@/modules/runtime/controllers/public-runtime.controller";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +28,7 @@ export default async function PublicStickerPage({
 }: {
   params: { publicCode: string };
 }) {
-  const resolution = await resolvePublicSticker(params.publicCode);
+  const resolution = await loadPublicRuntime(params.publicCode);
 
   if (resolution.kind === "NOT_FOUND") {
     notFound();
@@ -50,9 +53,8 @@ export default async function PublicStickerPage({
     redirect(resolution.destinationUrl);
   }
 
-  const { sticker, household } = resolution;
-  const page = sticker.page;
-  await recordPageRendered(resolution);
+  const { sticker, household, page } = resolution;
+  await acknowledgeRenderedRuntimePage(resolution);
 
   return (
     <div className="mx-auto flex min-h-screen max-w-3xl flex-col gap-6 px-6 py-10">

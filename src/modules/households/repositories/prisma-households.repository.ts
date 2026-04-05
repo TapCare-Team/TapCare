@@ -14,6 +14,16 @@ const householdInclude = {
 } as const;
 
 export class PrismaHouseholdsRepository {
+  async listBySiteIds(siteIds: string[]) {
+    const households = await prisma.household.findMany({
+      where: { siteId: { in: siteIds }, status: "ACTIVE" },
+      include: householdInclude,
+      orderBy: [{ siteId: "asc" }, { displayAddress: "asc" }]
+    });
+
+    return households.map(mapPrismaHousehold);
+  }
+
   async listBySite(siteId: string) {
     const households = await prisma.household.findMany({
       where: { siteId, status: "ACTIVE" },
