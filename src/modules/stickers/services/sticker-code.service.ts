@@ -17,19 +17,31 @@ export function buildDisplayCodeCandidate(stickerType: StickerType, serialNumber
   return `${PREFIX_BY_TYPE[stickerType]}-${serialNumber.toString().padStart(4, "0")}`;
 }
 
-export async function generateDisplayCode(householdId: string, stickerType: StickerType) {
-  const existingCount = await stickersRepository.countByHouseholdAndStickerType(householdId, stickerType);
-
-  for (let offset = 1; offset <= 25; offset += 1) {
-    const candidate = buildDisplayCodeCandidate(stickerType, existingCount + offset);
-    const exists = await stickersRepository.existsByDisplayCode(householdId, candidate);
-
-    if (!exists) {
-      return candidate;
+export function nextDisplayCodeFromExisting(stickerType: StickerType, existingDisplayCodes: string[]) {
+  const prefix = `${PREFIX_BY_TYPE[stickerType]}-`;
+  const maxSerial = existingDisplayCodes.reduce((currentMax, displayCode) => {
+    if (!displayCode.startsWith(prefix)) {
+      return currentMax;
     }
-  }
 
-  throw new Error(setupMessages.uniqueDisplayCodeFailed);
+    const parsed = Number.parseInt(displayCode.slice(prefix.length), 10);
+    if (!Number.isFinite(parsed)) {
+      return currentMax;
+    }
+
+    return Math.max(currentMax, parsed);
+  }, 0);
+
+  return buildDisplayCodeCandidate(stickerType, maxSerial + 1);
+}
+
+export async function generateDisplayCode(householdId: string, stickerType: StickerType) {
+  const existingDisplayCodes = await stickersRepository.listDisplayCodesByHouseholdAndStickerType(
+    householdId,
+    stickerType
+  );
+
+  return nextDisplayCodeFromExisting(stickerType, existingDisplayCodes);
 }
 
 export function generatePublicCode() {

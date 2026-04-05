@@ -19,10 +19,13 @@ export class PrismaStickersRepository {
     return Boolean(sticker);
   }
 
-  async countByHouseholdAndStickerType(householdId: string, stickerType: Sticker["stickerType"]) {
-    return prisma.sticker.count({
-      where: { householdId, stickerType }
+  async listDisplayCodesByHouseholdAndStickerType(householdId: string, stickerType: Sticker["stickerType"]) {
+    const stickers = await prisma.sticker.findMany({
+      where: { householdId, stickerType },
+      select: { displayCode: true }
     });
+
+    return stickers.map((sticker) => sticker.displayCode);
   }
 
   async existsByPublicCode(publicCode: string) {

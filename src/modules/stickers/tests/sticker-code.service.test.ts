@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { buildDisplayCodeCandidate, generatePublicCode } from "@/modules/stickers/services/sticker-code.service";
+import {
+  buildDisplayCodeCandidate,
+  generatePublicCode,
+  nextDisplayCodeFromExisting
+} from "@/modules/stickers/services/sticker-code.service";
 
 describe("sticker code service", () => {
   it("uses a predictable prefix for each sticker type", () => {
@@ -14,5 +18,10 @@ describe("sticker code service", () => {
     expect(generatePublicCode()).toMatch(
       /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
     );
+  });
+
+  it("derives the next household-scoped display code from existing values in one pass", () => {
+    expect(nextDisplayCodeFromExisting("HELP_PROFILE", ["HP-0001", "HP-0002", "HP-0004"])).toBe("HP-0005");
+    expect(nextDisplayCodeFromExisting("EMERGENCY_CONTACT", [])).toBe("EC-0001");
   });
 });
