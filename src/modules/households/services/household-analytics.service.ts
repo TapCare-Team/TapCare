@@ -136,7 +136,22 @@ export async function getHouseholdDetail(user: SessionUser, householdId: string,
     ? new Date(sortedEvents[sortedEvents.length - 1].occurredAt)
     : null;
   const activityWindow = resolveActivityWindow(filters, anchorDate);
+  const activityWindowFormValues = toActivityWindowFormValues(activityWindow);
   const recentEvents = sortedEvents.filter((event) => {
+    if (activityWindow.preset === "custom") {
+      const eventDay = event.occurredAt.slice(0, 10);
+
+      if (activityWindowFormValues.from && eventDay < activityWindowFormValues.from) {
+        return false;
+      }
+
+      if (activityWindowFormValues.to && eventDay > activityWindowFormValues.to) {
+        return false;
+      }
+
+      return true;
+    }
+
     const occurredAt = new Date(event.occurredAt).getTime();
 
     if (activityWindow.startAt && occurredAt < activityWindow.startAt.getTime()) {
@@ -157,7 +172,7 @@ export async function getHouseholdDetail(user: SessionUser, householdId: string,
     featureSnapshots: buildFeatureSnapshots(householdEvents),
     activityWindow: {
       preset: activityWindow.preset,
-      ...toActivityWindowFormValues(activityWindow)
+      ...activityWindowFormValues
     },
     activityBounds: {
       earliest: earliestEventDate?.toISOString().slice(0, 10) ?? "",

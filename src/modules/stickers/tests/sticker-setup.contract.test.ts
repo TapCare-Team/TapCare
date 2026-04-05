@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
+import { mockHouseholdIds } from "@/lib/mock-data";
 import { createStickerSchema, updateStickerSchema } from "@/modules/stickers/contracts/sticker-setup.contract";
 
 describe("sticker setup contract", () => {
   it("accepts checklist page content only when checklist items are present", () => {
     const result = createStickerSchema.safeParse({
-      householdId: "household-1",
+      householdId: mockHouseholdIds.lee,
       stickerType: "CHECKLIST_REMINDER",
       runtimeMode: "RENDER_PAGE",
       name: "Kitchen checklist",
@@ -23,7 +24,7 @@ describe("sticker setup contract", () => {
 
   it("rejects help profile content that does not match the runtime shape", () => {
     const result = createStickerSchema.safeParse({
-      householdId: "household-1",
+      householdId: mockHouseholdIds.lee,
       stickerType: "HELP_PROFILE",
       runtimeMode: "RENDER_PAGE",
       name: "Wearable help tag",

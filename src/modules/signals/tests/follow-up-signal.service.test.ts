@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { InteractionEvent } from "@/modules/analytics/domain/analytics";
 import type { Household } from "@/modules/households/domain/household";
+import { mockHouseholdIds } from "@/lib/mock-data";
 import {
   deriveFollowUpSignals,
   isSignalActionable,
@@ -9,7 +10,7 @@ import {
 
 const mockHouseholds: Household[] = [
   {
-    id: "household-1",
+    id: mockHouseholdIds.lee,
     siteId: "site-sgo-bedok",
     siteName: "SGO Bedok",
     addressLine1: "12 Bedok North Street 2",
@@ -31,7 +32,7 @@ const mockHouseholds: Household[] = [
     ]
   },
   {
-    id: "household-2",
+    id: mockHouseholdIds.goh,
     siteId: "site-sgo-bedok",
     siteName: "SGO Bedok",
     addressLine1: "18 Bedok South Avenue 1",
@@ -57,7 +58,7 @@ const mockHouseholds: Household[] = [
 const mockInteractionEvents: InteractionEvent[] = [
   {
     id: "event-1",
-    householdId: "household-1",
+    householdId: mockHouseholdIds.lee,
     siteId: "site-sgo-bedok",
     stickerType: "EMERGENCY_CONTACT",
     eventType: "STICKER_OPENED",
@@ -66,7 +67,7 @@ const mockInteractionEvents: InteractionEvent[] = [
   },
   {
     id: "event-2",
-    householdId: "household-1",
+    householdId: mockHouseholdIds.lee,
     siteId: "site-sgo-bedok",
     stickerType: "EMERGENCY_CONTACT",
     eventType: "STICKER_OPENED",
@@ -75,7 +76,7 @@ const mockInteractionEvents: InteractionEvent[] = [
   },
   {
     id: "event-3",
-    householdId: "household-1",
+    householdId: mockHouseholdIds.lee,
     siteId: "site-sgo-bedok",
     stickerType: "EMERGENCY_CONTACT",
     eventType: "STICKER_OPENED",
@@ -84,7 +85,7 @@ const mockInteractionEvents: InteractionEvent[] = [
   },
   {
     id: "event-4",
-    householdId: "household-2",
+    householdId: mockHouseholdIds.goh,
     siteId: "site-sgo-bedok",
     stickerType: "CURATED_RESOURCES",
     eventType: "STICKER_OPENED",
@@ -93,7 +94,7 @@ const mockInteractionEvents: InteractionEvent[] = [
   },
   {
     id: "event-5",
-    householdId: "household-2",
+    householdId: mockHouseholdIds.goh,
     siteId: "site-sgo-bedok",
     stickerType: "CURATED_RESOURCES",
     eventType: "STICKER_OPENED",
@@ -102,7 +103,7 @@ const mockInteractionEvents: InteractionEvent[] = [
   },
   {
     id: "event-6",
-    householdId: "household-2",
+    householdId: mockHouseholdIds.goh,
     siteId: "site-sgo-bedok",
     stickerType: "CURATED_RESOURCES",
     eventType: "STICKER_OPENED",
@@ -111,7 +112,7 @@ const mockInteractionEvents: InteractionEvent[] = [
   },
   {
     id: "event-7",
-    householdId: "household-2",
+    householdId: mockHouseholdIds.goh,
     siteId: "site-sgo-bedok",
     stickerType: "CURATED_RESOURCES",
     eventType: "STICKER_OPENED",
@@ -120,7 +121,7 @@ const mockInteractionEvents: InteractionEvent[] = [
   },
   {
     id: "event-8",
-    householdId: "household-2",
+    householdId: mockHouseholdIds.goh,
     siteId: "site-sgo-bedok",
     stickerType: "CURATED_RESOURCES",
     eventType: "STICKER_OPENED",
@@ -129,7 +130,7 @@ const mockInteractionEvents: InteractionEvent[] = [
   },
   {
     id: "event-9",
-    householdId: "household-2",
+    householdId: mockHouseholdIds.goh,
     siteId: "site-sgo-bedok",
     stickerType: "CURATED_RESOURCES",
     eventType: "STICKER_OPENED",
@@ -138,7 +139,7 @@ const mockInteractionEvents: InteractionEvent[] = [
   },
   {
     id: "event-10",
-    householdId: "household-2",
+    householdId: mockHouseholdIds.goh,
     siteId: "site-sgo-bedok",
     stickerType: "CURATED_RESOURCES",
     eventType: "STICKER_OPENED",
@@ -147,7 +148,7 @@ const mockInteractionEvents: InteractionEvent[] = [
   },
   {
     id: "event-11",
-    householdId: "household-2",
+    householdId: mockHouseholdIds.goh,
     siteId: "site-sgo-bedok",
     stickerType: "CURATED_RESOURCES",
     eventType: "STICKER_OPENED",
@@ -160,7 +161,7 @@ describe("deriveFollowUpSignals", () => {
   it("creates repeated emergency usage signal from production logic", () => {
     const signals = deriveFollowUpSignals({
       households: [mockHouseholds[0]],
-      events: mockInteractionEvents.filter((event) => event.householdId === "household-1"),
+      events: mockInteractionEvents.filter((event) => event.householdId === mockHouseholdIds.lee),
       now: new Date("2025-04-04T09:00:00.000Z")
     });
 
@@ -170,7 +171,7 @@ describe("deriveFollowUpSignals", () => {
   it("creates inactivity signal only when there is a baseline and no recent sticker activity", () => {
     const signals = deriveFollowUpSignals({
       households: [mockHouseholds[1]],
-      events: mockInteractionEvents.filter((event) => event.householdId === "household-2"),
+      events: mockInteractionEvents.filter((event) => event.householdId === mockHouseholdIds.goh),
       now: new Date("2025-04-04T09:00:00.000Z")
     });
 
@@ -180,7 +181,7 @@ describe("deriveFollowUpSignals", () => {
   it("creates no-active-critical-sticker signal when critical stickers are disabled", () => {
     const signals = deriveFollowUpSignals({
       households: [mockHouseholds[1]],
-      events: mockInteractionEvents.filter((event) => event.householdId === "household-2"),
+      events: mockInteractionEvents.filter((event) => event.householdId === mockHouseholdIds.goh),
       now: new Date("2025-04-04T09:00:00.000Z")
     });
 
@@ -190,7 +191,7 @@ describe("deriveFollowUpSignals", () => {
   it("does not surface seeded April 2025 emergency usage as recent when evaluated much later", () => {
     const signals = deriveFollowUpSignals({
       households: [mockHouseholds[0]],
-      events: mockInteractionEvents.filter((event) => event.householdId === "household-1"),
+      events: mockInteractionEvents.filter((event) => event.householdId === mockHouseholdIds.lee),
       now: new Date("2025-06-01T09:00:00.000Z")
     });
 
@@ -200,16 +201,16 @@ describe("deriveFollowUpSignals", () => {
   it("merges persisted review state back into derived signals", () => {
     const derivedSignals = deriveFollowUpSignals({
       households: [mockHouseholds[0]],
-      events: mockInteractionEvents.filter((event) => event.householdId === "household-1"),
+      events: mockInteractionEvents.filter((event) => event.householdId === mockHouseholdIds.lee),
       now: new Date("2025-04-04T09:00:00.000Z")
     });
 
     const mergedSignals = mergePersistedSignalState(
       derivedSignals,
-      [{ id: "household-1-REPEATED_EMERGENCY_USAGE", status: "REVIEWED" }],
+      [{ id: `${mockHouseholdIds.lee}-REPEATED_EMERGENCY_USAGE`, status: "REVIEWED" }],
       [
         {
-          signalId: "household-1-REPEATED_EMERGENCY_USAGE",
+          signalId: `${mockHouseholdIds.lee}-REPEATED_EMERGENCY_USAGE`,
           review: {
             status: "REVIEWED",
             reviewedAt: "2025-04-04T12:00:00.000Z",
@@ -227,8 +228,8 @@ describe("deriveFollowUpSignals", () => {
     const mergedSignals = mergePersistedSignalState(
       [
         {
-          id: "household-1-REPEATED_EMERGENCY_USAGE",
-          householdId: "household-1",
+          id: `${mockHouseholdIds.lee}-REPEATED_EMERGENCY_USAGE`,
+          householdId: mockHouseholdIds.lee,
           siteId: "site-sgo-bedok",
           signalType: "REPEATED_EMERGENCY_USAGE",
           status: "ACTIVE",
@@ -238,10 +239,10 @@ describe("deriveFollowUpSignals", () => {
           evidence: { eventCount: 3, windowDays: 7 }
         }
       ],
-      [{ id: "household-1-REPEATED_EMERGENCY_USAGE", status: "REVIEWED" }],
+      [{ id: `${mockHouseholdIds.lee}-REPEATED_EMERGENCY_USAGE`, status: "REVIEWED" }],
       [
         {
-          signalId: "household-1-REPEATED_EMERGENCY_USAGE",
+          signalId: `${mockHouseholdIds.lee}-REPEATED_EMERGENCY_USAGE`,
           review: {
             status: "SNOOZED",
             reviewedAt: "2025-04-04T12:00:00.000Z",
