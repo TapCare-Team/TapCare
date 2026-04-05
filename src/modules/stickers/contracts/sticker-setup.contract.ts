@@ -14,7 +14,6 @@ export const pageConfigSchema = z.object({
 
 export const createStickerSchema = z.object({
   householdId: z.string().min(1),
-  publicCode: z.string().min(1),
   stickerType: z.enum([
     "EMERGENCY_CONTACT",
     "FREQUENT_CONTACT",

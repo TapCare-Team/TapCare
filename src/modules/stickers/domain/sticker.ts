@@ -18,6 +18,7 @@ export type PageConfig = {
 
 export type Sticker = {
   id: string;
+  displayCode: string;
   publicCode: string;
   stickerType: StickerType;
   runtimeMode: RuntimeMode;

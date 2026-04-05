@@ -45,6 +45,7 @@ function mapPageContent(content: Prisma.JsonValue): PageConfig["content"] {
 export function mapPrismaSticker(sticker: PrismaStickerRecord): Sticker {
   return {
     id: sticker.id,
+    displayCode: sticker.displayCode,
     publicCode: sticker.publicCode,
     stickerType: sticker.stickerType as StickerType,
     runtimeMode: sticker.runtimeMode as RuntimeMode,

@@ -37,6 +37,7 @@ export default async function HouseholdDetailPage({
       nav={[
         { href: "/", label: "Dashboard" },
         { href: "/households", label: "Back to households" },
+        { href: `/households/${detail.household.id}/stickers`, label: "Manage stickers" },
         { href: "/follow-up", label: "Follow-up queue" }
       ]}
     >
@@ -64,7 +65,7 @@ export default async function HouseholdDetailPage({
               <div key={sticker.id} className="rounded-2xl border border-black/5 bg-white p-4">
                 <p className="font-medium">{sticker.name}</p>
                 <p className="text-sm text-muted">
-                  {sticker.status} | {sticker.runtimeMode} | {sticker.stickerType.replaceAll("_", " ")}
+                  {sticker.displayCode} | {sticker.status} | {sticker.runtimeMode} | {sticker.stickerType.replaceAll("_", " ")}
                 </p>
               </div>
             ))}

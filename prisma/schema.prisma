@@ -93,6 +93,7 @@ model SeniorProfile {
 
 model Sticker {
   id                  String            @id @default(cuid())
+  displayCode         String
   publicCode          String            @unique
   householdId         String
   siteId              String
@@ -113,6 +114,7 @@ model Sticker {
 
   @@index([householdId, status])
   @@index([siteId, status])
+  @@unique([householdId, displayCode])
 }
 
 model DestinationConfig {
