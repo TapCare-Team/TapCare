@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 type SiteOption = {
   id: string;
@@ -26,6 +26,65 @@ export function HouseholdCreateForm({
   const [seniorDisplayName, setSeniorDisplayName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
+  const [isCheckingDuplicate, setIsCheckingDuplicate] = useState(false);
+
+  async function checkDuplicate() {
+    if (!canPersist || !siteId || !addressLine1.trim()) {
+      setDuplicateWarning(null);
+      return;
+    }
+
+    setIsCheckingDuplicate(true);
+
+    try {
+      const response = await fetch("/api/v1/officer/households/duplicate-check", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          siteId,
+          addressLine1,
+          addressLine2,
+          unitNumber,
+          postalCode
+        })
+      });
+
+      const payload = (await response.json()) as {
+        duplicate?: { id: string; displayAddress: string; siteName: string } | null;
+        error?: string;
+      };
+
+      if (!response.ok) {
+        setDuplicateWarning(null);
+        return;
+      }
+
+      if (payload.duplicate) {
+        setDuplicateWarning(
+          `Possible duplicate: ${payload.duplicate.displayAddress} already exists under ${payload.duplicate.siteName}.`
+        );
+        return;
+      }
+
+      setDuplicateWarning(null);
+    } catch {
+      setDuplicateWarning(null);
+    } finally {
+      setIsCheckingDuplicate(false);
+    }
+  }
+
+  useEffect(() => {
+    if (!addressLine1.trim()) {
+      setDuplicateWarning(null);
+      return;
+    }
+
+    void checkDuplicate();
+  }, [siteId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -102,6 +161,7 @@ export function HouseholdCreateForm({
         <input
           value={addressLine1}
           onChange={(event) => setAddressLine1(event.target.value)}
+          onBlur={checkDuplicate}
           className="rounded-2xl border border-black/10 bg-white px-4 py-3 text-ink"
           placeholder="e.g. Blk 18 Bedok South Road"
           disabled={!canPersist || isSubmitting}
@@ -114,6 +174,7 @@ export function HouseholdCreateForm({
         <input
           value={addressLine2}
           onChange={(event) => setAddressLine2(event.target.value)}
+          onBlur={checkDuplicate}
           className="rounded-2xl border border-black/10 bg-white px-4 py-3 text-ink"
           placeholder="e.g. Opposite market or lift lobby"
           disabled={!canPersist || isSubmitting}
@@ -126,6 +187,7 @@ export function HouseholdCreateForm({
           <input
             value={unitNumber}
             onChange={(event) => setUnitNumber(event.target.value)}
+            onBlur={checkDuplicate}
             className="rounded-2xl border border-black/10 bg-white px-4 py-3 text-ink"
             placeholder="#05-123"
             disabled={!canPersist || isSubmitting}
@@ -137,6 +199,7 @@ export function HouseholdCreateForm({
           <input
             value={postalCode}
             onChange={(event) => setPostalCode(event.target.value)}
+            onBlur={checkDuplicate}
             className="rounded-2xl border border-black/10 bg-white px-4 py-3 text-ink"
             placeholder="460018"
             inputMode="numeric"
@@ -157,6 +220,12 @@ export function HouseholdCreateForm({
         />
       </label>
 
+      {isCheckingDuplicate ? <p className="text-sm text-muted">Checking for existing household records...</p> : null}
+      {duplicateWarning ? (
+        <div className="rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          {duplicateWarning}
+        </div>
+      ) : null}
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
 
       <div className="flex flex-wrap items-center gap-3">

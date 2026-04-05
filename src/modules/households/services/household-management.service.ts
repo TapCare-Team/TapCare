@@ -91,3 +91,26 @@ export async function createHouseholdForUser(user: SessionUser, rawInput: Create
     displayAddress
   });
 }
+
+export async function findDuplicateHouseholdForUser(user: SessionUser, rawInput: CreateHouseholdInput) {
+  if (!isDatabaseConfigured()) {
+    throw new ConfigurationError(householdMessages.databaseUnavailable, "HOUSEHOLD_DATABASE_UNAVAILABLE");
+  }
+
+  if (!canAccessOfficerSurface(user)) {
+    throw new ForbiddenError();
+  }
+
+  const input = createHouseholdSchema.parse(rawInput);
+  const allowedSites = await resolveAllowedSites(user);
+  const site = allowedSites.find((candidate) => candidate.id === input.siteId);
+
+  if (!site) {
+    throw new ForbiddenError(householdMessages.outOfScopeSite);
+  }
+
+  const householdsRepository = getHouseholdsRepository();
+  const displayAddress = buildDisplayAddress(input);
+
+  return householdsRepository.findDuplicateAddress(input.siteId, displayAddress);
+}
