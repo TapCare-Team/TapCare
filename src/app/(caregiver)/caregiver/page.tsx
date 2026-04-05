@@ -3,15 +3,13 @@ import { Panel } from "@/components/shared/panel";
 import { StatCard } from "@/components/shared/stat-card";
 import { CaseloadTable } from "@/components/caregiver/caseload-table";
 import { requireUserWithRole } from "@/lib/auth";
-import { getOfficerHouseholds } from "@/modules/households/services/household-analytics.service";
+import { getHouseholdsByIds } from "@/modules/households/services/household-analytics.service";
 
 export const dynamic = "force-dynamic";
 
 export default async function CaregiverDashboardPage() {
   const user = await requireUserWithRole(["CAREGIVER", "ADMIN"]);
-  const households = (await getOfficerHouseholds(user.siteIds[0] ?? "site-sgo-bedok")).filter((household) =>
-    user.householdIds.includes(household.id)
-  );
+  const households = await getHouseholdsByIds(user.householdIds);
 
   return (
     <AppShell

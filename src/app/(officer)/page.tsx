@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 
 export default async function OfficerDashboardPage() {
   const user = await requireUserWithRole(["OFFICER", "ADMIN"]);
-  const summary = await getOfficerDashboardSummary(user.siteIds[0] ?? "site-sgo-bedok");
+  const summary = await getOfficerDashboardSummary(user.siteIds);
   const nav = [
     { href: "/households", label: "Households" },
     { href: "/follow-up", label: "Follow-up queue" }

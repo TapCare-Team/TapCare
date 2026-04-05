@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminAnalyticsPage() {
   const user = await requireUserWithRole(["ADMIN", "DEVELOPER"]);
-  const summary = await getOfficerDashboardSummary(user.siteIds[0] ?? "site-sgo-bedok");
+  const summary = await getOfficerDashboardSummary(user.siteIds);
 
   return (
     <AppShell

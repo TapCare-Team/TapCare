@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 export default async function HouseholdsPage() {
   const user = await requireUserWithRole(["OFFICER", "ADMIN"]);
-  const households = await getOfficerHouseholds(user.siteIds[0] ?? "site-sgo-bedok");
+  const households = await getOfficerHouseholds(user.siteIds);
 
   return (
     <AppShell

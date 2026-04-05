@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 export default async function FollowUpQueuePage() {
   const user = await requireUserWithRole(["OFFICER", "ADMIN"]);
-  const summary = await getOfficerDashboardSummary(user.siteIds[0] ?? "site-sgo-bedok");
+  const summary = await getOfficerDashboardSummary(user.siteIds);
 
   return (
     <AppShell
