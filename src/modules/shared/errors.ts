@@ -12,7 +12,7 @@ export class DomainError extends Error {
 }
 
 export class ForbiddenError extends DomainError {
-  constructor(message = commonMessages.forbidden) {
+  constructor(message: string = commonMessages.forbidden) {
     super(message, 403, "FORBIDDEN");
   }
 }

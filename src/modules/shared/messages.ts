@@ -30,3 +30,12 @@ export const signalMessages = {
 export const analyticsMessages = {
   invalidInteractionEventPayload: "Invalid interaction event payload"
 } as const;
+
+export const householdMessages = {
+  databaseUnavailable: "DATABASE_URL is required for household setup",
+  invalidCreatePayload: "Invalid household payload",
+  createFailed: "Unable to create household",
+  duplicateCheckFailed: "Unable to check for duplicate households",
+  duplicateAddress: "A household with the same address already exists in this satellite office",
+  outOfScopeSite: "Officers can only add households within their assigned satellite scope"
+} as const;
