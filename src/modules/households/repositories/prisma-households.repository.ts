@@ -61,4 +61,51 @@ export class PrismaHouseholdsRepository {
 
     return household ? mapPrismaHousehold(household) : null;
   }
+
+  async findDuplicateAddress(siteId: string, displayAddress: string) {
+    const household = await prisma.household.findFirst({
+      where: {
+        siteId,
+        status: "ACTIVE",
+        displayAddress: {
+          equals: displayAddress,
+          mode: "insensitive"
+        }
+      },
+      include: householdInclude
+    });
+
+    return household ? mapPrismaHousehold(household) : null;
+  }
+
+  async create(input: {
+    siteId: string;
+    addressLine1: string;
+    addressLine2?: string;
+    unitNumber?: string;
+    postalCode?: string;
+    displayAddress: string;
+    seniorDisplayName?: string;
+  }) {
+    const household = await prisma.household.create({
+      data: {
+        siteId: input.siteId,
+        addressLine1: input.addressLine1,
+        addressLine2: input.addressLine2,
+        unitNumber: input.unitNumber,
+        postalCode: input.postalCode,
+        displayAddress: input.displayAddress,
+        seniors: input.seniorDisplayName
+          ? {
+              create: {
+                displayAlias: input.seniorDisplayName
+              }
+            }
+          : undefined
+      },
+      include: householdInclude
+    });
+
+    return mapPrismaHousehold(household);
+  }
 }

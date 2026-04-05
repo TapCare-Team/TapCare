@@ -17,7 +17,8 @@ export default async function HouseholdsPage() {
       subtitle="See each household, the seniors linked to it, and any follow-up context."
       nav={[
         { href: "/", label: "Dashboard" },
-        { href: "/follow-up", label: "Follow-up queue" }
+        { href: "/follow-up", label: "Follow-up queue" },
+        { href: "/households/new", label: "Add household" }
       ]}
     >
       <Panel title="Household list" eyebrow="Your site">

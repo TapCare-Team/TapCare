@@ -1,4 +1,5 @@
 import { mockHouseholds } from "@/lib/mock-data";
+import type { Household } from "@/modules/households/domain/household";
 
 export class MockHouseholdsRepository {
   async listBySiteIds(siteIds: string[]) {
@@ -23,5 +24,26 @@ export class MockHouseholdsRepository {
         household.stickers.some((sticker) => sticker.publicCode === publicCode)
       ) ?? null
     );
+  }
+
+  async findDuplicateAddress(siteId: string, displayAddress: string) {
+    return (
+      mockHouseholds.find(
+        (household) =>
+          household.siteId === siteId && household.displayAddress.toLowerCase() === displayAddress.toLowerCase()
+      ) ?? null
+    );
+  }
+
+  async create(_input: {
+    siteId: string;
+    addressLine1: string;
+    addressLine2?: string;
+    unitNumber?: string;
+    postalCode?: string;
+    displayAddress: string;
+    seniorDisplayName?: string;
+  }): Promise<Household> {
+    throw new Error("Mock household creation is not supported");
   }
 }
