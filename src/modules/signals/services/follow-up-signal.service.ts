@@ -33,6 +33,23 @@ function openedByType(events: InteractionEvent[], stickerType: StickerType) {
   );
 }
 
+function groupEventsByHouseholdId(events: InteractionEvent[]) {
+  return events.reduce<Map<string, InteractionEvent[]>>((acc, event) => {
+    if (!event.householdId) {
+      return acc;
+    }
+
+    const householdEvents = acc.get(event.householdId);
+    if (householdEvents) {
+      householdEvents.push(event);
+    } else {
+      acc.set(event.householdId, [event]);
+    }
+
+    return acc;
+  }, new Map());
+}
+
 function makeSignal(params: {
   household: Household;
   signalType: SignalType;
@@ -60,9 +77,10 @@ export function deriveFollowUpSignals({
   now = new Date()
 }: BuildSignalsInput): FollowUpSignal[] {
   const signals: FollowUpSignal[] = [];
+  const eventsByHouseholdId = groupEventsByHouseholdId(events);
 
   for (const household of households) {
-    const householdEvents = events.filter((event) => event.householdId === household.id);
+    const householdEvents = eventsByHouseholdId.get(household.id) ?? [];
     const recentEvents = householdEvents.filter((event) => withinDays(new Date(event.occurredAt), now, 7));
 
     const emergencyEvents = openedByType(recentEvents, "EMERGENCY_CONTACT");
