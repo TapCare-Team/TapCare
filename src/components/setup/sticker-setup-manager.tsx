@@ -4,7 +4,14 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import type { DestinationType } from "@/modules/analytics/domain/analytics";
 import type { Household } from "@/modules/households/domain/household";
-import type { DestinationConfig, PageConfig, Sticker } from "@/modules/stickers/domain/sticker";
+import type {
+  ChecklistPageConfig,
+  DestinationConfig,
+  HelpProfilePageConfig,
+  PageConfig,
+  ResourcesPageConfig,
+  Sticker
+} from "@/modules/stickers/domain/sticker";
 
 type SetupManagerProps = {
   household: Household;
@@ -60,6 +67,9 @@ function stickerToFormState(sticker?: Sticker): EditableSticker {
   };
 }
 
+function buildPageContent(pageType: "CHECKLIST", raw: string): ChecklistPageConfig["content"];
+function buildPageContent(pageType: "HELP_PROFILE", raw: string): HelpProfilePageConfig["content"];
+function buildPageContent(pageType: "RESOURCES", raw: string): ResourcesPageConfig["content"];
 function buildPageContent(pageType: PageConfig["pageType"], raw: string) {
   const lines = raw
     .split("\n")
@@ -110,11 +120,23 @@ function buildPayload(householdId: string, form: EditableSticker) {
   }
 
   const page: PageConfig | undefined = form.pageTitle.trim()
-    ? {
-        pageType: form.pageType,
-        title: form.pageTitle.trim(),
-        content: buildPageContent(form.pageType, form.pageContentText)
-      }
+    ? form.pageType === "CHECKLIST"
+      ? {
+          pageType: "CHECKLIST",
+          title: form.pageTitle.trim(),
+          content: buildPageContent("CHECKLIST", form.pageContentText)
+        }
+      : form.pageType === "HELP_PROFILE"
+        ? {
+            pageType: "HELP_PROFILE",
+            title: form.pageTitle.trim(),
+            content: buildPageContent("HELP_PROFILE", form.pageContentText)
+          }
+        : {
+            pageType: "RESOURCES",
+            title: form.pageTitle.trim(),
+            content: buildPageContent("RESOURCES", form.pageContentText)
+          }
     : undefined;
 
   return { ...base, destination: undefined, page };

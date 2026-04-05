@@ -6,11 +6,49 @@ export const destinationConfigSchema = z.object({
   label: z.string().max(120).optional()
 });
 
-export const pageConfigSchema = z.object({
-  pageType: z.enum(["CHECKLIST", "HELP_PROFILE", "RESOURCES"]),
+const checklistPageConfigSchema = z.object({
+  pageType: z.literal("CHECKLIST"),
   title: z.string().min(1),
-  content: z.record(z.unknown())
+  content: z.object({
+    checklistItems: z.array(z.string().min(1)).min(1)
+  })
 });
+
+const helpProfilePageConfigSchema = z.object({
+  pageType: z.literal("HELP_PROFILE"),
+  title: z.string().min(1),
+  content: z.object({
+    helpFields: z
+      .array(
+        z.object({
+          label: z.string().min(1),
+          value: z.string().min(1)
+        })
+      )
+      .min(1)
+  })
+});
+
+const resourcesPageConfigSchema = z.object({
+  pageType: z.literal("RESOURCES"),
+  title: z.string().min(1),
+  content: z.object({
+    links: z
+      .array(
+        z.object({
+          label: z.string().min(1),
+          href: z.string().url()
+        })
+      )
+      .min(1)
+  })
+});
+
+export const pageConfigSchema = z.discriminatedUnion("pageType", [
+  checklistPageConfigSchema,
+  helpProfilePageConfigSchema,
+  resourcesPageConfigSchema
+]);
 
 const stickerTypeSchema = z.enum([
   "EMERGENCY_CONTACT",

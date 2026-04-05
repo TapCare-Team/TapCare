@@ -25,7 +25,7 @@ function toSiteScope(siteIds: string | string[]) {
   return normalizeSiteIds(Array.isArray(siteIds) ? siteIds : [siteIds]);
 }
 
-async function deriveScopedSignals(siteIds: string[]) {
+async function deriveScopedSignals(siteIds: string | string[]) {
   const normalizedSiteIds = toSiteScope(siteIds);
   const { householdsRepository, eventsRepository } = getHouseholdAnalyticsRepositories();
   const [households, events]: [Household[], InteractionEvent[]] =
