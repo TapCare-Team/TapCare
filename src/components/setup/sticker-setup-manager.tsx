@@ -437,9 +437,17 @@ export function StickerSetupManager({ household, initialStickers, canPersist }: 
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="text-lg font-semibold">{sticker.name}</p>
-                <p className="text-sm text-muted">
-                  {sticker.displayCode} | {sticker.stickerType.replaceAll("_", " ")} | {sticker.status}
-                </p>
+                <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted">
+                  <span className="rounded-full border border-black/10 bg-white px-3 py-1">
+                    {sticker.displayCode}
+                  </span>
+                  <span className="rounded-full border border-black/10 bg-white px-3 py-1">
+                    {sticker.stickerType.replaceAll("_", " ")}
+                  </span>
+                  <span className="rounded-full border border-black/10 bg-white px-3 py-1">
+                    {sticker.status}
+                  </span>
+                </div>
               </div>
               <div className="flex flex-wrap gap-3">
                 <button
