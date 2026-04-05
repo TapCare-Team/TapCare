@@ -12,21 +12,38 @@ export const pageConfigSchema = z.object({
   content: z.record(z.unknown())
 });
 
+const stickerTypeSchema = z.enum([
+  "EMERGENCY_CONTACT",
+  "FREQUENT_CONTACT",
+  "CHECKLIST_REMINDER",
+  "HELP_PROFILE",
+  "CURATED_RESOURCES"
+]);
+
+const runtimeModeSchema = z.enum(["DIRECT_REDIRECT", "RENDER_PAGE"]);
+const stickerStatusSchema = z.enum(["ACTIVE", "DISABLED"]);
+
 export const createStickerSchema = z.object({
   householdId: z.string().min(1),
-  stickerType: z.enum([
-    "EMERGENCY_CONTACT",
-    "FREQUENT_CONTACT",
-    "CHECKLIST_REMINDER",
-    "HELP_PROFILE",
-    "CURATED_RESOURCES"
-  ]),
-  runtimeMode: z.enum(["DIRECT_REDIRECT", "RENDER_PAGE"]),
-  status: z.enum(["ACTIVE", "DISABLED"]).default("ACTIVE"),
+  stickerType: stickerTypeSchema,
+  runtimeMode: runtimeModeSchema,
+  status: stickerStatusSchema.default("ACTIVE"),
   name: z.string().min(1),
   isCritical: z.boolean().default(false),
   destination: destinationConfigSchema.optional(),
   page: pageConfigSchema.optional()
 });
 
-export const updateStickerSchema = createStickerSchema.partial();
+export const updateStickerSchema = z.object({
+  stickerType: stickerTypeSchema.optional(),
+  runtimeMode: runtimeModeSchema.optional(),
+  status: stickerStatusSchema.optional(),
+  name: z.string().min(1).optional(),
+  isCritical: z.boolean().optional(),
+  destination: destinationConfigSchema.optional(),
+  page: pageConfigSchema.optional()
+});
+
+export const assignStickerHouseholdSchema = z.object({
+  householdId: z.string().min(1)
+});

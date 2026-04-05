@@ -1,12 +1,7 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth";
-import { canManageHousehold } from "@/modules/auth/services/access-control.service";
-import { PrismaHouseholdsRepository } from "@/modules/households/repositories/prisma-households.repository";
-import { assignStickerToHousehold } from "@/modules/stickers/services/sticker-setup.service";
-
-const schema = z.object({ householdId: z.string().min(1) });
-const householdsRepository = new PrismaHouseholdsRepository();
+import { assignStickerHouseholdSchema } from "@/modules/stickers/contracts/sticker-setup.contract";
+import { assignStickerToHouseholdForUser } from "@/modules/stickers/services/sticker-setup.service";
 
 export async function POST(
   request: Request,
@@ -18,24 +13,23 @@ export async function POST(
   }
 
   const body = await request.json();
-  const parsed = schema.safeParse(body);
+  const parsed = assignStickerHouseholdSchema.safeParse(body);
 
   if (!parsed.success) {
     return NextResponse.json({ error: "Invalid assign payload" }, { status: 400 });
   }
 
   try {
-    const household = await householdsRepository.getById(parsed.data.householdId);
-    if (!household) {
-      return NextResponse.json({ error: "Household not found" }, { status: 404 });
-    }
-    if (!canManageHousehold(user, household.id, household.siteId)) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-
-    const sticker = await assignStickerToHousehold(params.stickerId, parsed.data.householdId);
+    const sticker = await assignStickerToHouseholdForUser(user, params.stickerId, parsed.data.householdId);
     return NextResponse.json(sticker);
   } catch (error) {
+    if (error instanceof Error && (error.message === "Household not found" || error.message === "Sticker not found")) {
+      return NextResponse.json({ error: error.message }, { status: 404 });
+    }
+    if (error instanceof Error && error.message === "Forbidden") {
+      return NextResponse.json({ error: error.message }, { status: 403 });
+    }
+
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Unable to assign sticker" },
       { status: 400 }

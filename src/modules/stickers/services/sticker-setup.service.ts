@@ -1,3 +1,5 @@
+import type { SessionUser } from "@/modules/auth/domain/access";
+import { canManageHousehold } from "@/modules/auth/services/access-control.service";
 import type { Sticker } from "@/modules/stickers/domain/sticker";
 import { PrismaHouseholdsRepository } from "@/modules/households/repositories/prisma-households.repository";
 import { PrismaStickersRepository } from "@/modules/stickers/repositories/prisma-stickers.repository";
@@ -37,6 +39,37 @@ export async function listHouseholdStickers(householdId: string) {
   return stickersRepository.listByHouseholdId(householdId);
 }
 
+async function getManageableHousehold(user: SessionUser, householdId: string) {
+  const household = await householdsRepository.getById(householdId);
+  if (!household) {
+    throw new Error("Household not found");
+  }
+
+  if (!canManageHousehold(user, household.id, household.siteId)) {
+    throw new Error("Forbidden");
+  }
+
+  return household;
+}
+
+async function getManageableStickerScope(user: SessionUser, stickerId: string) {
+  const scope = await getStickerScope(stickerId);
+  if (!scope) {
+    throw new Error("Sticker not found");
+  }
+
+  if (!canManageHousehold(user, scope.householdId, scope.siteId)) {
+    throw new Error("Forbidden");
+  }
+
+  return scope;
+}
+
+export async function listHouseholdStickersForUser(user: SessionUser, householdId: string) {
+  await getManageableHousehold(user, householdId);
+  return listHouseholdStickers(householdId);
+}
+
 export async function createSticker(input: CreateStickerInput) {
   if (!isDatabaseConfigured()) {
     throw new Error("DATABASE_URL is required for setup APIs");
@@ -72,12 +105,27 @@ export async function createSticker(input: CreateStickerInput) {
   throw new Error("Unable to create sticker after retrying display code generation");
 }
 
+export async function createStickerForUser(user: SessionUser, input: CreateStickerInput) {
+  await getManageableHousehold(user, input.householdId);
+  return createSticker(input);
+}
+
 export async function updateSticker(stickerId: string, patch: Partial<Sticker>) {
   if (!isDatabaseConfigured()) {
     throw new Error("DATABASE_URL is required for setup APIs");
   }
 
   return stickersRepository.update(stickerId, patch);
+}
+
+export async function updateStickerForUser(user: SessionUser, stickerId: string, patch: Partial<Sticker>) {
+  await getManageableStickerScope(user, stickerId);
+  const sticker = await updateSticker(stickerId, patch);
+  if (!sticker) {
+    throw new Error("Sticker not found");
+  }
+
+  return sticker;
 }
 
 export async function assignStickerToHousehold(stickerId: string, householdId: string) {
@@ -93,10 +141,20 @@ export async function assignStickerToHousehold(stickerId: string, householdId: s
   return stickersRepository.assignHousehold(stickerId, householdId, household.siteId);
 }
 
+export async function assignStickerToHouseholdForUser(user: SessionUser, stickerId: string, householdId: string) {
+  await getManageableStickerScope(user, stickerId);
+  await getManageableHousehold(user, householdId);
+  return assignStickerToHousehold(stickerId, householdId);
+}
+
 export async function getStickerScope(stickerId: string) {
   if (!isDatabaseConfigured()) {
     throw new Error("DATABASE_URL is required for setup APIs");
   }
 
   return stickersRepository.getScopeById(stickerId);
+}
+
+export async function setStickerStatusForUser(user: SessionUser, stickerId: string, status: Sticker["status"]) {
+  return updateStickerForUser(user, stickerId, { status });
 }

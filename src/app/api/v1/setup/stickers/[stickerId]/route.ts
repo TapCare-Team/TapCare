@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
-import { canManageHousehold } from "@/modules/auth/services/access-control.service";
 import { updateStickerSchema } from "@/modules/stickers/contracts/sticker-setup.contract";
-import { getStickerScope, updateSticker } from "@/modules/stickers/services/sticker-setup.service";
+import { updateStickerForUser } from "@/modules/stickers/services/sticker-setup.service";
 
 export async function PATCH(
   request: Request,
@@ -21,21 +20,16 @@ export async function PATCH(
   }
 
   try {
-    const scope = await getStickerScope(params.stickerId);
-    if (!scope) {
-      return NextResponse.json({ error: "Sticker not found" }, { status: 404 });
-    }
-    if (!canManageHousehold(user, scope.householdId, scope.siteId)) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-
-    const sticker = await updateSticker(params.stickerId, parsed.data);
-    if (!sticker) {
-      return NextResponse.json({ error: "Sticker not found" }, { status: 404 });
-    }
-
+    const sticker = await updateStickerForUser(user, params.stickerId, parsed.data);
     return NextResponse.json(sticker);
   } catch (error) {
+    if (error instanceof Error && error.message === "Sticker not found") {
+      return NextResponse.json({ error: error.message }, { status: 404 });
+    }
+    if (error instanceof Error && error.message === "Forbidden") {
+      return NextResponse.json({ error: error.message }, { status: 403 });
+    }
+
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Unable to update sticker" },
       { status: 400 }
