@@ -14,13 +14,13 @@ export default async function HouseholdsPage() {
   return (
     <AppShell
       title="Seniors and Households"
-      subtitle="Operational household list with activation state and follow-up context."
+      subtitle="See each household, the seniors linked to it, and any follow-up context."
       nav={[
         { href: "/", label: "Dashboard" },
         { href: "/follow-up", label: "Follow-up queue" }
       ]}
     >
-      <Panel title="Household list" eyebrow="Site scope">
+      <Panel title="Household list" eyebrow="Your site">
         <div className="space-y-4">
           {households.map((household) => (
             <div key={household.id} className="rounded-2xl border border-black/5 bg-white p-4">

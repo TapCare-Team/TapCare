@@ -1,4 +1,5 @@
 import type { SignalType } from "@/modules/signals/domain/follow-up-signal";
+import { labelForFollowUpReason } from "@/modules/signals/domain/follow-up-reason-label";
 
 const colors: Record<SignalType, string> = {
   REPEATED_EMERGENCY_USAGE: "bg-orange-100 text-orange-700",
@@ -13,7 +14,7 @@ const colors: Record<SignalType, string> = {
 export function SignalBadge({ signalType }: { signalType: SignalType }) {
   return (
     <span className={`rounded-full px-3 py-1 text-xs font-medium ${colors[signalType]}`}>
-      {signalType.replaceAll("_", " ")}
+      {labelForFollowUpReason(signalType)}
     </span>
   );
 }

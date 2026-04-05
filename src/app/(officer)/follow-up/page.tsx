@@ -13,13 +13,13 @@ export default async function FollowUpQueuePage() {
   return (
     <AppShell
       title="Follow-up Queue"
-      subtitle="Read explainable signals first, then decide whether outreach is appropriate."
+      subtitle="Review the recent reasons for follow-up, then decide whether outreach is needed."
       nav={[
         { href: "/", label: "Dashboard" },
         { href: "/households", label: "Households" }
       ]}
     >
-      <Panel title="Active signals" eyebrow="Operational triage">
+      <Panel title="Households needing review" eyebrow="Follow-up">
         <FollowUpList signals={summary.signals} />
       </Panel>
     </AppShell>
