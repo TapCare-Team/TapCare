@@ -3,6 +3,10 @@ import { SignalBadge } from "@/components/shared/signal-badge";
 import type { FollowUpSignal } from "@/modules/signals/domain/follow-up-signal";
 
 export function FollowUpList({ signals }: { signals: FollowUpSignal[] }) {
+  if (signals.length === 0) {
+    return <p className="text-sm text-muted">No households matched the selected follow-up reason.</p>;
+  }
+
   return (
     <div className="space-y-3">
       {signals.map((signal) => (
@@ -16,7 +20,16 @@ export function FollowUpList({ signals }: { signals: FollowUpSignal[] }) {
               Open household
             </Link>
           </div>
-          <p className="mt-2 text-sm text-muted">Last activity seen {new Date(signal.lastObservedAt).toLocaleString()}</p>
+          <p className="mt-2 text-sm text-muted">
+            Last activity seen{" "}
+            {new Date(signal.lastObservedAt).toLocaleString([], {
+              year: "numeric",
+              month: "numeric",
+              day: "numeric",
+              hour: "numeric",
+              minute: "2-digit"
+            })}
+          </p>
         </div>
       ))}
     </div>
