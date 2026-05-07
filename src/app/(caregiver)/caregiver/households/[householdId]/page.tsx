@@ -35,7 +35,7 @@ export default async function CaregiverHouseholdPage({
       title={detail.household.displayAddress}
       subtitle="Household usage summary and sticker setup access for assigned caregivers."
       nav={[
-        { href: "/caregiver", label: "Back to caregiver view" },
+        { href: "/caregiver", label: "Caregiver view" },
         { href: `/caregiver/households/${detail.household.id}/stickers`, label: "Manage stickers" }
       ]}
       homeHref="/caregiver"

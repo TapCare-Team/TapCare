@@ -25,7 +25,7 @@ export function CaseloadTable({ households }: { households: AwaitedHouseholdList
               </td>
               <td className="px-4 py-4 text-sm">{household.signal?.signalType.replaceAll("_", " ") ?? "None"}</td>
               <td className="px-4 py-4 text-right">
-                <Link href={`/caregiver/households/${household.id}`} className="font-medium">
+                <Link href={`/caregiver/households/${household.id}/stickers`} className="font-medium">
                   Open
                 </Link>
               </td>

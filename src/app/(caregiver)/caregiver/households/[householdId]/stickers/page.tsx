@@ -25,8 +25,8 @@ export default async function CaregiverStickerSetupPage({
       title="Sticker setup"
       subtitle={`Configure household-specific sticker routing for ${detail.household.displayAddress}.`}
       nav={[
-        { href: `/caregiver/households/${detail.household.id}`, label: "Back to household" },
-        { href: "/caregiver", label: "Caregiver view" }
+        { href: "/caregiver", label: "Caregiver view" },
+        { href: `/caregiver/households/${detail.household.id}`, label: "Household" }
       ]}
       homeHref="/caregiver"
     >
