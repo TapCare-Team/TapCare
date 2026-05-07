@@ -1,0 +1,70 @@
+name: Feature Request
+description: Propose a user-facing product improvement.
+title: "feat: "
+labels: ["feature"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or Opportunity
+      description: What user need, workflow gap, or operational issue should this solve?
+      placeholder: Officers need to...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: primary_user
+    attributes:
+      label: Primary User
+      description: Who benefits most from this change?
+      options:
+        - SGO satellite office officer
+        - Caregiver / household member
+        - Admin / developer
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected_behavior
+    attributes:
+      label: Expected Behavior
+      description: What should the product do when this is complete?
+      placeholder: When an officer opens...
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: product_area
+    attributes:
+      label: Product Area
+      description: Select all areas this feature may affect.
+      options:
+        - label: Officer dashboard / follow-up visibility
+        - label: Household management
+        - label: Follow-up signals or heuristics
+        - label: NFC / sticker setup or runtime
+        - label: Analytics or reporting
+        - label: Admin / developer observability
+
+  - type: textarea
+    id: privacy
+    attributes:
+      label: Privacy Notes
+      description: Mention any PII, analytics, logs, or sensitive data this might involve.
+      placeholder: This should not store message contents...
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: Acceptance Criteria
+      description: What must be true for this to be considered done?
+      placeholder: |
+        - Officers can...
+        - Invalid inputs show...
+        - Tests cover...
+    validations:
+      required: true
+

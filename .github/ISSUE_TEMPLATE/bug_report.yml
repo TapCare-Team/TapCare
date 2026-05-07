@@ -1,0 +1,77 @@
+name: Bug Report
+description: Report broken or incorrect behavior.
+title: "fix: "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: current_behavior
+    attributes:
+      label: Current Behavior
+      description: What is happening now?
+      placeholder: The dashboard shows...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected_behavior
+    attributes:
+      label: Expected Behavior
+      description: What should happen instead?
+      placeholder: It should...
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps_to_reproduce
+    attributes:
+      label: Steps to Reproduce
+      description: List the shortest steps that reproduce the issue.
+      placeholder: |
+        1. Log in as...
+        2. Go to...
+        3. Click...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: affected_user
+    attributes:
+      label: Affected User
+      options:
+        - SGO satellite office officer
+        - Caregiver / household member
+        - Admin / developer
+        - Unknown
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: affected_area
+    attributes:
+      label: Affected Area
+      description: Select all areas that seem related.
+      options:
+        - label: Officer dashboard / follow-up visibility
+        - label: Household management
+        - label: Follow-up signals or heuristics
+        - label: NFC / sticker setup or runtime
+        - label: Analytics or reporting
+        - label: Login / access control
+        - label: API / database
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Add screenshots, error messages, or non-sensitive logs.
+      placeholder: Paste non-sensitive evidence here.
+
+  - type: checkboxes
+    id: privacy_check
+    attributes:
+      label: Privacy Check
+      description: Confirm evidence does not include sensitive content.
+      options:
+        - label: Evidence does not include call contents, WhatsApp contents, message contents, or unnecessary PII.
+          required: true
+
