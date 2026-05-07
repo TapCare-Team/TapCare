@@ -1,0 +1,314 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Site {
+  id         String         @id @default(cuid())
+  code       String         @unique
+  name       String
+  region     String?
+  households Household[]
+  users      UserSiteRole[]
+  stickers   Sticker[]
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+}
+
+model User {
+  id                   String                @id @default(cuid())
+  email                String                @unique
+  displayName          String
+  status               UserStatus            @default(ACTIVE)
+  globalRole           GlobalRole            @default(OFFICER)
+  siteRoles            UserSiteRole[]
+  householdAssignments HouseholdAssignment[]
+  reviews              FollowUpReview[]
+  auditLogs            AuditLog[]
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+}
+
+model UserSiteRole {
+  id        String   @id @default(cuid())
+  userId    String
+  siteId    String
+  role      SiteRole
+  user      User     @relation(fields: [userId], references: [id])
+  site      Site     @relation(fields: [siteId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([userId, siteId, role])
+}
+
+model HouseholdAssignment {
+  id          String    @id @default(cuid())
+  householdId String
+  caregiverId String
+  assignedAt  DateTime  @default(now())
+  endedAt     DateTime?
+  household   Household @relation(fields: [householdId], references: [id])
+  caregiver   User      @relation(fields: [caregiverId], references: [id])
+
+  @@index([caregiverId, endedAt])
+  @@index([householdId, endedAt])
+  @@unique([householdId, caregiverId, assignedAt])
+}
+
+model Household {
+  id              String                @id @default(cuid())
+  siteId          String
+  status          HouseholdStatus       @default(ACTIVE)
+  addressLine1    String
+  addressLine2    String?
+  unitNumber      String?
+  postalCode      String?
+  displayAddress  String
+  lastActiveAt    DateTime?
+  site            Site                  @relation(fields: [siteId], references: [id])
+  assignments     HouseholdAssignment[]
+  seniors         SeniorProfile[]
+  stickers        Sticker[]
+  events          InteractionEvent[]
+  signals         FollowUpSignal[]
+  reviews         FollowUpReview[]
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+}
+
+model SeniorProfile {
+  id           String       @id @default(cuid())
+  householdId  String
+  displayAlias String
+  status       SeniorStatus @default(ACTIVE)
+  household    Household    @relation(fields: [householdId], references: [id])
+  events       InteractionEvent[]
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+}
+
+model Sticker {
+  id                  String            @id @default(cuid())
+  displayCode         String
+  publicCode          String            @unique
+  householdId         String
+  siteId              String
+  name                String
+  isCritical          Boolean           @default(false)
+  stickerType         StickerType
+  runtimeMode         RuntimeMode
+  status              StickerStatus     @default(ACTIVE)
+  destinationConfigId String?           @unique
+  pageConfigId        String?           @unique
+  household           Household         @relation(fields: [householdId], references: [id])
+  site                Site              @relation(fields: [siteId], references: [id])
+  destinationConfig   DestinationConfig? @relation(fields: [destinationConfigId], references: [id])
+  pageConfig          PageConfig?       @relation(fields: [pageConfigId], references: [id])
+  events              InteractionEvent[]
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  @@index([householdId, status])
+  @@index([siteId, status])
+  @@unique([householdId, displayCode])
+}
+
+model DestinationConfig {
+  id               String          @id @default(cuid())
+  destinationType  DestinationType
+  destinationValue String
+  label            String?
+  sticker          Sticker?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+}
+
+model PageConfig {
+  id           String        @id @default(cuid())
+  pageType     PageType
+  title        String
+  content      Json
+  sticker      Sticker?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model InteractionEvent {
+  id               String            @id @default(cuid())
+  occurredAt       DateTime
+  siteId           String
+  householdId      String?
+  seniorProfileId  String?
+  stickerId        String?
+  publicCode       String?
+  stickerType      StickerType?
+  runtimeMode      RuntimeMode?
+  eventType        InteractionEventType
+  outcome          EventOutcome
+  destinationType  DestinationType?
+  failureReason    FailureReason?
+  sessionTokenHash String?
+  metadata         Json?
+  household        Household?        @relation(fields: [householdId], references: [id])
+  seniorProfile    SeniorProfile?    @relation(fields: [seniorProfileId], references: [id])
+  sticker          Sticker?          @relation(fields: [stickerId], references: [id])
+
+  @@index([siteId, occurredAt])
+  @@index([householdId, occurredAt])
+  @@index([stickerId, occurredAt])
+  @@index([eventType, occurredAt])
+}
+
+model FollowUpSignal {
+  id              String       @id @default(cuid())
+  householdId     String
+  seniorProfileId String?
+  siteId          String
+  signalType      SignalType
+  status          SignalStatus @default(ACTIVE)
+  firstObservedAt DateTime
+  lastObservedAt  DateTime
+  explanation     String
+  evidence        Json
+  household       Household    @relation(fields: [householdId], references: [id])
+
+  @@index([siteId, status, lastObservedAt])
+  @@index([householdId, status])
+}
+
+model FollowUpReview {
+  id           String       @id @default(cuid())
+  householdId  String
+  signalId     String?
+  reviewerId   String
+  status       ReviewStatus @default(PENDING)
+  note         String?
+  reviewedAt   DateTime?
+  snoozedUntil DateTime?
+  household    Household    @relation(fields: [householdId], references: [id])
+  reviewer     User         @relation(fields: [reviewerId], references: [id])
+
+  @@index([reviewerId, status])
+  @@index([householdId, status])
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  actorUserId String
+  action      String
+  entityType  String
+  entityId    String
+  occurredAt  DateTime @default(now())
+  metadata    Json?
+  actor       User     @relation(fields: [actorUserId], references: [id])
+}
+
+enum GlobalRole {
+  OFFICER
+  CAREGIVER
+  ADMIN
+  DEVELOPER
+}
+
+enum SiteRole {
+  SITE_OFFICER
+  SITE_MANAGER
+  SITE_VIEWER
+  CAREGIVER_VIEWER
+}
+
+enum UserStatus {
+  ACTIVE
+  DISABLED
+}
+
+enum HouseholdStatus {
+  ACTIVE
+  INACTIVE
+  ARCHIVED
+}
+
+enum SeniorStatus {
+  ACTIVE
+  INACTIVE
+  ARCHIVED
+}
+
+enum StickerType {
+  EMERGENCY_CONTACT
+  FREQUENT_CONTACT
+  CHECKLIST_REMINDER
+  HELP_PROFILE
+  CURATED_RESOURCES
+}
+
+enum RuntimeMode {
+  DIRECT_REDIRECT
+  RENDER_PAGE
+}
+
+enum StickerStatus {
+  ACTIVE
+  DISABLED
+}
+
+enum DestinationType {
+  WHATSAPP
+  PHONE
+  EXTERNAL_URL
+}
+
+enum PageType {
+  CHECKLIST
+  HELP_PROFILE
+  RESOURCES
+}
+
+enum InteractionEventType {
+  STICKER_OPENED
+  REDIRECT_ISSUED
+  PAGE_RENDERED
+  PAGE_ACTION_CLICKED
+}
+
+enum EventOutcome {
+  SUCCESS
+  FAILED
+}
+
+enum FailureReason {
+  INVALID_CODE
+  DISABLED_STICKER
+  INVALID_DESTINATION
+  MISSING_CONFIGURATION
+  BROKEN_LINK
+  UNKNOWN
+}
+
+enum SignalType {
+  REPEATED_EMERGENCY_USAGE
+  REPEATED_HELP_PROFILE_USAGE
+  HIGH_CONTACT_USAGE
+  HIGH_REMINDER_USAGE
+  SUDDEN_INACTIVITY
+  NO_ACTIVE_CRITICAL_STICKER
+  REPEATED_FAILED_INTERACTIONS
+}
+
+enum SignalStatus {
+  ACTIVE
+  REVIEWED
+  DISMISSED
+  RESOLVED
+}
+
+enum ReviewStatus {
+  PENDING
+  REVIEWED
+  SNOOZED
+  CLOSED
+}

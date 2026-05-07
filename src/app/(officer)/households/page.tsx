@@ -1,0 +1,48 @@
+import Link from "next/link";
+import { AppShell } from "@/components/shared/app-shell";
+import { Panel } from "@/components/shared/panel";
+import { SignalBadge } from "@/components/shared/signal-badge";
+import { requireUserWithRole } from "@/lib/auth";
+import { getOfficerHouseholds } from "@/modules/households/services/household-analytics.service";
+
+export const dynamic = "force-dynamic";
+
+export default async function HouseholdsPage() {
+  const user = await requireUserWithRole(["OFFICER", "ADMIN"]);
+  const households = await getOfficerHouseholds(user.siteIds);
+
+  return (
+    <AppShell
+      title="Seniors and Households"
+      subtitle="See each household, the seniors linked to it, and any follow-up context."
+      nav={[
+        { href: "/", label: "Dashboard" },
+        { href: "/follow-up", label: "Follow-up queue" },
+        { href: "/households/new", label: "Add household" }
+      ]}
+    >
+      <Panel title="Household list" eyebrow="Your site">
+        <div className="space-y-4">
+          {households.map((household) => (
+            <div key={household.id} className="rounded-2xl border border-black/5 bg-white p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="font-semibold">{household.displayAddress}</p>
+                  <p className="text-sm text-muted">
+                    {household.seniorAliases.join(", ")} | {household.siteName}
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  {household.signal ? <SignalBadge signalType={household.signal.signalType} /> : null}
+                  <Link href={`/households/${household.id}`} className="font-medium">
+                    View details
+                  </Link>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Panel>
+    </AppShell>
+  );
+}
