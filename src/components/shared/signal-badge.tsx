@@ -13,7 +13,7 @@ const colors: Record<SignalType, string> = {
 
 export function SignalBadge({ signalType }: { signalType: SignalType }) {
   return (
-    <span className={`rounded-full px-3 py-1 text-xs font-medium ${colors[signalType]}`}>
+    <span className={`whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium ${colors[signalType]}`}>
       {labelForFollowUpReason(signalType)}
     </span>
   );

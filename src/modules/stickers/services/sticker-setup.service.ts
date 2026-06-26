@@ -135,6 +135,19 @@ export async function updateStickerForUser(user: SessionUser, stickerId: string,
   return sticker;
 }
 
+export async function deleteStickerForUser(user: SessionUser, stickerId: string) {
+  await getManageableStickerScope(user, stickerId);
+
+  if (!isDatabaseConfigured()) {
+    throw new ConfigurationError(setupMessages.databaseUnavailable, "SETUP_DATABASE_UNAVAILABLE");
+  }
+
+  const deleted = await stickersRepository.delete(stickerId);
+  if (!deleted) {
+    throw new NotFoundError(setupMessages.stickerNotFound, "STICKER_NOT_FOUND");
+  }
+}
+
 export async function assignStickerToHousehold(stickerId: string, householdId: string) {
   if (!isDatabaseConfigured()) {
     throw new ConfigurationError(setupMessages.databaseUnavailable, "SETUP_DATABASE_UNAVAILABLE");

@@ -2,6 +2,12 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import {
+  validateHouseholdAddressLine1,
+  validateOptionalAddressLine2,
+  validateOptionalPostalCode,
+  validateOptionalUnitNumber
+} from "@/modules/households/domain/household-input-validation";
 
 type SiteOption = {
   id: string;
@@ -29,8 +35,22 @@ export function HouseholdCreateForm({
   const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
   const [isCheckingDuplicate, setIsCheckingDuplicate] = useState(false);
 
+  function validateForm() {
+    return (
+      validateHouseholdAddressLine1(addressLine1) ||
+      validateOptionalAddressLine2(addressLine2) ||
+      validateOptionalUnitNumber(unitNumber) ||
+      validateOptionalPostalCode(postalCode)
+    );
+  }
+
   async function checkDuplicate() {
     if (!canPersist || !siteId || !addressLine1.trim()) {
+      setDuplicateWarning(null);
+      return;
+    }
+
+    if (validateForm()) {
       setDuplicateWarning(null);
       return;
     }
@@ -95,6 +115,14 @@ export function HouseholdCreateForm({
     setIsSubmitting(true);
     setError(null);
 
+    const validationError = validateForm();
+
+    if (validationError) {
+      setError(validationError);
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
       const response = await fetch("/api/v1/officer/households", {
         method: "POST",
@@ -118,7 +146,7 @@ export function HouseholdCreateForm({
         return;
       }
 
-      router.push(`/households/${payload.id}`);
+      router.replace("/");
       router.refresh();
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "Unable to create household");
@@ -160,7 +188,10 @@ export function HouseholdCreateForm({
         Block and street address
         <input
           value={addressLine1}
-          onChange={(event) => setAddressLine1(event.target.value)}
+          onChange={(event) => {
+            setAddressLine1(event.target.value);
+            setError(null);
+          }}
           onBlur={checkDuplicate}
           className="rounded-2xl border border-black/10 bg-white px-4 py-3 text-ink"
           placeholder="e.g. Blk 18 Bedok South Road"
@@ -173,7 +204,10 @@ export function HouseholdCreateForm({
         Additional address details
         <input
           value={addressLine2}
-          onChange={(event) => setAddressLine2(event.target.value)}
+          onChange={(event) => {
+            setAddressLine2(event.target.value);
+            setError(null);
+          }}
           onBlur={checkDuplicate}
           className="rounded-2xl border border-black/10 bg-white px-4 py-3 text-ink"
           placeholder="e.g. Opposite market or lift lobby"
@@ -186,7 +220,10 @@ export function HouseholdCreateForm({
           Unit number
           <input
             value={unitNumber}
-            onChange={(event) => setUnitNumber(event.target.value)}
+            onChange={(event) => {
+              setUnitNumber(event.target.value);
+              setError(null);
+            }}
             onBlur={checkDuplicate}
             className="rounded-2xl border border-black/10 bg-white px-4 py-3 text-ink"
             placeholder="#05-123"
@@ -198,7 +235,10 @@ export function HouseholdCreateForm({
           Postal code
           <input
             value={postalCode}
-            onChange={(event) => setPostalCode(event.target.value)}
+            onChange={(event) => {
+              setPostalCode(event.target.value.replace(/\D/g, "").slice(0, 6));
+              setError(null);
+            }}
             onBlur={checkDuplicate}
             className="rounded-2xl border border-black/10 bg-white px-4 py-3 text-ink"
             placeholder="460018"
@@ -213,20 +253,15 @@ export function HouseholdCreateForm({
         Senior display name
         <input
           value={seniorDisplayName}
-          onChange={(event) => setSeniorDisplayName(event.target.value)}
+          onChange={(event) => {
+            setSeniorDisplayName(event.target.value);
+            setError(null);
+          }}
           className="rounded-2xl border border-black/10 bg-white px-4 py-3 text-ink"
           placeholder="Optional, for easier officer identification"
           disabled={!canPersist || isSubmitting}
         />
       </label>
-
-      {isCheckingDuplicate ? <p className="text-sm text-muted">Checking for existing household records...</p> : null}
-      {duplicateWarning ? (
-        <div className="rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          {duplicateWarning}
-        </div>
-      ) : null}
-      {error ? <p className="text-sm text-red-600">{error}</p> : null}
 
       <div className="flex flex-wrap items-center gap-3">
         <button
@@ -236,6 +271,16 @@ export function HouseholdCreateForm({
         >
           {isSubmitting ? "Creating household..." : "Create household"}
         </button>
+      </div>
+
+      <div className="space-y-2" aria-live="polite">
+        {isCheckingDuplicate ? <p className="text-sm text-muted">Checking for existing household records...</p> : null}
+        {duplicateWarning ? (
+          <div className="rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            {duplicateWarning}
+          </div>
+        ) : null}
+        {error ? <p className="text-sm text-red-600">{error}</p> : null}
       </div>
     </form>
   );

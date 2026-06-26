@@ -7,6 +7,10 @@ function normalizePublicCode(publicCode: string) {
   return publicCode.trim().toLowerCase();
 }
 
+function isValidPublicCode(publicCode: string) {
+  return /^[a-z0-9][a-z0-9-]{5,79}$/.test(publicCode);
+}
+
 function logStickerOpened(record: RuntimeRecord) {
   logger.info("sticker_opened", {
     publicCode: record.sticker.publicCode,
@@ -17,8 +21,61 @@ function logStickerOpened(record: RuntimeRecord) {
   });
 }
 
+function normalizeContactDestinationUrl(destination: RuntimeRecord["sticker"]["destination"]) {
+  if (!destination) {
+    return null;
+  }
+
+  const value = destination.value.trim();
+
+  if (destination.type === "PHONE") {
+    if (value.startsWith("tel:")) {
+      return value;
+    }
+
+    const digitsOnly = value.replace(/[^\d]/g, "");
+    if (digitsOnly.length >= 8 && digitsOnly.length <= 15) {
+      return value.startsWith("+") ? `tel:+${digitsOnly}` : `tel:${digitsOnly}`;
+    }
+
+    return null;
+  }
+
+  if (destination.type === "WHATSAPP") {
+    if (/^https:\/\/wa\.me\/\d{8,15}$/.test(value)) {
+      return value;
+    }
+
+    const digitsOnly = value.replace(/[^\d]/g, "");
+    if (digitsOnly.length >= 8 && digitsOnly.length <= 15) {
+      return `https://wa.me/${digitsOnly}`;
+    }
+
+    return null;
+  }
+
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" ? value : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function resolvePublicRuntime(publicCode: string): Promise<PublicRuntimeResolution> {
   const normalized = normalizePublicCode(publicCode);
+
+  if (!isValidPublicCode(normalized)) {
+    logger.warn("sticker_opened", { publicCode: normalized, outcome: "INVALID_CODE_FORMAT" });
+    await recordRuntimeEvent({
+      publicCode: normalized,
+      eventType: "STICKER_OPENED",
+      outcome: "FAILED",
+      failureReason: "INVALID_CODE"
+    });
+    return { kind: "NOT_FOUND", publicCode: normalized };
+  }
+
   const { runtimeRepository } = getPublicRuntimeRepositories();
   const record = await runtimeRepository.getByPublicCode(normalized);
 
@@ -66,6 +123,30 @@ export async function resolvePublicRuntime(publicCode: string): Promise<PublicRu
   });
 
   if (record.sticker.runtimeMode === "DIRECT_REDIRECT" && record.sticker.destination) {
+    const destinationUrl = normalizeContactDestinationUrl(record.sticker.destination);
+    if (!destinationUrl) {
+      logger.warn("sticker_opened", {
+        publicCode: normalized,
+        householdId: record.household.id,
+        stickerId: record.sticker.id,
+        outcome: "INVALID_DESTINATION"
+      });
+      await recordRuntimeEvent({
+        publicCode: normalized,
+        household: record.household,
+        sticker: record.sticker,
+        eventType: "STICKER_OPENED",
+        outcome: "FAILED",
+        failureReason: "INVALID_DESTINATION"
+      });
+      return {
+        kind: "DISABLED",
+        publicCode: normalized,
+        household: record.household,
+        sticker: record.sticker
+      };
+    }
+
     logger.info("redirect_issued", {
       publicCode: normalized,
       householdId: record.household.id,
@@ -85,7 +166,7 @@ export async function resolvePublicRuntime(publicCode: string): Promise<PublicRu
       publicCode: normalized,
       household: record.household,
       sticker: record.sticker,
-      destinationUrl: record.sticker.destination.value
+      destinationUrl
     };
   }
 

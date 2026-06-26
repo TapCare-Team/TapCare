@@ -23,6 +23,44 @@ function TelRedirectPage({ href }: { href: string }) {
   );
 }
 
+function ChecklistItem({ item }: { item: string }) {
+  const labelledLinkMatch = item.match(/^(.+?)\s*\|\s*(https?:\/\/\S+)$/);
+
+  if (labelledLinkMatch) {
+    const [, label, rawHref] = labelledLinkMatch;
+    const href = rawHref.replace(/[.,;!?]+$/, "");
+
+    return (
+      <div className="space-y-2">
+        <p className="font-medium text-ink">{label.trim()}</p>
+        <a className="break-all font-medium text-accent" href={href}>
+          {href}
+        </a>
+      </div>
+    );
+  }
+
+  const urlMatch = item.match(/https?:\/\/\S+/);
+
+  if (!urlMatch) {
+    return <>{item}</>;
+  }
+
+  const href = urlMatch[0].replace(/[.,;!?]+$/, "");
+  const [before, ...afterParts] = item.split(href);
+  const after = afterParts.join(href);
+
+  return (
+    <>
+      {before}
+      <a className="font-medium text-accent" href={href}>
+        {href}
+      </a>
+      {after}
+    </>
+  );
+}
+
 export default async function PublicStickerPage({
   params
 }: {
@@ -54,6 +92,7 @@ export default async function PublicStickerPage({
   }
 
   const { sticker, household, page } = resolution;
+
   await acknowledgeRenderedRuntimePage(resolution);
 
   return (
@@ -69,7 +108,7 @@ export default async function PublicStickerPage({
           <ul className="space-y-3">
             {page.content.checklistItems?.map((item) => (
               <li key={item} className="rounded-2xl border border-black/5 p-4">
-                {item}
+                <ChecklistItem item={item} />
               </li>
             ))}
           </ul>

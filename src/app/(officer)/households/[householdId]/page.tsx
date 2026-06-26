@@ -1,4 +1,6 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
+import { DeleteHouseholdButton } from "@/components/households/delete-household-button";
 import { AppShell } from "@/components/shared/app-shell";
 import { Panel } from "@/components/shared/panel";
 import { RecentActivityFilter } from "@/components/shared/recent-activity-filter";
@@ -34,13 +36,23 @@ export default async function HouseholdDetailPage({
     <AppShell
       title={detail.household.displayAddress}
       subtitle="Review household activity, sticker status, and reasons this household may need follow-up."
-      nav={[
-        { href: "/", label: "Dashboard" },
-        { href: "/households", label: "Back to households" },
-        { href: `/households/${detail.household.id}/stickers`, label: "Manage stickers" },
-        { href: "/follow-up", label: "Follow-up queue" }
-      ]}
+      nav={[{ href: "/", label: "Household list", replace: true }]}
     >
+      {user.role === "ADMIN" ? (
+        <Panel title="Household actions" eyebrow="Admin">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <p className="max-w-2xl text-sm text-muted">
+              Archive this household when it should no longer appear in active officer workflows. Existing stickers will
+              be disabled, while historical interaction events remain available for analytics.
+            </p>
+            <DeleteHouseholdButton
+              householdId={detail.household.id}
+              householdLabel={detail.household.displayAddress}
+            />
+          </div>
+        </Panel>
+      ) : null}
+
       <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
         <Panel title="Why this household may need follow-up" eyebrow="Follow-up">
           <div className="space-y-4">
@@ -59,7 +71,18 @@ export default async function HouseholdDetailPage({
           </div>
         </Panel>
 
-        <Panel title="Sticker status" eyebrow="Current setup">
+        <Panel
+          title="Sticker status"
+          eyebrow="Current setup"
+          action={
+            <Link
+              href={`/households/${detail.household.id}/stickers`}
+              className="rounded-full border border-accent/20 bg-accentSoft px-4 py-2 text-sm text-accent transition hover:bg-white"
+            >
+              Manage stickers
+            </Link>
+          }
+        >
           <div className="space-y-3">
             {detail.household.stickers.map((sticker) => (
               <div key={sticker.id} className="rounded-2xl border border-black/5 bg-white p-4">

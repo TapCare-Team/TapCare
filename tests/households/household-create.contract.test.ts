@@ -37,4 +37,56 @@ describe("createHouseholdSchema", () => {
       })
     ).toThrow("Postal code must be 6 digits");
   });
+
+  it("rejects addresses that do not include a number and name", () => {
+    expect(() =>
+      createHouseholdSchema.parse({
+        siteId: "site-sgo-bedok",
+        addressLine1: "Bedok"
+      })
+    ).toThrow("Block and street address must include both a number and a street or building name");
+  });
+
+  it("rejects unit numbers that do not start with #", () => {
+    expect(() =>
+      createHouseholdSchema.parse({
+        siteId: "site-sgo-bedok",
+        addressLine1: "Blk 18 Bedok South Road",
+        unitNumber: "05-123"
+      })
+    ).toThrow("Unit number should look like #03-145");
+  });
+
+  it("rejects incomplete unit numbers", () => {
+    expect(() =>
+      createHouseholdSchema.parse({
+        siteId: "site-sgo-bedok",
+        addressLine1: "Blk 809 Bedok North Street 2",
+        unitNumber: "#09"
+      })
+    ).toThrow("Unit number should look like #03-145");
+  });
+
+  it("rejects obvious placeholder household input", () => {
+    const result = createHouseholdSchema.safeParse({
+      siteId: "site-sgo-bedok",
+      addressLine1: "809 hkhkj",
+      addressLine2: "xrdcfgvhb",
+      unitNumber: "#09",
+      postalCode: "123456"
+    });
+
+    expect(result.success).toBe(false);
+
+    if (!result.success) {
+      expect(result.error.issues.map((issue) => issue.message)).toEqual(
+        expect.arrayContaining([
+          "Block and street address should include a recognizable street type, such as Road, Street, Avenue, Drive, Lane, or Close.",
+          "Additional address details look invalid. Please enter a real landmark or leave it blank.",
+          "Unit number should look like #03-145.",
+          "Postal code looks like a placeholder. Please enter the actual 6-digit postal code."
+        ])
+      );
+    }
+  });
 });

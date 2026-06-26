@@ -3,7 +3,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { commonMessages, setupMessages } from "@/modules/shared/messages";
 import { updateStickerSchema } from "@/modules/stickers/contracts/sticker-setup.contract";
 import { toSetupRouteErrorResponse } from "@/modules/stickers/services/sticker-setup-route.service";
-import { updateStickerForUser } from "@/modules/stickers/services/sticker-setup.service";
+import { deleteStickerForUser, updateStickerForUser } from "@/modules/stickers/services/sticker-setup.service";
 
 export async function PATCH(
   request: Request,
@@ -18,7 +18,13 @@ export async function PATCH(
   const parsed = updateStickerSchema.safeParse(body);
 
   if (!parsed.success) {
-    return NextResponse.json({ error: setupMessages.invalidUpdatePayload }, { status: 400 });
+    return NextResponse.json(
+      {
+        error: parsed.error.issues[0]?.message ?? setupMessages.invalidUpdatePayload,
+        code: "INVALID_STICKER_UPDATE_PAYLOAD"
+      },
+      { status: 400 }
+    );
   }
 
   try {
@@ -26,5 +32,22 @@ export async function PATCH(
     return NextResponse.json(sticker);
   } catch (error) {
     return toSetupRouteErrorResponse(error, setupMessages.updateFailed);
+  }
+}
+
+export async function DELETE(
+  _request: Request,
+  { params }: { params: { stickerId: string } }
+) {
+  const user = await getCurrentUser();
+  if (!user) {
+    return NextResponse.json({ error: commonMessages.unauthorized }, { status: 401 });
+  }
+
+  try {
+    await deleteStickerForUser(user, params.stickerId);
+    return new NextResponse(null, { status: 204 });
+  } catch (error) {
+    return toSetupRouteErrorResponse(error, setupMessages.deleteFailed);
   }
 }

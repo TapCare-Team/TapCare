@@ -36,10 +36,7 @@ export function nextDisplayCodeFromExisting(stickerType: StickerType, existingDi
 }
 
 export async function generateDisplayCode(householdId: string, stickerType: StickerType) {
-  const existingDisplayCodes = await stickersRepository.listDisplayCodesByHouseholdAndStickerType(
-    householdId,
-    stickerType
-  );
+  const existingDisplayCodes = await stickersRepository.listDisplayCodesByHousehold(householdId);
 
   return nextDisplayCodeFromExisting(stickerType, existingDisplayCodes);
 }

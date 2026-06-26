@@ -19,9 +19,9 @@ export class PrismaStickersRepository {
     return Boolean(sticker);
   }
 
-  async listDisplayCodesByHouseholdAndStickerType(householdId: string, stickerType: Sticker["stickerType"]) {
+  async listDisplayCodesByHousehold(householdId: string) {
     const stickers = await prisma.sticker.findMany({
-      where: { householdId, stickerType },
+      where: { householdId },
       select: { displayCode: true }
     });
 
@@ -171,13 +171,55 @@ export class PrismaStickersRepository {
           isCritical: patch.isCritical,
           stickerType: patch.stickerType,
           runtimeMode: patch.runtimeMode,
-          status: patch.status
+          status: patch.status,
+          destinationConfigId: patch.runtimeMode === "RENDER_PAGE" && patch.page ? null : undefined,
+          pageConfigId: patch.runtimeMode === "DIRECT_REDIRECT" && patch.destination ? null : undefined
         },
         include: stickerInclude
       });
     });
 
     return mapPrismaSticker(updated);
+  }
+
+  async delete(stickerId: string) {
+    const current = await prisma.sticker.findUnique({
+      where: { id: stickerId },
+      select: {
+        id: true,
+        destinationConfigId: true,
+        pageConfigId: true
+      }
+    });
+
+    if (!current) {
+      return false;
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.interactionEvent.updateMany({
+        where: { stickerId },
+        data: { stickerId: null }
+      });
+
+      await tx.sticker.delete({
+        where: { id: stickerId }
+      });
+
+      if (current.destinationConfigId) {
+        await tx.destinationConfig.delete({
+          where: { id: current.destinationConfigId }
+        });
+      }
+
+      if (current.pageConfigId) {
+        await tx.pageConfig.delete({
+          where: { id: current.pageConfigId }
+        });
+      }
+    });
+
+    return true;
   }
 
   async assignHousehold(stickerId: string, householdId: string, siteId: string) {

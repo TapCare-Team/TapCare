@@ -2,13 +2,25 @@ import Link from "next/link";
 import { SignalBadge } from "@/components/shared/signal-badge";
 import type { AwaitedHouseholdListItem } from "@/types/view-models";
 
+function formatLastActive(lastActiveAt?: string) {
+  if (!lastActiveAt) {
+    return "No activity yet";
+  }
+
+  return new Date(lastActiveAt).toLocaleDateString([], {
+    year: "numeric",
+    month: "short",
+    day: "numeric"
+  });
+}
+
 function activeStickerCount(household: AwaitedHouseholdListItem) {
   return household.stickers.filter((sticker) => sticker.status === "ACTIVE").length;
 }
 
-export function CaseloadTable({ households }: { households: AwaitedHouseholdListItem[] }) {
+export function HouseholdTriageList({ households }: { households: AwaitedHouseholdListItem[] }) {
   if (households.length === 0) {
-    return <p className="text-sm text-muted">No households are assigned to this caregiver yet.</p>;
+    return <p className="text-sm text-muted">No households matched the selected follow-up reason.</p>;
   }
 
   return (
@@ -40,11 +52,9 @@ export function CaseloadTable({ households }: { households: AwaitedHouseholdList
               <td className="px-4 py-4 align-top text-sm text-muted">
                 {activeStickerCount(household)} active / {household.stickers.length} total stickers
               </td>
-              <td className="px-4 py-4 align-top text-sm text-muted">
-                {household.lastActiveAt ? new Date(household.lastActiveAt).toLocaleDateString() : "No activity yet"}
-              </td>
+              <td className="px-4 py-4 align-top text-sm text-muted">{formatLastActive(household.lastActiveAt)}</td>
               <td className="px-4 py-4 text-right align-top">
-                <Link href={`/caregiver/households/${household.id}`} className="whitespace-nowrap font-medium">
+                <Link href={`/households/${household.id}`} className="whitespace-nowrap font-medium">
                   View details
                 </Link>
               </td>

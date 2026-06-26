@@ -108,4 +108,29 @@ export class PrismaHouseholdsRepository {
 
     return mapPrismaHousehold(household);
   }
+
+  async archive(householdId: string) {
+    const household = await prisma.household.findUnique({
+      where: { id: householdId },
+      select: { id: true }
+    });
+
+    if (!household) {
+      return false;
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.household.update({
+        where: { id: householdId },
+        data: { status: "ARCHIVED" }
+      });
+
+      await tx.sticker.updateMany({
+        where: { householdId },
+        data: { status: "DISABLED" }
+      });
+    });
+
+    return true;
+  }
 }

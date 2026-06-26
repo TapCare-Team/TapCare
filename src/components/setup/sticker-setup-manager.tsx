@@ -17,21 +17,101 @@ type SetupManagerProps = {
   household: Household;
   initialStickers: Sticker[];
   canPersist: boolean;
+  mode?: "manage" | "create";
+  afterCreateHref?: string;
 };
 
 type EditableSticker = {
   name: string;
   stickerType: Sticker["stickerType"];
-  runtimeMode: Sticker["runtimeMode"];
   status: Sticker["status"];
   isCritical: boolean;
-  destinationType: DestinationType;
+  destinationType: Extract<DestinationType, "WHATSAPP" | "PHONE">;
   destinationLabel: string;
   destinationValue: string;
-  pageType: PageConfig["pageType"];
   pageTitle: string;
   pageContentText: string;
 };
+
+const purposeLabels: Record<Sticker["stickerType"], string> = {
+  EMERGENCY_CONTACT: "Emergency contact",
+  FREQUENT_CONTACT: "Frequent contact",
+  CHECKLIST_REMINDER: "Checklist / reminder",
+  HELP_PROFILE: "Help profile",
+  CURATED_RESOURCES: "Curated resources"
+};
+
+function runtimeModeForPurpose(stickerType: Sticker["stickerType"]): Sticker["runtimeMode"] {
+  return stickerType === "EMERGENCY_CONTACT" || stickerType === "FREQUENT_CONTACT"
+    ? "DIRECT_REDIRECT"
+    : "RENDER_PAGE";
+}
+
+function pageTypeForPurpose(stickerType: Sticker["stickerType"]): PageConfig["pageType"] {
+  if (stickerType === "HELP_PROFILE") {
+    return "HELP_PROFILE";
+  }
+
+  if (stickerType === "CURATED_RESOURCES") {
+    return "RESOURCES";
+  }
+
+  return "CHECKLIST";
+}
+
+function defaultCriticalForPurpose(stickerType: Sticker["stickerType"]) {
+  return stickerType === "EMERGENCY_CONTACT" || stickerType === "HELP_PROFILE";
+}
+
+function contactValueToInput(value?: string) {
+  if (!value) {
+    return "";
+  }
+
+  if (value.startsWith("tel:")) {
+    return value.slice(4);
+  }
+
+  if (value.includes("wa.me/")) {
+    return value.split("wa.me/")[1]?.split(/[/?#]/)[0] ?? value;
+  }
+
+  return value;
+}
+
+function contactInputToDestinationValue(destinationType: EditableSticker["destinationType"], value: string) {
+  const trimmed = value.trim();
+  const digitsOnly = trimmed.replace(/[^\d]/g, "");
+
+  if (destinationType === "PHONE") {
+    return trimmed.startsWith("+") ? `tel:+${digitsOnly}` : `tel:${digitsOnly}`;
+  }
+
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+    return trimmed;
+  }
+
+  return `https://wa.me/${digitsOnly}`;
+}
+
+function contactInputError(value: string) {
+  const trimmed = value.trim();
+  const digitsOnly = trimmed.replace(/[^\d]/g, "");
+
+  if (!trimmed) {
+    return "Contact number is required.";
+  }
+
+  if (!/^[+\d\s()-]+$/.test(trimmed)) {
+    return "Contact number can only contain digits, spaces, dashes, brackets, or a leading plus sign.";
+  }
+
+  if (digitsOnly.length < 8 || digitsOnly.length > 15) {
+    return "Contact number must contain 8 to 15 digits.";
+  }
+
+  return "";
+}
 
 function contentToText(page?: PageConfig) {
   if (!page) {
@@ -52,18 +132,29 @@ function contentToText(page?: PageConfig) {
 }
 
 function stickerToFormState(sticker?: Sticker): EditableSticker {
+  const stickerType = sticker?.stickerType ?? "EMERGENCY_CONTACT";
+
   return {
     name: sticker?.name ?? "",
-    stickerType: sticker?.stickerType ?? "EMERGENCY_CONTACT",
-    runtimeMode: sticker?.runtimeMode ?? "DIRECT_REDIRECT",
+    stickerType,
     status: sticker?.status ?? "ACTIVE",
-    isCritical: sticker?.isCritical ?? false,
-    destinationType: sticker?.destination?.type ?? "WHATSAPP",
+    isCritical: sticker?.isCritical ?? defaultCriticalForPurpose(stickerType),
+    destinationType:
+      sticker?.destination?.type === "PHONE" || sticker?.destination?.type === "WHATSAPP"
+        ? sticker.destination.type
+        : "WHATSAPP",
     destinationLabel: sticker?.destination?.label ?? "",
-    destinationValue: sticker?.destination?.value ?? "",
-    pageType: sticker?.page?.pageType ?? "CHECKLIST",
+    destinationValue: contactValueToInput(sticker?.destination?.value),
     pageTitle: sticker?.page?.title ?? "",
     pageContentText: contentToText(sticker?.page)
+  };
+}
+
+function applyPurposeDefaults(form: EditableSticker, stickerType: Sticker["stickerType"]): EditableSticker {
+  return {
+    ...form,
+    stickerType,
+    isCritical: defaultCriticalForPurpose(stickerType)
   };
 }
 
@@ -97,36 +188,103 @@ function buildPageContent(pageType: PageConfig["pageType"], raw: string) {
   };
 }
 
+function validateForm(form: EditableSticker) {
+  if (!form.name.trim()) {
+    return "Sticker label is required.";
+  }
+
+  if (runtimeModeForPurpose(form.stickerType) === "DIRECT_REDIRECT") {
+    if (!form.destinationLabel.trim()) {
+      return "Contact name is required.";
+    }
+
+    const contactError = contactInputError(form.destinationValue);
+
+    if (contactError) {
+      return contactError;
+    }
+  }
+
+  if (runtimeModeForPurpose(form.stickerType) === "RENDER_PAGE") {
+    if (!form.pageTitle.trim()) {
+      return "Page heading is required.";
+    }
+
+    if (!form.pageContentText.trim()) {
+      return "Page details are required.";
+    }
+  }
+
+  if (pageTypeForPurpose(form.stickerType) === "RESOURCES") {
+    const invalidLine = form.pageContentText
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .find((line) => !line.includes("|"));
+
+    if (invalidLine) {
+      return "Resource links must use the format Label | https://example.org.";
+    }
+  }
+
+  if (pageTypeForPurpose(form.stickerType) === "CHECKLIST") {
+    const invalidChecklistLink = form.pageContentText
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => line.includes("|"))
+      .find((line) => {
+        const [label, href] = line.split("|").map((part) => part.trim());
+
+        if (!label || !href) {
+          return true;
+        }
+
+        try {
+          const url = new URL(href);
+          return url.protocol !== "http:" && url.protocol !== "https:";
+        } catch {
+          return true;
+        }
+      });
+
+    if (invalidChecklistLink) {
+      return "Checklist links must use the format Label | https://example.org.";
+    }
+  }
+
+  return "";
+}
+
 function buildPayload(householdId: string, form: EditableSticker) {
+  const runtimeMode = runtimeModeForPurpose(form.stickerType);
+  const pageType = pageTypeForPurpose(form.stickerType);
   const base = {
     householdId,
     name: form.name.trim(),
     stickerType: form.stickerType,
-    runtimeMode: form.runtimeMode,
+    runtimeMode,
     status: form.status,
-    isCritical: form.isCritical
+    isCritical: form.stickerType === "EMERGENCY_CONTACT" ? true : form.isCritical
   };
 
-  if (form.runtimeMode === "DIRECT_REDIRECT") {
-    const destination: DestinationConfig | undefined = form.destinationValue.trim()
-      ? {
-          type: form.destinationType,
-          value: form.destinationValue.trim(),
-          label: form.destinationLabel.trim() || undefined
-        }
-      : undefined;
+  if (runtimeMode === "DIRECT_REDIRECT") {
+    const destination: DestinationConfig = {
+      type: form.destinationType,
+      value: contactInputToDestinationValue(form.destinationType, form.destinationValue),
+      label: form.destinationLabel.trim()
+    };
 
-    return { ...base, destination, page: undefined };
+    return { ...base, destination };
   }
 
-  const page: PageConfig | undefined = form.pageTitle.trim()
-    ? form.pageType === "CHECKLIST"
+  const page: PageConfig =
+    pageType === "CHECKLIST"
       ? {
           pageType: "CHECKLIST",
           title: form.pageTitle.trim(),
           content: buildPageContent("CHECKLIST", form.pageContentText)
         }
-      : form.pageType === "HELP_PROFILE"
+      : pageType === "HELP_PROFILE"
         ? {
             pageType: "HELP_PROFILE",
             title: form.pageTitle.trim(),
@@ -136,58 +294,53 @@ function buildPayload(householdId: string, form: EditableSticker) {
             pageType: "RESOURCES",
             title: form.pageTitle.trim(),
             content: buildPageContent("RESOURCES", form.pageContentText)
-          }
-    : undefined;
+          };
 
-  return { ...base, destination: undefined, page };
+  return { ...base, page };
+}
+
+function pageContentLabel(stickerType: Sticker["stickerType"]) {
+  if (stickerType === "HELP_PROFILE") {
+    return "Profile information";
+  }
+
+  if (stickerType === "CURATED_RESOURCES") {
+    return "Resource links";
+  }
+
+  return "Checklist or reminder details";
+}
+
+function pageContentPlaceholder(stickerType: Sticker["stickerType"]) {
+  if (stickerType === "HELP_PROFILE") {
+    return "Name: Mdm Lee\nIf found: Please call her daughter\nPreferred language: Mandarin\nHome area: Bedok North";
+  }
+
+  if (stickerType === "CURATED_RESOURCES") {
+    return "Community centre | https://example.org/community\nSupport hotline | https://example.org/hotline";
+  }
+
+  return "Bring keys\nBring wallet\nBring phone\nPhysiotherapy appointment: Friday at 10am\nStretching video | https://youtube.com/example\nClinic booking | https://example.org/appointment";
 }
 
 function helperText(form: EditableSticker) {
-  if (form.runtimeMode === "DIRECT_REDIRECT") {
-    if (form.destinationType === "WHATSAPP") {
-      return "Use a full WhatsApp link such as https://wa.me/6591234567.";
-    }
-
-    if (form.destinationType === "PHONE") {
-      return "Use a tel: link such as tel:+6591234567.";
-    }
-
-    return "Use a full https:// destination.";
+  if (form.stickerType === "EMERGENCY_CONTACT") {
+    return "Emergency contact stickers are always marked important and open the chosen contact immediately.";
   }
 
-  if (form.pageType === "CHECKLIST") {
-    return "One checklist item per line.";
+  if (form.stickerType === "FREQUENT_CONTACT") {
+    return "Frequent contact stickers open the chosen contact immediately.";
   }
 
-  if (form.pageType === "HELP_PROFILE") {
-    return "One help field per line in the format Label: Value.";
+  if (form.stickerType === "HELP_PROFILE") {
+    return "Use one field per line in the format Label: Value.";
   }
 
-  return "One resource per line in the format Label | https://example.org.";
-}
-
-function destinationPlaceholder(destinationType: DestinationType) {
-  if (destinationType === "WHATSAPP") {
-    return "Example: https://wa.me/6591234567";
+  if (form.stickerType === "CURATED_RESOURCES") {
+    return "Use one resource per line in the format Label | https://example.org.";
   }
 
-  if (destinationType === "PHONE") {
-    return "Example: tel:+6591234567";
-  }
-
-  return "Example: https://example.org/help";
-}
-
-function pageContentPlaceholder(pageType: PageConfig["pageType"]) {
-  if (pageType === "CHECKLIST") {
-    return "Drink water\nTake medication\nCall daughter at noon";
-  }
-
-  if (pageType === "HELP_PROFILE") {
-    return "Name: Mdm Lee\nNeeds support with: Memory prompts\nPreferred language: Mandarin";
-  }
-
-  return "Community centre | https://example.org/community\nSupport hotline | https://example.org/hotline";
+  return "Use one checklist item or reminder per line. For clickable links, use Label | https://example.org.";
 }
 
 function StickerEditor({
@@ -197,24 +350,29 @@ function StickerEditor({
   onChange,
   onSubmit,
   actionLabel,
+  validationError,
   busy,
   disabled
 }: {
   title: string;
   householdId: string;
   form: EditableSticker;
-  onChange: (patch: Partial<EditableSticker>) => void;
+  onChange: (patch: Partial<EditableSticker> | EditableSticker) => void;
   onSubmit: () => void;
   actionLabel: string;
+  validationError?: string;
   busy: boolean;
   disabled: boolean;
 }) {
+  const isContactSticker = runtimeModeForPurpose(form.stickerType) === "DIRECT_REDIRECT";
+  const isEmergencyContact = form.stickerType === "EMERGENCY_CONTACT";
+
   return (
     <div className="space-y-4 rounded-2xl border border-black/5 bg-white p-5">
       <div>
         <h3 className="text-lg font-semibold">{title}</h3>
         <p className="text-sm text-muted">
-          {form.runtimeMode === "DIRECT_REDIRECT" ? "Opens one action right away" : "Shows a TapCare page"}
+          {isContactSticker ? "Opens one contact action right away." : "Shows a TapCare information page."}
         </p>
       </div>
 
@@ -232,25 +390,16 @@ function StickerEditor({
           Sticker purpose
           <select
             value={form.stickerType}
-            onChange={(event) => onChange({ stickerType: event.target.value as Sticker["stickerType"] })}
+            onChange={(event) =>
+              onChange(applyPurposeDefaults(form, event.target.value as Sticker["stickerType"]))
+            }
             className="w-full rounded-xl border border-black/10 bg-white px-3 py-2 text-ink"
           >
-            <option value="EMERGENCY_CONTACT">Emergency contact</option>
-            <option value="FREQUENT_CONTACT">Frequent contact</option>
-            <option value="CHECKLIST_REMINDER">Checklist / reminder</option>
-            <option value="HELP_PROFILE">Help profile</option>
-            <option value="CURATED_RESOURCES">Curated resources</option>
-          </select>
-        </label>
-        <label className="space-y-2 text-sm text-muted">
-          What should happen after tapping?
-          <select
-            value={form.runtimeMode}
-            onChange={(event) => onChange({ runtimeMode: event.target.value as Sticker["runtimeMode"] })}
-            className="w-full rounded-xl border border-black/10 bg-white px-3 py-2 text-ink"
-          >
-            <option value="DIRECT_REDIRECT">Open one contact or link right away</option>
-            <option value="RENDER_PAGE">Show a TapCare page</option>
+            {Object.entries(purposeLabels).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
           </select>
         </label>
         <label className="space-y-2 text-sm text-muted">
@@ -264,32 +413,39 @@ function StickerEditor({
             <option value="DISABLED">Disabled</option>
           </select>
         </label>
-        <label className="flex items-center gap-3 rounded-xl border border-black/10 bg-panel px-3 py-2 text-sm text-muted">
-          <input
-            type="checkbox"
-            checked={form.isCritical}
-            onChange={(event) => onChange({ isCritical: event.target.checked })}
-          />
-          Mark this as an important sticker
-        </label>
+        {isEmergencyContact ? (
+          <div className="rounded-xl border border-accent/20 bg-accentSoft px-3 py-2 text-sm text-accent">
+            Emergency contact stickers are automatically marked important.
+          </div>
+        ) : (
+          <label className="flex items-center gap-3 rounded-xl border border-black/10 bg-panel px-3 py-2 text-sm text-muted">
+            <input
+              type="checkbox"
+              checked={form.isCritical}
+              onChange={(event) => onChange({ isCritical: event.target.checked })}
+            />
+            Mark this as an important sticker
+          </label>
+        )}
       </div>
 
-      {form.runtimeMode === "DIRECT_REDIRECT" ? (
+      {isContactSticker ? (
         <div className="grid gap-4 md:grid-cols-2">
           <label className="space-y-2 text-sm text-muted">
-            Open with
+            Contact method
             <select
               value={form.destinationType}
-              onChange={(event) => onChange({ destinationType: event.target.value as DestinationType })}
+              onChange={(event) =>
+                onChange({ destinationType: event.target.value as EditableSticker["destinationType"] })
+              }
               className="w-full rounded-xl border border-black/10 bg-white px-3 py-2 text-ink"
             >
               <option value="WHATSAPP">WhatsApp</option>
-              <option value="PHONE">Phone</option>
-              <option value="EXTERNAL_URL">External URL</option>
+              <option value="PHONE">Phone call</option>
             </select>
           </label>
           <label className="space-y-2 text-sm text-muted">
-            Contact or link name
+            Contact name
             <input
               value={form.destinationLabel}
               onChange={(event) => onChange({ destinationLabel: event.target.value })}
@@ -298,45 +454,39 @@ function StickerEditor({
             />
           </label>
           <label className="space-y-2 text-sm text-muted md:col-span-2">
-            Contact or link address
+            Contact number
             <input
               value={form.destinationValue}
               onChange={(event) => onChange({ destinationValue: event.target.value })}
-              placeholder={destinationPlaceholder(form.destinationType)}
+              placeholder="Example: +6591234567"
               className="w-full rounded-xl border border-black/10 bg-white px-3 py-2 text-ink"
             />
           </label>
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2">
-          <label className="space-y-2 text-sm text-muted">
-            Page style
-            <select
-              value={form.pageType}
-              onChange={(event) => onChange({ pageType: event.target.value as PageConfig["pageType"] })}
-              className="w-full rounded-xl border border-black/10 bg-white px-3 py-2 text-ink"
-            >
-              <option value="CHECKLIST">Checklist</option>
-              <option value="HELP_PROFILE">Help profile</option>
-              <option value="RESOURCES">Resources</option>
-            </select>
-          </label>
+        <div className="grid gap-4">
           <label className="space-y-2 text-sm text-muted">
             Page heading
             <input
               value={form.pageTitle}
               onChange={(event) => onChange({ pageTitle: event.target.value })}
-              placeholder="Example: Morning reminders"
+              placeholder={
+                form.stickerType === "HELP_PROFILE"
+                  ? "Example: Help profile"
+                  : form.stickerType === "CURATED_RESOURCES"
+                    ? "Example: Useful support links"
+                    : "Example: Door checklist"
+              }
               className="w-full rounded-xl border border-black/10 bg-white px-3 py-2 text-ink"
             />
           </label>
-          <label className="space-y-2 text-sm text-muted md:col-span-2">
-            What should appear on the page?
+          <label className="space-y-2 text-sm text-muted">
+            {pageContentLabel(form.stickerType)}
             <textarea
               value={form.pageContentText}
               onChange={(event) => onChange({ pageContentText: event.target.value })}
-              rows={6}
-              placeholder={pageContentPlaceholder(form.pageType)}
+              rows={7}
+              placeholder={pageContentPlaceholder(form.stickerType)}
               className="w-full rounded-xl border border-black/10 bg-white px-3 py-2 text-ink"
             />
           </label>
@@ -354,12 +504,23 @@ function StickerEditor({
           {busy ? "Saving..." : actionLabel}
         </button>
       </div>
+      {validationError ? (
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+          {validationError}
+        </div>
+      ) : null}
       <input type="hidden" value={householdId} readOnly />
     </div>
   );
 }
 
-export function StickerSetupManager({ household, initialStickers, canPersist }: SetupManagerProps) {
+export function StickerSetupManager({
+  household,
+  initialStickers,
+  canPersist,
+  mode = "manage",
+  afterCreateHref
+}: SetupManagerProps) {
   const router = useRouter();
   const [stickers, setStickers] = useState<Record<string, EditableSticker>>(
     Object.fromEntries(initialStickers.map((sticker) => [sticker.id, stickerToFormState(sticker)]))
@@ -367,14 +528,17 @@ export function StickerSetupManager({ household, initialStickers, canPersist }: 
   const [createForm, setCreateForm] = useState<EditableSticker>(stickerToFormState());
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [deleteCandidateId, setDeleteCandidateId] = useState<string | null>(null);
+  const [savedStickerId, setSavedStickerId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
     setStickers(Object.fromEntries(initialStickers.map((sticker) => [sticker.id, stickerToFormState(sticker)])));
   }, [initialStickers]);
 
-  async function submitRequest(url: string, method: "POST" | "PATCH", body?: unknown) {
+  async function submitRequest(url: string, method: "POST" | "PATCH" | "DELETE", body?: unknown) {
     const response = await fetch(url, {
       method,
       headers: body ? { "Content-Type": "application/json" } : undefined,
@@ -395,11 +559,23 @@ export function StickerSetupManager({ household, initialStickers, canPersist }: 
   async function handleCreate() {
     setError("");
     setSuccessMessage("");
+    setFormErrors((current) => ({ ...current, create: "" }));
+    const validationError = validateForm(createForm);
+
+    if (validationError) {
+      setFormErrors((current) => ({ ...current, create: validationError }));
+      return;
+    }
+
     setBusyId("create");
 
     try {
       await submitRequest("/api/v1/setup/stickers", "POST", buildPayload(household.id, createForm));
       setCreateForm(stickerToFormState());
+      setSavedStickerId(null);
+      if (afterCreateHref) {
+        router.replace(afterCreateHref);
+      }
       refreshWithMessage("Sticker created.");
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "Unable to create sticker");
@@ -408,21 +584,48 @@ export function StickerSetupManager({ household, initialStickers, canPersist }: 
     }
   }
 
-  async function handleUpdate(stickerId: string, action: "save" | "activate" | "disable") {
+  async function handleUpdate(stickerId: string) {
     setError("");
     setSuccessMessage("");
-    setBusyId(`${action}:${stickerId}`);
+    setFormErrors((current) => ({ ...current, [stickerId]: "" }));
+
+    const validationError = validateForm(stickers[stickerId] ?? stickerToFormState());
+
+    if (validationError) {
+      setFormErrors((current) => ({ ...current, [stickerId]: validationError }));
+      return;
+    }
+
+    setBusyId(`save:${stickerId}`);
 
     try {
-      if (action === "save") {
-        await submitRequest(`/api/v1/setup/stickers/${stickerId}`, "PATCH", buildPayload(household.id, stickers[stickerId]));
-        refreshWithMessage("Sticker updated.");
-      } else {
-        await submitRequest(`/api/v1/setup/stickers/${stickerId}/${action}`, "POST");
-        refreshWithMessage(action === "activate" ? "Sticker activated." : "Sticker disabled.");
-      }
+      await submitRequest(
+        `/api/v1/setup/stickers/${stickerId}`,
+        "PATCH",
+        buildPayload(household.id, stickers[stickerId])
+      );
+      setDeleteCandidateId(null);
+      setSavedStickerId(stickerId);
+      refreshWithMessage("Sticker updated.");
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "Unable to update sticker");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handleDelete(stickerId: string) {
+    setError("");
+    setSuccessMessage("");
+    setBusyId(`delete:${stickerId}`);
+
+    try {
+      await submitRequest(`/api/v1/setup/stickers/${stickerId}`, "DELETE");
+      setDeleteCandidateId(null);
+      setSavedStickerId(null);
+      refreshWithMessage("Sticker deleted.");
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Unable to delete sticker");
     } finally {
       setBusyId(null);
     }
@@ -442,19 +645,31 @@ export function StickerSetupManager({ household, initialStickers, canPersist }: 
         </div>
       ) : null}
 
-      <StickerEditor
-        title={`Add sticker for ${household.displayAddress}`}
-        householdId={household.id}
-        form={createForm}
-        onChange={(patch) => setCreateForm((current) => ({ ...current, ...patch }))}
-        onSubmit={handleCreate}
-        actionLabel="Create sticker"
-        busy={busyId === "create" || isPending}
-        disabled={!canPersist}
-      />
+      {mode === "create" ? (
+        <StickerEditor
+          title={`Add sticker for ${household.displayAddress}`}
+          householdId={household.id}
+          form={createForm}
+          onChange={(patch) => {
+            setCreateForm((current) => ({ ...current, ...patch }));
+            setFormErrors((current) => ({ ...current, create: "" }));
+          }}
+          onSubmit={handleCreate}
+          actionLabel="Create sticker"
+          validationError={formErrors.create}
+          busy={busyId === "create" || isPending}
+          disabled={!canPersist}
+        />
+      ) : null}
 
-      <div className="space-y-4">
-        {initialStickers.map((sticker) => (
+      {mode === "manage" ? (
+        <div className="space-y-4">
+          {initialStickers.length === 0 ? (
+            <div className="rounded-2xl border border-black/5 bg-white p-5 text-sm text-muted">
+              No stickers have been created for this household yet.
+            </div>
+          ) : null}
+          {initialStickers.map((sticker) => (
           <div key={sticker.id} className="space-y-3 rounded-3xl border border-black/5 bg-panel p-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
@@ -464,7 +679,7 @@ export function StickerSetupManager({ household, initialStickers, canPersist }: 
                     {sticker.displayCode}
                   </span>
                   <span className="rounded-full border border-black/10 bg-white px-3 py-1">
-                    {sticker.stickerType.replaceAll("_", " ")}
+                    {purposeLabels[sticker.stickerType]}
                   </span>
                   <span className="rounded-full border border-black/10 bg-white px-3 py-1">
                     {sticker.status}
@@ -472,43 +687,66 @@ export function StickerSetupManager({ household, initialStickers, canPersist }: 
                 </div>
               </div>
               <div className="flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  onClick={() => handleUpdate(sticker.id, "activate")}
-                  disabled={!canPersist || busyId === `activate:${sticker.id}` || isPending}
-                  className="rounded-full border border-black/10 px-4 py-2 text-sm text-muted transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  Activate
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleUpdate(sticker.id, "disable")}
-                  disabled={!canPersist || busyId === `disable:${sticker.id}` || isPending}
-                  className="rounded-full border border-black/10 px-4 py-2 text-sm text-muted transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  Disable
-                </button>
+                {deleteCandidateId === sticker.id ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setDeleteCandidateId(null)}
+                      disabled={busyId === `delete:${sticker.id}` || isPending}
+                      className="rounded-full border border-black/10 px-4 py-2 text-sm text-muted transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(sticker.id)}
+                      disabled={!canPersist || busyId === `delete:${sticker.id}` || isPending}
+                      className="rounded-full border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-700 transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {busyId === `delete:${sticker.id}` ? "Deleting..." : "Confirm delete"}
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setDeleteCandidateId(sticker.id)}
+                    disabled={!canPersist || isPending}
+                    className="rounded-full border border-red-200 px-4 py-2 text-sm text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Delete sticker
+                  </button>
+                )}
               </div>
             </div>
+            {deleteCandidateId === sticker.id ? (
+              <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+                This removes the sticker setup for &quot;{sticker.name}&quot;. Historical interaction events are kept for
+                analytics.
+              </div>
+            ) : null}
 
             <StickerEditor
               title="Edit sticker"
               householdId={household.id}
               form={stickers[sticker.id] ?? stickerToFormState(sticker)}
-              onChange={(patch) =>
+              onChange={(patch) => {
                 setStickers((current) => ({
                   ...current,
                   [sticker.id]: { ...(current[sticker.id] ?? stickerToFormState(sticker)), ...patch }
-                }))
-              }
-              onSubmit={() => handleUpdate(sticker.id, "save")}
-              actionLabel="Save changes"
+                }));
+                setFormErrors((current) => ({ ...current, [sticker.id]: "" }));
+                setSavedStickerId((current) => (current === sticker.id ? null : current));
+              }}
+              onSubmit={() => handleUpdate(sticker.id)}
+              actionLabel={savedStickerId === sticker.id ? "Saved" : "Save changes"}
+              validationError={formErrors[sticker.id]}
               busy={busyId === `save:${sticker.id}` || isPending}
               disabled={!canPersist}
             />
           </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }

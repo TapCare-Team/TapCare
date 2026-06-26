@@ -10,6 +10,7 @@ export const setupMessages = {
   listFailed: "Unable to list stickers",
   createFailed: "Unable to create sticker",
   updateFailed: "Unable to update sticker",
+  deleteFailed: "Unable to delete sticker",
   activateFailed: "Unable to activate sticker",
   disableFailed: "Unable to disable sticker",
   assignFailed: "Unable to assign sticker",
@@ -35,7 +36,9 @@ export const householdMessages = {
   databaseUnavailable: "DATABASE_URL is required for household setup",
   invalidCreatePayload: "Invalid household payload",
   createFailed: "Unable to create household",
+  deleteFailed: "Unable to delete household",
   duplicateCheckFailed: "Unable to check for duplicate households",
   duplicateAddress: "A household with the same address already exists in this satellite office",
+  householdNotFound: "Household not found",
   outOfScopeSite: "Officers can only add households within their assigned satellite scope"
 } as const;

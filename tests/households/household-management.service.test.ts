@@ -6,7 +6,9 @@ const mocks = vi.hoisted(() => ({
   listByIds: vi.fn(),
   listAll: vi.fn(),
   findDuplicateAddress: vi.fn(),
-  create: vi.fn()
+  create: vi.fn(),
+  getById: vi.fn(),
+  archive: vi.fn()
 }));
 
 vi.mock("@/lib/db/database-mode", () => ({
@@ -35,6 +37,8 @@ vi.mock("@/modules/households/repositories/prisma-households.repository", () => 
   PrismaHouseholdsRepository: class {
     findDuplicateAddress = mocks.findDuplicateAddress;
     create = mocks.create;
+    getById = mocks.getById;
+    archive = mocks.archive;
   }
 }));
 
@@ -42,6 +46,8 @@ vi.mock("@/modules/households/repositories/mock-households.repository", () => ({
   MockHouseholdsRepository: class {
     findDuplicateAddress = mocks.findDuplicateAddress;
     create = mocks.create;
+    getById = mocks.getById;
+    archive = mocks.archive;
   }
 }));
 
@@ -50,6 +56,14 @@ const officerUser = {
   displayName: "Officer Tan",
   role: "OFFICER" as const,
   siteIds: ["site-bedok", "site-tampines"],
+  householdIds: []
+};
+
+const adminUser = {
+  id: "user-admin",
+  displayName: "Admin Junny",
+  role: "ADMIN" as const,
+  siteIds: [],
   householdIds: []
 };
 
@@ -64,6 +78,17 @@ describe("household-management.service", () => {
     ]);
     mocks.listAll.mockResolvedValue([]);
     mocks.findDuplicateAddress.mockResolvedValue(null);
+    mocks.getById.mockResolvedValue({
+      id: "household-1",
+      siteId: "site-bedok",
+      siteName: "SGO Bedok",
+      addressLine1: "Blk 18 Bedok South Road",
+      displayAddress: "Blk 18 Bedok South Road, #05-123, 460018",
+      seniorAliases: [],
+      caregiverIds: [],
+      stickers: []
+    });
+    mocks.archive.mockResolvedValue(true);
     mocks.create.mockImplementation(async (input: Record<string, unknown>) => ({
       id: "household-new",
       siteId: input.siteId,
@@ -146,5 +171,24 @@ describe("household-management.service", () => {
     });
 
     expect(mocks.create).not.toHaveBeenCalled();
+  });
+
+  it("rejects household deletion by officers", async () => {
+    const { deleteHouseholdForUser } = await import("@/modules/households/services/household-management.service");
+
+    await expect(deleteHouseholdForUser(officerUser, "household-1")).rejects.toMatchObject({
+      statusCode: 403
+    });
+
+    expect(mocks.archive).not.toHaveBeenCalled();
+  });
+
+  it("allows admins to archive households", async () => {
+    const { deleteHouseholdForUser } = await import("@/modules/households/services/household-management.service");
+
+    await deleteHouseholdForUser(adminUser, "household-1");
+
+    expect(mocks.getById).toHaveBeenCalledWith("household-1");
+    expect(mocks.archive).toHaveBeenCalledWith("household-1");
   });
 });

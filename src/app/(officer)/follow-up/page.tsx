@@ -24,13 +24,12 @@ export default async function FollowUpQueuePage({
     <AppShell
       title="Follow-up Queue"
       subtitle="Review the recent reasons for follow-up, then decide whether outreach is needed."
-      nav={[
-        { href: "/", label: "Dashboard" },
-        { href: "/households", label: "Households" }
-      ]}
+      nav={[]}
     >
       <Panel title="Households needing review" eyebrow="Follow-up">
-        <FollowUpReasonFilterBar basePath="/follow-up" selectedReason={selectedReason} />
+        <div className="mb-5">
+          <FollowUpReasonFilterBar basePath="/follow-up" selectedReason={selectedReason} />
+        </div>
         <FollowUpList signals={filteredSignals} />
       </Panel>
     </AppShell>

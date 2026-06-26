@@ -15,10 +15,7 @@ export default async function NewHouseholdPage() {
     <AppShell
       title="Add household"
       subtitle="Add a household within your assigned satellite office scope before setting up stickers."
-      nav={[
-        { href: "/households", label: "Back to households" },
-        { href: "/", label: "Dashboard" }
-      ]}
+      nav={[{ href: "/", label: "Household list", replace: true }]}
     >
       <Panel title="Household details" eyebrow="Officer setup">
         <p className="mb-5 text-sm text-muted">

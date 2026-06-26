@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { StickerSetupManager } from "@/components/setup/sticker-setup-manager";
 import { AppShell } from "@/components/shared/app-shell";
@@ -9,7 +8,7 @@ import { getHouseholdDetail } from "@/modules/households/services/household-anal
 
 export const dynamic = "force-dynamic";
 
-export default async function CaregiverStickerSetupPage({
+export default async function NewCaregiverStickerPage({
   params
 }: {
   params: { householdId: string };
@@ -23,35 +22,25 @@ export default async function CaregiverStickerSetupPage({
 
   return (
     <AppShell
-      title="Sticker setup"
-      subtitle={`Configure household-specific sticker routing for ${detail.household.displayAddress}.`}
+      title="Add sticker"
+      subtitle={`Create one new sticker setup for ${detail.household.displayAddress}.`}
       nav={[
-        { href: `/caregiver/households/${detail.household.id}`, label: "Household details", replace: true }
+        { href: `/caregiver/households/${detail.household.id}/stickers`, label: "Sticker setup", replace: true }
       ]}
       homeHref="/caregiver"
     >
-      <Panel
-        title="Existing stickers"
-        eyebrow="Assigned households only"
-        action={
-          <Link
-            href={`/caregiver/households/${detail.household.id}/stickers/new`}
-            className="rounded-full border border-accent/30 bg-accentSoft px-5 py-2.5 text-sm font-semibold text-accent shadow-sm transition hover:bg-white"
-          >
-            Add sticker
-          </Link>
-        }
-      >
+      <Panel title="New sticker details" eyebrow="Sticker setup">
         <p className="text-sm text-muted">
-          Caregivers can configure only the households they are assigned to. Edit or remove existing sticker setups here.
+          Choose the sticker purpose first. The required details will change based on what the sticker should do.
         </p>
       </Panel>
 
       <StickerSetupManager
         household={detail.household}
-        initialStickers={detail.household.stickers}
+        initialStickers={[]}
         canPersist={isDatabaseConfigured()}
-        mode="manage"
+        mode="create"
+        afterCreateHref={`/caregiver/households/${detail.household.id}/stickers`}
       />
     </AppShell>
   );

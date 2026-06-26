@@ -5,7 +5,7 @@ type AppShellProps = {
   title: string;
   subtitle: string;
   children: ReactNode;
-  nav: { href: string; label: string }[];
+  nav: { href: string; label: string; replace?: boolean }[];
   homeHref?: string;
 };
 
@@ -27,6 +27,7 @@ export function AppShell({ title, subtitle, children, nav, homeHref = "/" }: App
                 <Link
                   key={item.href}
                   href={item.href}
+                  replace={item.replace}
                   className="rounded-full border border-accent/20 bg-accentSoft px-4 py-2 text-accent transition hover:bg-white"
                 >
                   {item.label}

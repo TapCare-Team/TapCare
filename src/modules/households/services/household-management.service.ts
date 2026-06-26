@@ -114,3 +114,23 @@ export async function findDuplicateHouseholdForUser(user: SessionUser, rawInput:
 
   return householdsRepository.findDuplicateAddress(input.siteId, displayAddress);
 }
+
+export async function deleteHouseholdForUser(user: SessionUser, householdId: string) {
+  if (!isDatabaseConfigured()) {
+    throw new ConfigurationError(householdMessages.databaseUnavailable, "HOUSEHOLD_DATABASE_UNAVAILABLE");
+  }
+
+  if (user.role !== "ADMIN") {
+    throw new ForbiddenError();
+  }
+
+  const household = await prismaHouseholdsRepository.getById(householdId);
+  if (!household) {
+    throw new NotFoundError(householdMessages.householdNotFound, "HOUSEHOLD_NOT_FOUND");
+  }
+
+  const deleted = await prismaHouseholdsRepository.archive(householdId);
+  if (!deleted) {
+    throw new NotFoundError(householdMessages.householdNotFound, "HOUSEHOLD_NOT_FOUND");
+  }
+}

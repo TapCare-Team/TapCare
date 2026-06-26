@@ -24,4 +24,8 @@ describe("sticker code service", () => {
     expect(nextDisplayCodeFromExisting("HELP_PROFILE", ["HP-0001", "HP-0002", "HP-0004"])).toBe("HP-0005");
     expect(nextDisplayCodeFromExisting("EMERGENCY_CONTACT", [])).toBe("EC-0001");
   });
+
+  it("skips existing household display codes even when they came from a previous sticker type", () => {
+    expect(nextDisplayCodeFromExisting("EMERGENCY_CONTACT", ["EC-0001", "CL-0001"])).toBe("EC-0002");
+  });
 });

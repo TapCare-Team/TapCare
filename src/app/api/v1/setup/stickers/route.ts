@@ -15,7 +15,13 @@ export async function POST(request: Request) {
   const parsed = createStickerSchema.safeParse(body);
 
   if (!parsed.success) {
-    return NextResponse.json({ error: setupMessages.invalidCreatePayload }, { status: 400 });
+    return NextResponse.json(
+      {
+        error: parsed.error.issues[0]?.message ?? setupMessages.invalidCreatePayload,
+        code: "INVALID_STICKER_CREATE_PAYLOAD"
+      },
+      { status: 400 }
+    );
   }
 
   try {

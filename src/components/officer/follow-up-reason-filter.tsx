@@ -19,7 +19,7 @@ export function FollowUpReasonFilterBar({
   ] as const;
 
   return (
-    <div className="mb-5 flex flex-wrap gap-3">
+    <div className="flex flex-wrap gap-3">
       {filters.map((filter) => {
         const isActive = selectedReason === filter.value;
 

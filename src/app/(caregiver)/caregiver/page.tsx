@@ -1,6 +1,5 @@
 import { AppShell } from "@/components/shared/app-shell";
 import { Panel } from "@/components/shared/panel";
-import { StatCard } from "@/components/shared/stat-card";
 import { CaseloadTable } from "@/components/caregiver/caseload-table";
 import { requireUserWithRole } from "@/lib/auth";
 import { getHouseholdsByIds } from "@/modules/households/services/household-analytics.service";
@@ -13,37 +12,12 @@ export default async function CaregiverDashboardPage() {
 
   return (
     <AppShell
-      title="Caregiver View"
-      subtitle="Read-only caseload view for households you are responsible for."
+      title="Households"
+      subtitle="Open a household to review activity and manage sticker setup."
       nav={[]}
       homeHref="/caregiver"
     >
-      <div className="grid gap-4 md:grid-cols-3">
-        <StatCard
-          label="Assigned households"
-          value={households.length}
-          hint="Only households with an active assignment to this caregiver."
-        />
-        <StatCard
-          label="Households with signals"
-          value={households.filter((household) => household.signal).length}
-          hint="Read-only visibility into existing follow-up signals."
-        />
-        <StatCard
-          label="Disabled critical stickers"
-          value={
-            households.filter((household) =>
-              household.stickers.some(
-                (sticker) =>
-                  sticker.isCritical && sticker.status === "DISABLED"
-              )
-            ).length
-          }
-          hint="Assigned households missing an active emergency or help-profile sticker."
-        />
-      </div>
-
-      <Panel title="Caseload" eyebrow="Assigned only">
+      <Panel title="Household list" eyebrow={`${households.length} assigned households`}>
         <CaseloadTable households={households} />
       </Panel>
     </AppShell>
