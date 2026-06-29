@@ -3,6 +3,13 @@ export const commonMessages = {
   forbidden: "Forbidden"
 } as const;
 
+export const authMessages = {
+  passwordResetRequested: "If an account exists for that email, a reset link has been prepared.",
+  invalidResetToken: "Reset link is invalid or expired.",
+  invalidCurrentPassword: "Current password is incorrect.",
+  passwordChanged: "Password changed. Please sign in again."
+} as const;
+
 export const setupMessages = {
   invalidCreatePayload: "Invalid sticker payload",
   invalidUpdatePayload: "Invalid sticker update payload",
@@ -37,8 +44,11 @@ export const householdMessages = {
   invalidCreatePayload: "Invalid household payload",
   createFailed: "Unable to create household",
   deleteFailed: "Unable to delete household",
+  assignCaregiverFailed: "Unable to assign caregiver",
   duplicateCheckFailed: "Unable to check for duplicate households",
   duplicateAddress: "A household with the same address already exists in this satellite office",
   householdNotFound: "Household not found",
+  caregiverNotFound: "Caregiver needs to sign up first.",
+  caregiverAlreadyAssigned: "This caregiver is already assigned to the household.",
   outOfScopeSite: "Officers can only add households within their assigned satellite scope"
 } as const;

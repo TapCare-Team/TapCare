@@ -1,6 +1,10 @@
 import { isDatabaseConfigured } from "@/lib/db/database-mode";
 import type { SessionUser } from "@/modules/auth/domain/access";
-import { canAccessOfficerSurface } from "@/modules/auth/services/access-control.service";
+import { canAccessOfficerSurface, canViewHousehold } from "@/modules/auth/services/access-control.service";
+import {
+  assignCaregiverSchema,
+  type AssignCaregiverInput
+} from "@/modules/households/contracts/household-caregiver-assignment.contract";
 import { createHouseholdSchema, type CreateHouseholdInput } from "@/modules/households/contracts/household-create.contract";
 import { MockHouseholdsRepository } from "@/modules/households/repositories/mock-households.repository";
 import { MockSitesRepository } from "@/modules/households/repositories/mock-sites.repository";
@@ -133,4 +137,47 @@ export async function deleteHouseholdForUser(user: SessionUser, householdId: str
   if (!deleted) {
     throw new NotFoundError(householdMessages.householdNotFound, "HOUSEHOLD_NOT_FOUND");
   }
+}
+
+export async function assignCaregiverToHouseholdForUser(
+  user: SessionUser,
+  householdId: string,
+  rawInput: AssignCaregiverInput
+) {
+  if (!isDatabaseConfigured()) {
+    throw new ConfigurationError(householdMessages.databaseUnavailable, "HOUSEHOLD_DATABASE_UNAVAILABLE");
+  }
+
+  if (!canAccessOfficerSurface(user)) {
+    throw new ForbiddenError();
+  }
+
+  const input = assignCaregiverSchema.parse(rawInput);
+  const household = await prismaHouseholdsRepository.getById(householdId);
+
+  if (!household) {
+    throw new NotFoundError(householdMessages.householdNotFound, "HOUSEHOLD_NOT_FOUND");
+  }
+
+  if (!canViewHousehold(user, household.id, household.siteId)) {
+    throw new ForbiddenError();
+  }
+
+  const caregiver = await prismaHouseholdsRepository.findCaregiverByEmail(input.email);
+
+  if (!caregiver) {
+    throw new NotFoundError(householdMessages.caregiverNotFound, "CAREGIVER_NOT_FOUND");
+  }
+
+  const assignment = await prismaHouseholdsRepository.assignCaregiver(household.id, caregiver.id);
+
+  if (!assignment.household) {
+    throw new NotFoundError(householdMessages.householdNotFound, "HOUSEHOLD_NOT_FOUND");
+  }
+
+  return {
+    household: assignment.household,
+    caregiver,
+    alreadyAssigned: assignment.alreadyAssigned
+  };
 }

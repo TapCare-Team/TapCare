@@ -22,6 +22,30 @@ describe("sticker setup contract", () => {
     expect(result.success).toBe(true);
   });
 
+  it("accepts privacy-safe help profile content", () => {
+    const result = createStickerSchema.safeParse({
+      householdId: mockHouseholdIds.lee,
+      stickerType: "HELP_PROFILE",
+      runtimeMode: "RENDER_PAGE",
+      name: "Wearable help tag",
+      isCritical: true,
+      page: {
+        pageType: "HELP_PROFILE",
+        title: "Help profile",
+        content: {
+          helpFields: [
+            { label: "Name", value: "Mdm Lee" },
+            { label: "Preferred language", value: "Mandarin" },
+            { label: "Safe return instructions", value: "Please call her daughter and wait with her" },
+            { label: "Home area", value: "Bedok North" }
+          ]
+        }
+      }
+    });
+
+    expect(result.success).toBe(true);
+  });
+
   it("rejects help profile content that does not match the runtime shape", () => {
     const result = createStickerSchema.safeParse({
       householdId: mockHouseholdIds.lee,
@@ -39,6 +63,49 @@ describe("sticker setup contract", () => {
     });
 
     expect(result.success).toBe(false);
+  });
+
+  it("rejects public sticker content with full identity document details", () => {
+    const result = createStickerSchema.safeParse({
+      householdId: mockHouseholdIds.lee,
+      stickerType: "HELP_PROFILE",
+      runtimeMode: "RENDER_PAGE",
+      name: "Wearable help tag",
+      isCritical: true,
+      page: {
+        pageType: "HELP_PROFILE",
+        title: "Help profile",
+        content: {
+          helpFields: [
+            { label: "Name", value: "Mdm Lee" },
+            { label: "NRIC", value: "S1234567D" }
+          ]
+        }
+      }
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.message).toContain("NRIC");
+  });
+
+  it("rejects public sticker content with exact unit address details", () => {
+    const result = createStickerSchema.safeParse({
+      householdId: mockHouseholdIds.lee,
+      stickerType: "CHECKLIST_REMINDER",
+      runtimeMode: "RENDER_PAGE",
+      name: "Door checklist",
+      isCritical: false,
+      page: {
+        pageType: "CHECKLIST",
+        title: "Leaving home",
+        content: {
+          checklistItems: ["Return to Blk 123 Bedok North Street 2 #03-145"]
+        }
+      }
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.message).toContain("unit");
   });
 
   it("rejects resource links that are missing valid urls", () => {

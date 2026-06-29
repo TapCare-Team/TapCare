@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { CaregiverAssignmentPanel } from "@/components/households/caregiver-assignment-panel";
 import { DeleteHouseholdButton } from "@/components/households/delete-household-button";
 import { AppShell } from "@/components/shared/app-shell";
 import { Panel } from "@/components/shared/panel";
@@ -95,6 +96,13 @@ export default async function HouseholdDetailPage({
           </div>
         </Panel>
       </div>
+
+      <Panel title="Caregiver access" eyebrow="Assignments">
+        <CaregiverAssignmentPanel
+          householdId={detail.household.id}
+          assignments={detail.household.caregiverAssignments}
+        />
+      </Panel>
 
       <Panel title="Recent activity" eyebrow={`${detail.recentEvents.length} activities in selected range`}>
         <RecentActivityFilter

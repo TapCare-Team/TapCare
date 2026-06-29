@@ -4,7 +4,11 @@ import { mapPrismaHousehold } from "@/modules/households/repositories/prisma-map
 const householdInclude = {
   site: true,
   seniors: true,
-  assignments: true,
+  assignments: {
+    include: {
+      caregiver: true
+    }
+  },
   stickers: {
     include: {
       destinationConfig: true,
@@ -132,5 +136,50 @@ export class PrismaHouseholdsRepository {
     });
 
     return true;
+  }
+
+  async findCaregiverByEmail(email: string) {
+    const user = await prisma.user.findFirst({
+      where: {
+        email: {
+          equals: email.trim(),
+          mode: "insensitive"
+        },
+        globalRole: "CAREGIVER",
+        status: "ACTIVE"
+      },
+      select: {
+        id: true,
+        email: true,
+        displayName: true
+      }
+    });
+
+    return user;
+  }
+
+  async assignCaregiver(householdId: string, caregiverId: string) {
+    const existing = await prisma.householdAssignment.findFirst({
+      where: {
+        householdId,
+        caregiverId,
+        endedAt: null
+      },
+      select: { id: true }
+    });
+
+    if (!existing) {
+      await prisma.householdAssignment.create({
+        data: {
+          householdId,
+          caregiverId
+        }
+      });
+    }
+
+    return {
+      household: await this.getById(householdId),
+      alreadyAssigned: Boolean(existing)
+    };
   }
 }

@@ -12,5 +12,11 @@ export type Household = {
   lastActiveAt?: string;
   seniorAliases: string[];
   caregiverIds: string[];
+  caregiverAssignments: Array<{
+    caregiverId: string;
+    displayName: string;
+    email: string;
+    assignedAt: string;
+  }>;
   stickers: Sticker[];
 };

@@ -6,6 +6,7 @@ import {
   resolveActivityWindow,
   toActivityWindowFormValues
 } from "@/modules/households/domain/activity-range";
+import { withDerivedLastActiveAt } from "@/modules/households/domain/household-last-active";
 import { getHouseholdAnalyticsRepositories } from "@/modules/households/repositories/household-analytics.repository-provider";
 import type { Household } from "@/modules/households/domain/household";
 import type { InteractionEvent } from "@/modules/analytics/domain/analytics";
@@ -48,10 +49,12 @@ async function deriveScopedSignals(siteIds: string | string[]) {
           eventsRepository.listEventsBySiteIds(normalizedSiteIds)
         ]);
 
+  const householdsWithLastActive = withDerivedLastActiveAt(households, events);
+
   return {
-    households,
+    households: householdsWithLastActive,
     events,
-    signals: await derivePersistedSignals(households, events)
+    signals: await derivePersistedSignals(householdsWithLastActive, events)
   } satisfies {
     households: Household[];
     events: InteractionEvent[];
@@ -89,16 +92,18 @@ export async function getOfficerHouseholds(siteIds: string | string[]) {
 }
 
 export async function getHouseholdsByIds(householdIds: string[]) {
-  const { householdsRepository } = getHouseholdAnalyticsRepositories();
-  const [households, signals] = await Promise.all([
+  const { householdsRepository, eventsRepository } = getHouseholdAnalyticsRepositories();
+  const [households, events] = await Promise.all([
     householdsRepository.listByIds(householdIds),
-    getSignalsForHouseholds(householdIds)
+    eventsRepository.listEventsByHouseholdIds(householdIds)
   ]);
+  const householdsWithLastActive = withDerivedLastActiveAt(households, events);
+  const signals = await derivePersistedSignals(householdsWithLastActive, events);
   const signalMap = new Map(
     signals.filter((signal) => isSignalActionable(signal)).map((signal) => [signal.householdId, signal])
   );
 
-  return households.map((household) => ({
+  return householdsWithLastActive.map((household) => ({
     ...household,
     signal: signalMap.get(household.id) ?? null
   }));
@@ -115,8 +120,9 @@ export async function getSignalsForHouseholds(householdIds: string[]) {
     householdsRepository.listByIds(householdIds),
     eventsRepository.listEventsByHouseholdIds(householdIds)
   ]);
+  const householdsWithLastActive = withDerivedLastActiveAt(households, events);
 
-  return derivePersistedSignals(households, events);
+  return derivePersistedSignals(householdsWithLastActive, events);
 }
 
 export async function getHouseholdDetail(user: SessionUser, householdId: string, filters?: HouseholdDetailFilters) {
@@ -127,7 +133,9 @@ export async function getHouseholdDetail(user: SessionUser, householdId: string,
   }
 
   const householdEvents = await eventsRepository.listEventsByHouseholdIds([householdId]);
-  const signals = await derivePersistedSignals([household], householdEvents);
+  const [householdWithLastActive] = withDerivedLastActiveAt([household], householdEvents);
+  const resolvedHousehold = householdWithLastActive ?? household;
+  const signals = await derivePersistedSignals([resolvedHousehold], householdEvents);
   const sortedEvents = householdEvents.sort(
     (left, right) => new Date(right.occurredAt).getTime() - new Date(left.occurredAt).getTime()
   );
@@ -166,7 +174,7 @@ export async function getHouseholdDetail(user: SessionUser, householdId: string,
   });
 
   return {
-    household,
+    household: resolvedHousehold,
     recentEvents,
     signals,
     featureSnapshots: buildFeatureSnapshots(householdEvents),

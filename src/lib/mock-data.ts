@@ -42,9 +42,17 @@ export const mockHouseholds: Household[] = [
     unitNumber: "#03-145",
     postalCode: "460012",
     displayAddress: "12 Bedok North Street 2 #03-145",
-    lastActiveAt: "2025-04-03T10:00:00.000Z",
+    lastActiveAt: "2025-04-04T08:00:00.000Z",
     seniorAliases: ["Mdm Lee"],
     caregiverIds: ["user-caregiver-1"],
+    caregiverAssignments: [
+      {
+        caregiverId: "user-caregiver-1",
+        displayName: "Maya Lim",
+        email: "maya.lim@example.org",
+        assignedAt: "2025-04-01T08:00:00.000Z"
+      }
+    ],
     stickers: [
       {
         id: "sticker-1",
@@ -95,6 +103,7 @@ export const mockHouseholds: Household[] = [
     lastActiveAt: "2025-03-22T08:00:00.000Z",
     seniorAliases: ["Mr Goh"],
     caregiverIds: [],
+    caregiverAssignments: [],
     stickers: [
       {
         id: "sticker-3",
@@ -141,9 +150,17 @@ export const mockHouseholds: Household[] = [
     unitNumber: "#02-88",
     postalCode: "460004",
     displayAddress: "4 Chai Chee Road #02-88",
-    lastActiveAt: "2025-04-04T08:00:00.000Z",
+    lastActiveAt: "2025-04-03T19:00:00.000Z",
     seniorAliases: ["Mdm Noor"],
     caregiverIds: ["user-caregiver-1"],
+    caregiverAssignments: [
+      {
+        caregiverId: "user-caregiver-1",
+        displayName: "Maya Lim",
+        email: "maya.lim@example.org",
+        assignedAt: "2025-04-01T08:00:00.000Z"
+      }
+    ],
     stickers: [
       {
         id: "sticker-5",

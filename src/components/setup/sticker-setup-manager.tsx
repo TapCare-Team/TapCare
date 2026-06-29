@@ -2,8 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
+import { StickerPrivacyGuidance } from "@/components/setup/sticker-privacy-guidance";
 import type { DestinationType } from "@/modules/analytics/domain/analytics";
 import type { Household } from "@/modules/households/domain/household";
+import { findPublicStickerContentIssue } from "@/modules/privacy/sticker-content-policy";
 import type {
   ChecklistPageConfig,
   DestinationConfig,
@@ -213,6 +215,12 @@ function validateForm(form: EditableSticker) {
     if (!form.pageContentText.trim()) {
       return "Page details are required.";
     }
+
+    const privacyIssue = findPublicStickerContentIssue(`${form.pageTitle}\n${form.pageContentText}`);
+
+    if (privacyIssue) {
+      return privacyIssue;
+    }
   }
 
   if (pageTypeForPurpose(form.stickerType) === "RESOURCES") {
@@ -313,7 +321,7 @@ function pageContentLabel(stickerType: Sticker["stickerType"]) {
 
 function pageContentPlaceholder(stickerType: Sticker["stickerType"]) {
   if (stickerType === "HELP_PROFILE") {
-    return "Name: Mdm Lee\nIf found: Please call her daughter\nPreferred language: Mandarin\nHome area: Bedok North";
+    return "Name: Mdm Lee\nPreferred language: Mandarin\nSafe return instructions: Please call her daughter and wait with her\nHome area: Bedok North\nContact: +6591234567";
   }
 
   if (stickerType === "CURATED_RESOURCES") {
@@ -333,7 +341,7 @@ function helperText(form: EditableSticker) {
   }
 
   if (form.stickerType === "HELP_PROFILE") {
-    return "Use one field per line in the format Label: Value.";
+    return "Use one field per line in the format Label: Value. Contact fields render as call buttons; prefer safe return instructions over private medical or address details.";
   }
 
   if (form.stickerType === "CURATED_RESOURCES") {
@@ -465,6 +473,7 @@ function StickerEditor({
         </div>
       ) : (
         <div className="grid gap-4">
+          <StickerPrivacyGuidance compact />
           <label className="space-y-2 text-sm text-muted">
             Page heading
             <input

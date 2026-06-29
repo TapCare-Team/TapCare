@@ -1,28 +1,33 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { listLoginUsers } from "@/lib/auth";
-import { SESSION_COOKIE_NAME } from "@/modules/auth/domain/session";
+import { authenticateUser, createUserSession } from "@/lib/auth";
+import { loginSchema } from "@/modules/auth/contracts/login.contract";
+import { SESSION_COOKIE_NAME, SESSION_MAX_AGE_SECONDS } from "@/modules/auth/domain/session";
 import { defaultRouteForUser } from "@/modules/auth/services/session.service";
 
 export async function POST(request: Request) {
   const formData = await request.formData();
-  const userId = formData.get("userId");
+  const parsed = loginSchema.safeParse({
+    email: formData.get("email"),
+    password: formData.get("password")
+  });
 
-  if (typeof userId !== "string" || userId.length === 0) {
-    return NextResponse.redirect(new URL("/login", request.url));
+  if (!parsed.success) {
+    return NextResponse.redirect(new URL("/login?error=invalid", request.url));
   }
 
-  const users = await listLoginUsers();
-  const user = users.find((candidate) => candidate.id === userId);
+  const user = await authenticateUser(parsed.data.email, parsed.data.password);
   if (!user) {
-    return NextResponse.redirect(new URL("/login", request.url));
+    return NextResponse.redirect(new URL("/login?error=invalid", request.url));
   }
 
-  cookies().set(SESSION_COOKIE_NAME, user.id, {
+  const { sessionToken } = await createUserSession(user.id);
+  cookies().set(SESSION_COOKIE_NAME, sessionToken, {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
-    path: "/"
+    path: "/",
+    maxAge: SESSION_MAX_AGE_SECONDS
   });
 
   const destination = defaultRouteForUser(user);

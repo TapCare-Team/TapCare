@@ -2,6 +2,7 @@ import { AppShell } from "@/components/shared/app-shell";
 import { Panel } from "@/components/shared/panel";
 import { StatCard } from "@/components/shared/stat-card";
 import { FeatureSnapshotGrid } from "@/components/officer/feature-snapshot-grid";
+import { StickerPrivacyGuidance } from "@/components/setup/sticker-privacy-guidance";
 import { requireUserWithRole } from "@/lib/auth";
 import { getAdminAnalyticsSummary } from "@/modules/analytics/services/admin-analytics.service";
 
@@ -56,6 +57,10 @@ export default async function AdminAnalyticsPage() {
             ? new Date(summary.ingestionHealth.lastEventAt).toLocaleString()
             : "No events yet"}
         </p>
+      </Panel>
+
+      <Panel title="Public sticker guardrails" eyebrow="Privacy and monitoring">
+        <StickerPrivacyGuidance includeOperations />
       </Panel>
 
       <Panel title="Routing failures" eyebrow="Failure patterns">

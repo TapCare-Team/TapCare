@@ -24,12 +24,28 @@ function uniqueDayCount(events: InteractionEvent[]) {
   return new Set(events.map((event) => event.occurredAt.slice(0, 10))).size;
 }
 
+function sortEventsByOccurredAt(events: InteractionEvent[]) {
+  return [...events].sort(
+    (left, right) => new Date(left.occurredAt).getTime() - new Date(right.occurredAt).getTime()
+  );
+}
+
+function observationWindow(events: InteractionEvent[], fallback: string) {
+  const sortedEvents = sortEventsByOccurredAt(events);
+  return {
+    firstObservedAt: sortedEvents[0]?.occurredAt ?? fallback,
+    lastObservedAt: sortedEvents[sortedEvents.length - 1]?.occurredAt ?? fallback
+  };
+}
+
 function openedByType(events: InteractionEvent[], stickerType: StickerType) {
-  return events.filter(
-    (event) =>
-      event.stickerType === stickerType &&
-      event.eventType === "STICKER_OPENED" &&
-      event.outcome === "SUCCESS"
+  return sortEventsByOccurredAt(
+    events.filter(
+      (event) =>
+        event.stickerType === stickerType &&
+        event.eventType === "STICKER_OPENED" &&
+        event.outcome === "SUCCESS"
+    )
   );
 }
 
@@ -85,13 +101,14 @@ export function deriveFollowUpSignals({
 
     const emergencyEvents = openedByType(recentEvents, "EMERGENCY_CONTACT");
     if (emergencyEvents.length >= 3) {
+      const window = observationWindow(emergencyEvents, now.toISOString());
       signals.push(
         makeSignal({
           household,
           signalType: "REPEATED_EMERGENCY_USAGE",
           explanation: `Emergency contact sticker opened ${emergencyEvents.length} times in 7 days.`,
-          firstObservedAt: emergencyEvents[0].occurredAt,
-          lastObservedAt: emergencyEvents[emergencyEvents.length - 1].occurredAt,
+          firstObservedAt: window.firstObservedAt,
+          lastObservedAt: window.lastObservedAt,
           evidence: { eventCount: emergencyEvents.length, windowDays: 7 }
         })
       );
@@ -99,13 +116,14 @@ export function deriveFollowUpSignals({
 
     const helpEvents = openedByType(recentEvents, "HELP_PROFILE");
     if (helpEvents.length >= 4) {
+      const window = observationWindow(helpEvents, now.toISOString());
       signals.push(
         makeSignal({
           household,
           signalType: "REPEATED_HELP_PROFILE_USAGE",
           explanation: `Help profile sticker opened ${helpEvents.length} times in 7 days.`,
-          firstObservedAt: helpEvents[0].occurredAt,
-          lastObservedAt: helpEvents[helpEvents.length - 1].occurredAt,
+          firstObservedAt: window.firstObservedAt,
+          lastObservedAt: window.lastObservedAt,
           evidence: { eventCount: helpEvents.length, windowDays: 7 }
         })
       );
@@ -114,13 +132,14 @@ export function deriveFollowUpSignals({
     const contactEvents = openedByType(recentEvents, "FREQUENT_CONTACT");
     const contactDays = uniqueDayCount(contactEvents);
     if (contactEvents.length >= 10 && contactDays >= 3) {
+      const window = observationWindow(contactEvents, now.toISOString());
       signals.push(
         makeSignal({
           household,
           signalType: "HIGH_CONTACT_USAGE",
           explanation: `Contact sticker used ${contactEvents.length} times across ${contactDays} days in the last week.`,
-          firstObservedAt: contactEvents[0].occurredAt,
-          lastObservedAt: contactEvents[contactEvents.length - 1].occurredAt,
+          firstObservedAt: window.firstObservedAt,
+          lastObservedAt: window.lastObservedAt,
           evidence: { eventCount: contactEvents.length, activeDays: contactDays }
         })
       );
@@ -133,13 +152,14 @@ export function deriveFollowUpSignals({
     }, {});
     const reminderHeavyDays = Object.values(reminderByDay).filter((count) => count >= 2).length;
     if (reminderEvents.length >= 14 || reminderHeavyDays >= 5) {
+      const window = observationWindow(reminderEvents, now.toISOString());
       signals.push(
         makeSignal({
           household,
           signalType: "HIGH_REMINDER_USAGE",
           explanation: `Reminder sticker used repeatedly on ${reminderHeavyDays} days this week.`,
-          firstObservedAt: reminderEvents[0]?.occurredAt ?? now.toISOString(),
-          lastObservedAt: reminderEvents[reminderEvents.length - 1]?.occurredAt ?? now.toISOString(),
+          firstObservedAt: window.firstObservedAt,
+          lastObservedAt: window.lastObservedAt,
           evidence: { eventCount: reminderEvents.length, heavyDays: reminderHeavyDays }
         })
       );
@@ -191,13 +211,14 @@ export function deriveFollowUpSignals({
     const attempts = recentEvents.filter((event) => event.eventType === "STICKER_OPENED").length;
     const failureRate = attempts === 0 ? 0 : failedEvents.length / attempts;
     if (failedEvents.length >= 3 || (attempts >= 5 && failureRate > 0.4)) {
+      const window = observationWindow(failedEvents, now.toISOString());
       signals.push(
         makeSignal({
           household,
           signalType: "REPEATED_FAILED_INTERACTIONS",
           explanation: `${failedEvents.length} failed interactions recorded in 7 days.`,
-          firstObservedAt: failedEvents[0]?.occurredAt ?? now.toISOString(),
-          lastObservedAt: failedEvents[failedEvents.length - 1]?.occurredAt ?? now.toISOString(),
+          firstObservedAt: window.firstObservedAt,
+          lastObservedAt: window.lastObservedAt,
           evidence: { failedEvents: failedEvents.length, attempts, failureRate: Number(failureRate.toFixed(2)) }
         })
       );

@@ -3,11 +3,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   isDatabaseConfigured: vi.fn(),
   canAccessOfficerSurface: vi.fn(),
+  canViewHousehold: vi.fn(),
   listByIds: vi.fn(),
   listAll: vi.fn(),
   findDuplicateAddress: vi.fn(),
   create: vi.fn(),
   getById: vi.fn(),
+  findCaregiverByEmail: vi.fn(),
+  assignCaregiver: vi.fn(),
   archive: vi.fn()
 }));
 
@@ -16,7 +19,8 @@ vi.mock("@/lib/db/database-mode", () => ({
 }));
 
 vi.mock("@/modules/auth/services/access-control.service", () => ({
-  canAccessOfficerSurface: mocks.canAccessOfficerSurface
+  canAccessOfficerSurface: mocks.canAccessOfficerSurface,
+  canViewHousehold: mocks.canViewHousehold
 }));
 
 vi.mock("@/modules/households/repositories/prisma-sites.repository", () => ({
@@ -38,6 +42,8 @@ vi.mock("@/modules/households/repositories/prisma-households.repository", () => 
     findDuplicateAddress = mocks.findDuplicateAddress;
     create = mocks.create;
     getById = mocks.getById;
+    findCaregiverByEmail = mocks.findCaregiverByEmail;
+    assignCaregiver = mocks.assignCaregiver;
     archive = mocks.archive;
   }
 }));
@@ -47,6 +53,8 @@ vi.mock("@/modules/households/repositories/mock-households.repository", () => ({
     findDuplicateAddress = mocks.findDuplicateAddress;
     create = mocks.create;
     getById = mocks.getById;
+    findCaregiverByEmail = mocks.findCaregiverByEmail;
+    assignCaregiver = mocks.assignCaregiver;
     archive = mocks.archive;
   }
 }));
@@ -72,6 +80,7 @@ describe("household-management.service", () => {
     vi.clearAllMocks();
     mocks.isDatabaseConfigured.mockReturnValue(true);
     mocks.canAccessOfficerSurface.mockReturnValue(true);
+    mocks.canViewHousehold.mockReturnValue(true);
     mocks.listByIds.mockResolvedValue([
       { id: "site-bedok", code: "SGO-BEDOK", name: "SGO Bedok", region: "East" },
       { id: "site-tampines", code: "SGO-TAMP", name: "SGO Tampines", region: "East" }
@@ -86,7 +95,34 @@ describe("household-management.service", () => {
       displayAddress: "Blk 18 Bedok South Road, #05-123, 460018",
       seniorAliases: [],
       caregiverIds: [],
+      caregiverAssignments: [],
       stickers: []
+    });
+    mocks.findCaregiverByEmail.mockResolvedValue({
+      id: "user-caregiver-1",
+      displayName: "Maya Lim",
+      email: "maya.lim@example.org"
+    });
+    mocks.assignCaregiver.mockResolvedValue({
+      alreadyAssigned: false,
+      household: {
+        id: "household-1",
+        siteId: "site-bedok",
+        siteName: "SGO Bedok",
+        addressLine1: "Blk 18 Bedok South Road",
+        displayAddress: "Blk 18 Bedok South Road, #05-123, 460018",
+        seniorAliases: [],
+        caregiverIds: ["user-caregiver-1"],
+        caregiverAssignments: [
+          {
+            caregiverId: "user-caregiver-1",
+            displayName: "Maya Lim",
+            email: "maya.lim@example.org",
+            assignedAt: "2026-06-28T00:00:00.000Z"
+          }
+        ],
+        stickers: []
+      }
     });
     mocks.archive.mockResolvedValue(true);
     mocks.create.mockImplementation(async (input: Record<string, unknown>) => ({
@@ -101,6 +137,7 @@ describe("household-management.service", () => {
       lastActiveAt: undefined,
       seniorAliases: input.seniorDisplayName ? [input.seniorDisplayName] : [],
       caregiverIds: [],
+      caregiverAssignments: [],
       stickers: []
     }));
   });
@@ -156,6 +193,7 @@ describe("household-management.service", () => {
       displayAddress: "Blk 18 Bedok South Road, 460018",
       seniorAliases: [],
       caregiverIds: [],
+      caregiverAssignments: [],
       stickers: []
     });
 
@@ -190,5 +228,35 @@ describe("household-management.service", () => {
 
     expect(mocks.getById).toHaveBeenCalledWith("household-1");
     expect(mocks.archive).toHaveBeenCalledWith("household-1");
+  });
+
+  it("assigns an existing caregiver to an in-scope household", async () => {
+    const { assignCaregiverToHouseholdForUser } = await import("@/modules/households/services/household-management.service");
+
+    const result = await assignCaregiverToHouseholdForUser(officerUser, "household-1", {
+      email: "Maya.Lim@example.org"
+    });
+
+    expect(mocks.findCaregiverByEmail).toHaveBeenCalledWith("maya.lim@example.org");
+    expect(mocks.assignCaregiver).toHaveBeenCalledWith("household-1", "user-caregiver-1");
+    expect(result.alreadyAssigned).toBe(false);
+    expect(result.caregiver.email).toBe("maya.lim@example.org");
+  });
+
+  it("tells officers when the caregiver has not signed up yet", async () => {
+    const { assignCaregiverToHouseholdForUser } = await import("@/modules/households/services/household-management.service");
+    mocks.findCaregiverByEmail.mockResolvedValueOnce(null);
+
+    await expect(
+      assignCaregiverToHouseholdForUser(officerUser, "household-1", {
+        email: "missing@example.org"
+      })
+    ).rejects.toMatchObject({
+      statusCode: 404,
+      code: "CAREGIVER_NOT_FOUND",
+      message: "Caregiver needs to sign up first."
+    });
+
+    expect(mocks.assignCaregiver).not.toHaveBeenCalled();
   });
 });

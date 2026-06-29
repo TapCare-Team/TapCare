@@ -1,6 +1,17 @@
 import { PrismaClient } from "@prisma/client";
+import { randomBytes, scrypt as scryptCallback } from "node:crypto";
+import { promisify } from "node:util";
 
 const prisma = new PrismaClient();
+const scrypt = promisify(scryptCallback);
+const demoPassword = "TapCare1234!";
+
+async function hashPassword(password) {
+  const salt = randomBytes(16).toString("base64url");
+  const derivedKey = await scrypt(password, salt, 64);
+
+  return `scrypt$${salt}$${derivedKey.toString("base64url")}`;
+}
 
 const householdIds = {
   lee: "cmah1a8xk0001q9m7bedok12",
@@ -20,19 +31,22 @@ const users = [
     id: "user-officer-1",
     email: "amina.tan@tapcare.sg",
     displayName: "Amina Tan",
-    globalRole: "OFFICER"
+    globalRole: "OFFICER",
+    password: demoPassword
   },
   {
     id: "user-caregiver-1",
     email: "maya.lim@example.org",
     displayName: "Maya Lim",
-    globalRole: "CAREGIVER"
+    globalRole: "CAREGIVER",
+    password: demoPassword
   },
   {
     id: "user-admin-1",
     email: "dev.admin@tapcare.sg",
     displayName: "Dev Admin",
-    globalRole: "ADMIN"
+    globalRole: "ADMIN",
+    password: demoPassword
   }
 ];
 
@@ -44,7 +58,7 @@ const households = [
     unitNumber: "#03-145",
     postalCode: "460012",
     displayAddress: "12 Bedok North Street 2 #03-145",
-    lastActiveAt: new Date("2025-04-03T10:00:00.000Z")
+    lastActiveAt: new Date("2025-04-04T08:00:00.000Z")
   },
   {
     id: householdIds.goh,
@@ -62,7 +76,7 @@ const households = [
     unitNumber: "#02-88",
     postalCode: "460004",
     displayAddress: "4 Chai Chee Road #02-88",
-    lastActiveAt: new Date("2025-04-04T08:00:00.000Z")
+    lastActiveAt: new Date("2025-04-03T19:00:00.000Z")
   }
 ];
 
@@ -265,14 +279,22 @@ async function main() {
   });
 
   for (const user of users) {
+    const passwordHash = await hashPassword(user.password);
     await prisma.user.upsert({
       where: { id: user.id },
       update: {
         email: user.email,
         displayName: user.displayName,
-        globalRole: user.globalRole
+        globalRole: user.globalRole,
+        passwordHash
       },
-      create: user
+      create: {
+        id: user.id,
+        email: user.email,
+        displayName: user.displayName,
+        globalRole: user.globalRole,
+        passwordHash
+      },
     });
   }
 
@@ -356,12 +378,21 @@ async function main() {
     });
   }
 
+  const stickerIdMap = new Map();
   for (const sticker of stickers) {
-    await prisma.sticker.upsert({
-      where: { id: sticker.id },
-      update: sticker,
+    const { id, ...stickerFields } = sticker;
+    const seededSticker = await prisma.sticker.upsert({
+      where: {
+        householdId_displayCode: {
+          householdId: sticker.householdId,
+          displayCode: sticker.displayCode
+        }
+      },
+      update: stickerFields,
       create: sticker
     });
+
+    stickerIdMap.set(id, seededSticker.id);
   }
 
   for (const event of interactionEvents) {
@@ -385,7 +416,7 @@ async function main() {
         occurredAt: new Date(occurredAt),
         siteId: site.id,
         householdId,
-        stickerId,
+        stickerId: stickerIdMap.get(stickerId) ?? stickerId,
         publicCode,
         stickerType,
         runtimeMode,
@@ -399,7 +430,7 @@ async function main() {
         occurredAt: new Date(occurredAt),
         siteId: site.id,
         householdId,
-        stickerId,
+        stickerId: stickerIdMap.get(stickerId) ?? stickerId,
         publicCode,
         stickerType,
         runtimeMode,

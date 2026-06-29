@@ -29,11 +29,16 @@ function normalizeContactDestinationUrl(destination: RuntimeRecord["sticker"]["d
   const value = destination.value.trim();
 
   if (destination.type === "PHONE") {
+    const digitsOnly = value.replace(/[^\d]/g, "");
+
     if (value.startsWith("tel:")) {
-      return value;
+      if (digitsOnly.length >= 8 && digitsOnly.length <= 15) {
+        return value.startsWith("tel:+") ? `tel:+${digitsOnly}` : `tel:${digitsOnly}`;
+      }
+
+      return null;
     }
 
-    const digitsOnly = value.replace(/[^\d]/g, "");
     if (digitsOnly.length >= 8 && digitsOnly.length <= 15) {
       return value.startsWith("+") ? `tel:+${digitsOnly}` : `tel:${digitsOnly}`;
     }

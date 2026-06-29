@@ -61,6 +61,42 @@ function ChecklistItem({ item }: { item: string }) {
   );
 }
 
+function contactHref(value: string) {
+  const trimmed = value.trim();
+  const digitsOnly = trimmed.replace(/[^\d]/g, "");
+
+  if (trimmed.startsWith("tel:")) {
+    if (digitsOnly.length >= 8 && digitsOnly.length <= 15) {
+      return trimmed.startsWith("tel:+") ? `tel:+${digitsOnly}` : `tel:${digitsOnly}`;
+    }
+
+    return "";
+  }
+
+  if (digitsOnly.length >= 8 && digitsOnly.length <= 15) {
+    return trimmed.startsWith("+") ? `tel:+${digitsOnly}` : `tel:${digitsOnly}`;
+  }
+
+  return "";
+}
+
+function HelpProfileValue({ label, value }: { label: string; value: string }) {
+  const href = /\b(?:contact|call|phone)\b/i.test(label) ? contactHref(value) : "";
+
+  if (href) {
+    return (
+      <a
+        className="inline-flex rounded-full border border-accent/20 bg-accentSoft px-4 py-2 text-sm font-semibold text-accent"
+        href={href}
+      >
+        Call contact
+      </a>
+    );
+  }
+
+  return <>{value}</>;
+}
+
 export default async function PublicStickerPage({
   params
 }: {
@@ -91,7 +127,7 @@ export default async function PublicStickerPage({
     redirect(resolution.destinationUrl);
   }
 
-  const { sticker, household, page } = resolution;
+  const { sticker, page } = resolution;
 
   await acknowledgeRenderedRuntimePage(resolution);
 
@@ -100,7 +136,9 @@ export default async function PublicStickerPage({
       <div>
         <p className="text-sm uppercase tracking-[0.3em] text-muted">TapCare</p>
         <h1 className="text-3xl font-semibold">{page?.title ?? sticker.name}</h1>
-        <p className="mt-2 text-sm text-muted">{household.displayAddress}</p>
+        <p className="mt-2 text-sm text-muted">
+          Public support page. Use only for the immediate care or safe-return situation.
+        </p>
       </div>
 
       {page?.pageType === "CHECKLIST" ? (
@@ -121,7 +159,9 @@ export default async function PublicStickerPage({
             {page.content.helpFields?.map((field) => (
               <div key={field.label}>
                 <dt className="text-sm text-muted">{field.label}</dt>
-                <dd className="font-medium">{field.value}</dd>
+                <dd className="font-medium">
+                  <HelpProfileValue label={field.label} value={field.value} />
+                </dd>
               </div>
             ))}
           </dl>
@@ -137,7 +177,8 @@ export default async function PublicStickerPage({
                 className="block rounded-2xl border border-black/5 p-4 hover:bg-accentSoft"
                 href={link.href}
               >
-                {link.label}
+                <span className="block font-medium">{link.label}</span>
+                <span className="mt-1 block break-all text-sm text-accent">{link.href}</span>
               </a>
             ))}
           </div>

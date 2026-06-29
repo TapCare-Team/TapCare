@@ -1,0 +1,194 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { signupSchema } from "@/modules/auth/contracts/login.contract";
+
+type SignupFieldErrors = Partial<Record<"displayName" | "email" | "password" | "confirmPassword", string[]>>;
+
+function firstError(errors: SignupFieldErrors, field: keyof SignupFieldErrors) {
+  return errors[field]?.[0] ?? "";
+}
+
+function PasswordInput({
+  name,
+  label,
+  value,
+  error,
+  onChange,
+  placeholder
+}: {
+  name: "password" | "confirmPassword";
+  label: string;
+  value: string;
+  error?: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+}) {
+  const [isVisible, setIsVisible] = useState(false);
+
+  return (
+    <label className="flex flex-col gap-2 text-sm text-muted">
+      {label}
+      <div className="flex overflow-hidden rounded-2xl border border-black/10 bg-white">
+        <input
+          name={name}
+          type={isVisible ? "text" : "password"}
+          autoComplete="new-password"
+          required
+          minLength={12}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          className="min-w-0 flex-1 bg-white px-4 py-3 text-ink outline-none"
+          placeholder={placeholder}
+        />
+        <button
+          type="button"
+          onClick={() => setIsVisible((current) => !current)}
+          className="border-l border-black/10 px-4 text-sm font-medium text-accent transition hover:bg-accentSoft"
+          aria-label={isVisible ? `Hide ${label.toLowerCase()}` : `Show ${label.toLowerCase()}`}
+        >
+          {isVisible ? "Hide" : "Show"}
+        </button>
+      </div>
+      {error ? <span className="text-sm text-red-600">{error}</span> : null}
+    </label>
+  );
+}
+
+export function SignupForm() {
+  const router = useRouter();
+  const [displayName, setDisplayName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<SignupFieldErrors>({});
+  const [formError, setFormError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setFormError("");
+    setFieldErrors({});
+
+    const parsed = signupSchema.safeParse({
+      displayName,
+      email,
+      password,
+      confirmPassword
+    });
+
+    if (!parsed.success) {
+      setFieldErrors(parsed.error.flatten().fieldErrors);
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const formData = new FormData();
+      formData.set("displayName", parsed.data.displayName);
+      formData.set("email", parsed.data.email);
+      formData.set("password", parsed.data.password);
+      formData.set("confirmPassword", parsed.data.confirmPassword);
+
+      const response = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: {
+          Accept: "application/json"
+        },
+        body: formData
+      });
+
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => null)) as {
+          error?: string;
+          fieldErrors?: SignupFieldErrors;
+        } | null;
+        setFormError(payload?.error ?? "Unable to create account.");
+        setFieldErrors(payload?.fieldErrors ?? {});
+        return;
+      }
+
+      router.replace("/caregiver");
+      router.refresh();
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message : "Unable to create account.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+      {formError ? (
+        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {formError}
+        </div>
+      ) : null}
+
+      <label className="flex flex-col gap-2 text-sm text-muted">
+        Name
+        <input
+          name="displayName"
+          autoComplete="name"
+          required
+          value={displayName}
+          onChange={(event) => setDisplayName(event.target.value)}
+          className="rounded-2xl border border-black/10 bg-white px-4 py-3 text-ink"
+          placeholder="Your name"
+        />
+        {firstError(fieldErrors, "displayName") ? (
+          <span className="text-sm text-red-600">{firstError(fieldErrors, "displayName")}</span>
+        ) : null}
+      </label>
+
+      <label className="flex flex-col gap-2 text-sm text-muted">
+        Email
+        <input
+          name="email"
+          type="email"
+          autoComplete="email"
+          required
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+          className="rounded-2xl border border-black/10 bg-white px-4 py-3 text-ink"
+          placeholder="you@example.com"
+        />
+        {firstError(fieldErrors, "email") ? (
+          <span className="text-sm text-red-600">{firstError(fieldErrors, "email")}</span>
+        ) : null}
+      </label>
+
+      <PasswordInput
+        name="password"
+        label="Password"
+        value={password}
+        onChange={setPassword}
+        error={firstError(fieldErrors, "password")}
+        placeholder="Create a password"
+      />
+
+      <PasswordInput
+        name="confirmPassword"
+        label="Confirm password"
+        value={confirmPassword}
+        onChange={setConfirmPassword}
+        error={firstError(fieldErrors, "confirmPassword")}
+        placeholder="Repeat your password"
+      />
+
+      <p className="text-xs text-muted">
+        Use at least 12 characters with uppercase, lowercase, number, and symbol.
+      </p>
+
+      <button
+        type="submit"
+        disabled={isSubmitting}
+        className="w-full rounded-full border border-accent/20 bg-accentSoft px-5 py-3 text-sm font-semibold text-accent transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        {isSubmitting ? "Creating account..." : "Create account"}
+      </button>
+    </form>
+  );
+}
