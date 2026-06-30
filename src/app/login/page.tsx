@@ -44,21 +44,18 @@ export default async function LoginPage({
     : searchParams?.changed === "1";
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-6 py-10">
-      <div className="w-full max-w-md rounded-3xl border border-black/5 bg-white p-8 shadow-panel">
-        <p className="text-sm uppercase tracking-[0.3em] text-muted">TapCare</p>
-        <h1 className="mt-3 text-3xl font-semibold">Sign in</h1>
-        <p className="mt-2 text-sm text-muted">
-          Access for officers, caregivers, and admins.
-        </p>
+    <main className="flex min-h-screen items-center justify-center bg-white px-6 py-10">
+      <section className="w-full max-w-sm">
+        <p className="text-center text-sm font-semibold uppercase tracking-[0.28em] text-accent">TapCare</p>
+        <h1 className="mt-10 text-center text-4xl font-semibold tracking-normal text-ink">Welcome back</h1>
 
         {errorMessage ? (
-          <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <div className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {errorMessage}
           </div>
         ) : null}
         {passwordChanged ? (
-          <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+          <div className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
             Password changed. Sign in again with your new password.
           </div>
         ) : null}
@@ -68,7 +65,7 @@ export default async function LoginPage({
         <div className="mt-5">
           <a
             href="/api/auth/google/start"
-            className="flex w-full items-center justify-center rounded-full border border-black/10 px-5 py-3 text-sm font-semibold text-ink transition hover:bg-panel"
+            className="flex w-full items-center justify-center rounded-xl border border-black/10 bg-white px-5 py-3 text-sm font-semibold text-ink transition hover:border-black/25 hover:bg-panel"
           >
             Sign in with Google
           </a>
@@ -80,7 +77,7 @@ export default async function LoginPage({
             Create an account
           </Link>
         </p>
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }

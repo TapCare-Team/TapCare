@@ -30,7 +30,7 @@ function PasswordInput({
   return (
     <label className="flex flex-col gap-2 text-sm text-muted">
       {label}
-      <div className="flex overflow-hidden rounded-2xl border border-black/10 bg-white">
+      <div className="flex overflow-hidden rounded-xl border border-black/10 bg-panel transition focus-within:border-ink">
         <input
           name={name}
           type={isVisible ? "text" : "password"}
@@ -39,13 +39,13 @@ function PasswordInput({
           minLength={12}
           value={value}
           onChange={(event) => onChange(event.target.value)}
-          className="min-w-0 flex-1 bg-white px-4 py-3 text-ink outline-none"
+          className="min-w-0 flex-1 bg-panel px-4 py-4 text-ink outline-none"
           placeholder={placeholder}
         />
         <button
           type="button"
           onClick={() => setIsVisible((current) => !current)}
-          className="border-l border-black/10 px-4 text-sm font-medium text-accent transition hover:bg-accentSoft"
+          className="px-4 text-sm font-medium text-muted transition hover:text-ink"
           aria-label={isVisible ? `Hide ${label.toLowerCase()}` : `Show ${label.toLowerCase()}`}
         >
           {isVisible ? "Hide" : "Show"}
@@ -120,9 +120,9 @@ export function SignupForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+    <form onSubmit={handleSubmit} className="mt-8 space-y-4">
       {formError ? (
-        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {formError}
         </div>
       ) : null}
@@ -135,7 +135,7 @@ export function SignupForm() {
           required
           value={displayName}
           onChange={(event) => setDisplayName(event.target.value)}
-          className="rounded-2xl border border-black/10 bg-white px-4 py-3 text-ink"
+          className="rounded-xl border border-black/10 bg-panel px-4 py-4 text-ink outline-none transition focus:border-ink"
           placeholder="Your name"
         />
         {firstError(fieldErrors, "displayName") ? (
@@ -152,8 +152,8 @@ export function SignupForm() {
           required
           value={email}
           onChange={(event) => setEmail(event.target.value)}
-          className="rounded-2xl border border-black/10 bg-white px-4 py-3 text-ink"
-          placeholder="you@example.com"
+          className="rounded-xl border border-black/10 bg-panel px-4 py-4 text-ink outline-none transition focus:border-ink"
+          placeholder="Enter email"
         />
         {firstError(fieldErrors, "email") ? (
           <span className="text-sm text-red-600">{firstError(fieldErrors, "email")}</span>
@@ -166,7 +166,7 @@ export function SignupForm() {
         value={password}
         onChange={setPassword}
         error={firstError(fieldErrors, "password")}
-        placeholder="Create a password"
+        placeholder="Enter password"
       />
 
       <PasswordInput
@@ -175,7 +175,7 @@ export function SignupForm() {
         value={confirmPassword}
         onChange={setConfirmPassword}
         error={firstError(fieldErrors, "confirmPassword")}
-        placeholder="Repeat your password"
+        placeholder="Confirm password"
       />
 
       <p className="text-xs text-muted">
@@ -185,7 +185,7 @@ export function SignupForm() {
       <button
         type="submit"
         disabled={isSubmitting}
-        className="w-full rounded-full border border-accent/20 bg-accentSoft px-5 py-3 text-sm font-semibold text-accent transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+        className="w-full rounded-xl bg-ink px-5 py-4 text-sm font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
       >
         {isSubmitting ? "Creating account..." : "Create account"}
       </button>
