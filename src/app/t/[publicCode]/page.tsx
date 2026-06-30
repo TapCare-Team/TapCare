@@ -1,9 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import Script from "next/script";
-import {
-  acknowledgeRenderedRuntimePage,
-  loadPublicRuntime
-} from "@/modules/runtime/controllers/public-runtime.controller";
+import { loadPublicRuntime } from "@/modules/runtime/controllers/public-runtime.controller";
 
 export const dynamic = "force-dynamic";
 
@@ -128,8 +125,6 @@ export default async function PublicStickerPage({
   }
 
   const { sticker, page } = resolution;
-
-  await acknowledgeRenderedRuntimePage(resolution);
 
   return (
     <div className="mx-auto flex min-h-screen max-w-3xl flex-col gap-6 px-6 py-10">
