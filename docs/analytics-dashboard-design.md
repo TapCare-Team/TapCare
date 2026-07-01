@@ -7,10 +7,10 @@ TapCare is not a generic analytics tool. It is an NFC runtime and an operational
 Design priorities:
 
 1. One tap should do the intended thing.
-2. Officer workflow should stay simple.
+2. Admin workflow should stay simple.
 3. Household-specific routing must be database-driven.
 4. Privacy-safe analytics are enough; perfect attribution is not required.
-5. Setup must be simple enough for caregivers first, with officers able to step in when needed.
+5. Setup must be simple enough for caregivers, with admin able to help when needed.
 
 ## 1. Information Architecture
 
@@ -31,7 +31,7 @@ The default homepage should answer:
 1. Who may need follow-up?
 2. Which sticker types are useful in the field?
 
-### Officer-facing areas
+### Admin-facing areas
 
 - Outreach Dashboard
   - recent follow-up signals
@@ -66,7 +66,7 @@ The default homepage should answer:
 
 ### Admin area
 
-Separate from the officer dashboard.
+Separate from the household management dashboard.
 
 - ingestion health
 - routing failures
@@ -131,17 +131,17 @@ Flow:
 
 ## 3. User Workflows
 
-### Officer workflow: morning triage
+### Admin workflow: morning triage
 
-1. Officer lands on Outreach Dashboard.
+1. Admin lands on Outreach Dashboard.
 2. Reviews households with recent follow-up signals.
 3. Opens household detail to see plain-language evidence.
 4. Optionally reviews or resolves signals.
 5. Checks feature usefulness to understand what works in the field.
 
-### Officer workflow: setup support
+### Admin workflow: setup support
 
-1. Officer searches for the household by address.
+1. Admin searches for the household by address.
 2. Creates or updates a sticker when caregiver setup did not happen.
 3. Chooses sticker type and runtime mode.
 4. Saves household-specific destination or page content.
@@ -172,7 +172,7 @@ Keep the domain lightweight.
 - `Household`
   - address-based operational unit
 - `User`
-  - officer, caregiver, admin, developer
+  - admin, caregiver
 - `HouseholdAssignment`
   - caregiver-to-household access mapping
 - `Sticker`
@@ -186,7 +186,7 @@ Keep the domain lightweight.
 - `FollowUpSignal`
   - explainable derived signals
 - `FollowUpReview`
-  - optional officer review state
+  - optional admin review state
 
 ### Household should be address-based
 
@@ -250,17 +250,17 @@ Purpose:
 - log privacy-safe events
 - redirect or render
 
-### 2. Officer operational APIs
+### 2. Admin operational APIs
 
-- `GET /api/v1/officer/dashboard/summary`
-- `GET /api/v1/officer/households`
-- `GET /api/v1/officer/households/:householdId`
-- `GET /api/v1/officer/follow-up-signals`
-- `POST /api/v1/officer/follow-up-signals/:signalId/review`
+- `GET /api/v1/admin/dashboard/summary`
+- `GET /api/v1/admin/households`
+- `GET /api/v1/admin/households/:householdId`
+- `GET /api/v1/admin/follow-up-signals`
+- `POST /api/v1/admin/follow-up-signals/:signalId/review`
 
 Purpose:
 
-- officer dashboard and follow-up workflow
+- admin dashboard and follow-up workflow
 - not used by the sticker itself
 
 ### 3. Setup/config APIs
@@ -274,11 +274,11 @@ Purpose:
 
 Purpose:
 
-- simple caregiver or officer setup
+- simple caregiver or admin setup
 - no heavy provisioning workflow
 - household-specific configuration
 
-### 4. Admin/developer analytics APIs
+### 4. Admin analytics APIs
 
 - `GET /api/v1/admin/analytics/ingestion-health`
 - `GET /api/v1/admin/analytics/failure-patterns`
@@ -307,12 +307,10 @@ Purpose:
 7. If `runtimeMode = DIRECT_REDIRECT`:
   - resolve destination from `DestinationConfig`
   - validate scheme and allowed target
-  - log `redirect_issued`
   - immediately redirect
 8. If `runtimeMode = RENDER_PAGE`:
   - load `PageConfig`
   - render page
-  - log `page_rendered`
 
 ### Redirect handling
 
@@ -324,16 +322,11 @@ The product rule remains the same: no extra TapCare decision page for elderly co
 
 ## 8. Privacy-Safe Event Schema
 
-### DIRECT_REDIRECT events
+### Runtime events
 
 - `sticker_opened`
-- `redirect_issued`
 
-### RENDER_PAGE events
-
-- `sticker_opened`
-- `page_rendered`
-- optional `page_action_clicked`
+The product only needs to know whether the sticker URL was used successfully. Avoid extra synchronous event writes in the public sticker path unless there is a clear operational need.
 
 ### Never log
 
@@ -360,12 +353,6 @@ Avoid medical language and avoid black-box risk scoring.
 
 ## 10. RBAC
 
-### Site Officer
-
-- view households and signals in assigned sites
-- perform sticker setup for permitted households
-- review follow-up signals
-
 ### Caregiver
 
 - set up and update stickers for assigned households
@@ -376,10 +363,8 @@ Avoid medical language and avoid black-box risk scoring.
 
 - cross-site visibility
 - manage configuration and assignments
-
-### Developer
-
 - admin analytics and diagnostics
+- household and sticker management
 
 ## 11. Engineering Structure
 
@@ -388,9 +373,9 @@ Recommended modular monolith:
 ```text
 src/
   app/
-    (officer)/
-    (caregiver)/
     (admin)/
+    (caregiver)/
+    (management)/
     t/[publicCode]/
     api/v1/
   modules/
@@ -401,7 +386,7 @@ src/
     auth/
     audit/
   components/
-    officer/
+    admin/
     caregiver/
     setup/
     shared/
@@ -421,7 +406,7 @@ Boundary rules:
 
 - public `GET /t/:publicCode`
 - sticker setup APIs
-- officer dashboard summary
+- admin dashboard summary
 - household list/detail
 - caregiver setup and read-only view
 - privacy-safe interaction events
