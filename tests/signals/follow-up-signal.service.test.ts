@@ -228,14 +228,14 @@ describe("deriveFollowUpSignals", () => {
           review: {
             status: "REVIEWED",
             reviewedAt: "2025-04-04T12:00:00.000Z",
-            note: "Reviewed by officer"
+            note: "Reviewed by admin"
           }
         }
       ]
     );
 
     expect(mergedSignals[0]?.status).toBe("REVIEWED");
-    expect(mergedSignals[0]?.review?.note).toBe("Reviewed by officer");
+    expect(mergedSignals[0]?.review?.note).toBe("Reviewed by admin");
   });
 
   it("treats future snoozed signals as non-actionable until the snooze expires", () => {

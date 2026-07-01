@@ -10,13 +10,6 @@ export const mockHouseholdIds = {
 } as const;
 
 export const mockUsers: Record<string, SessionUser> = {
-  officer: {
-    id: "user-officer-1",
-    displayName: "Amina Tan",
-    role: "OFFICER",
-    siteIds: ["site-sgo-bedok"],
-    householdIds: []
-  },
   caregiver: {
     id: "user-caregiver-1",
     displayName: "Maya Lim",

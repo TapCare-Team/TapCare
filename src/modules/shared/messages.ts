@@ -50,5 +50,5 @@ export const householdMessages = {
   householdNotFound: "Household not found",
   caregiverNotFound: "Caregiver needs to sign up first.",
   caregiverAlreadyAssigned: "This caregiver is already assigned to the household.",
-  outOfScopeSite: "Officers can only add households within their assigned satellite scope"
+  outOfScopeSite: "Choose a satellite office that exists in this workspace"
 } as const;

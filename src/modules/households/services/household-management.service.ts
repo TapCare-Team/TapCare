@@ -1,6 +1,6 @@
 import { isDatabaseConfigured } from "@/lib/db/database-mode";
 import type { SessionUser } from "@/modules/auth/domain/access";
-import { canAccessOfficerSurface, canViewHousehold } from "@/modules/auth/services/access-control.service";
+import { canAccessAdminSurface, canViewHousehold } from "@/modules/auth/services/access-control.service";
 import {
   assignCaregiverSchema,
   type AssignCaregiverInput
@@ -54,11 +54,11 @@ async function resolveAllowedSites(user: SessionUser) {
     return repository.listAll();
   }
 
-  return repository.listByIds(user.siteIds);
+  return [];
 }
 
 export async function listCreatableSitesForUser(user: SessionUser) {
-  if (!canAccessOfficerSurface(user)) {
+  if (!canAccessAdminSurface(user)) {
     throw new ForbiddenError();
   }
 
@@ -70,7 +70,7 @@ export async function createHouseholdForUser(user: SessionUser, rawInput: Create
     throw new ConfigurationError(householdMessages.databaseUnavailable, "HOUSEHOLD_DATABASE_UNAVAILABLE");
   }
 
-  if (!canAccessOfficerSurface(user)) {
+  if (!canAccessAdminSurface(user)) {
     throw new ForbiddenError();
   }
 
@@ -101,7 +101,7 @@ export async function findDuplicateHouseholdForUser(user: SessionUser, rawInput:
     throw new ConfigurationError(householdMessages.databaseUnavailable, "HOUSEHOLD_DATABASE_UNAVAILABLE");
   }
 
-  if (!canAccessOfficerSurface(user)) {
+  if (!canAccessAdminSurface(user)) {
     throw new ForbiddenError();
   }
 
@@ -148,7 +148,7 @@ export async function assignCaregiverToHouseholdForUser(
     throw new ConfigurationError(householdMessages.databaseUnavailable, "HOUSEHOLD_DATABASE_UNAVAILABLE");
   }
 
-  if (!canAccessOfficerSurface(user)) {
+  if (!canAccessAdminSurface(user)) {
     throw new ForbiddenError();
   }
 

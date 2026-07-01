@@ -66,7 +66,7 @@ Before scanning real NFC stickers:
 - Sign up with email/password.
 - Sign up with Google.
 - Confirm new caregivers see no households until assigned.
-- Sign in as officer and admin seeded accounts only if using seeded staging data.
+- Sign in as the admin seeded account only if using seeded staging data.
 - Assign a caregiver to a household.
 - Confirm the caregiver sees only assigned households.
 - Create each sticker type.

@@ -8,7 +8,6 @@ const protectedPrefixes = [
   "/follow-up",
   "/admin",
   "/account",
-  "/api/v1/officer",
   "/api/v1/caregiver",
   "/api/v1/setup",
   "/api/v1/admin"
@@ -42,7 +41,6 @@ export const config = {
     "/follow-up/:path*",
     "/admin/:path*",
     "/account/:path*",
-    "/api/v1/officer/:path*",
     "/api/v1/caregiver/:path*",
     "/api/v1/setup/:path*",
     "/api/v1/admin/:path*"

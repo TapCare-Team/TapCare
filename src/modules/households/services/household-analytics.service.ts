@@ -8,8 +8,11 @@ import {
 } from "@/modules/households/domain/activity-range";
 import { withDerivedLastActiveAt } from "@/modules/households/domain/household-last-active";
 import { getHouseholdAnalyticsRepositories } from "@/modules/households/repositories/household-analytics.repository-provider";
+import { MockSitesRepository } from "@/modules/households/repositories/mock-sites.repository";
+import { PrismaSitesRepository } from "@/modules/households/repositories/prisma-sites.repository";
 import type { Household } from "@/modules/households/domain/household";
 import type { InteractionEvent } from "@/modules/analytics/domain/analytics";
+import { isDatabaseConfigured } from "@/lib/db/database-mode";
 import type { FollowUpSignal } from "@/modules/signals/domain/follow-up-signal";
 import { getFollowUpStateRepository } from "@/modules/signals/repositories/follow-up-state.repository-provider";
 import {
@@ -17,6 +20,9 @@ import {
   isSignalActionable,
   mergePersistedSignalState
 } from "@/modules/signals/services/follow-up-signal.service";
+
+const prismaSitesRepository = new PrismaSitesRepository();
+const mockSitesRepository = new MockSitesRepository();
 
 function normalizeSiteIds(siteIds: string[]) {
   return Array.from(new Set(siteIds.filter(Boolean)));
@@ -62,8 +68,14 @@ async function deriveScopedSignals(siteIds: string | string[]) {
   };
 }
 
-export async function getOfficerDashboardSummary(siteIds: string | string[]) {
-  const { households, events, signals } = await deriveScopedSignals(siteIds);
+async function deriveScopedSignalsForAdmin() {
+  const sitesRepository = isDatabaseConfigured() ? prismaSitesRepository : mockSitesRepository;
+  const sites = await sitesRepository.listAll();
+  return deriveScopedSignals(sites.map((site) => site.id));
+}
+
+export async function getAdminDashboardSummary(siteIds?: string | string[]) {
+  const { households, events, signals } = siteIds ? await deriveScopedSignals(siteIds) : await deriveScopedSignalsForAdmin();
   const actionableSignals = signals.filter((signal) => isSignalActionable(signal));
   const activeStickerHouseholds = households.filter((household) =>
     household.stickers.some((sticker) => sticker.status === "ACTIVE")
@@ -79,8 +91,8 @@ export async function getOfficerDashboardSummary(siteIds: string | string[]) {
   };
 }
 
-export async function getOfficerHouseholds(siteIds: string | string[]) {
-  const { households, signals } = await deriveScopedSignals(siteIds);
+export async function getAdminHouseholds(siteIds?: string | string[]) {
+  const { households, signals } = siteIds ? await deriveScopedSignals(siteIds) : await deriveScopedSignalsForAdmin();
   const signalMap = new Map(
     signals.filter((signal) => isSignalActionable(signal)).map((signal) => [signal.householdId, signal])
   );
@@ -109,8 +121,8 @@ export async function getHouseholdsByIds(householdIds: string[]) {
   }));
 }
 
-export async function getSignalsForSites(siteIds: string | string[]) {
-  const { signals } = await deriveScopedSignals(siteIds);
+export async function getSignalsForSites(siteIds?: string | string[]) {
+  const { signals } = siteIds ? await deriveScopedSignals(siteIds) : await deriveScopedSignalsForAdmin();
   return signals.filter((signal) => isSignalActionable(signal));
 }
 

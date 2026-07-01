@@ -38,10 +38,6 @@ export function defaultRouteForUser(user: Pick<SessionUser, "role">) {
     return "/caregiver";
   }
 
-  if (user.role === "ADMIN" || user.role === "DEVELOPER") {
-    return "/admin/analytics";
-  }
-
   return "/";
 }
 

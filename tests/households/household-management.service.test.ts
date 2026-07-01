@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   isDatabaseConfigured: vi.fn(),
-  canAccessOfficerSurface: vi.fn(),
+  canAccessAdminSurface: vi.fn(),
   canViewHousehold: vi.fn(),
   listByIds: vi.fn(),
   listAll: vi.fn(),
@@ -19,7 +19,7 @@ vi.mock("@/lib/db/database-mode", () => ({
 }));
 
 vi.mock("@/modules/auth/services/access-control.service", () => ({
-  canAccessOfficerSurface: mocks.canAccessOfficerSurface,
+  canAccessAdminSurface: mocks.canAccessAdminSurface,
   canViewHousehold: mocks.canViewHousehold
 }));
 
@@ -59,14 +59,6 @@ vi.mock("@/modules/households/repositories/mock-households.repository", () => ({
   }
 }));
 
-const officerUser = {
-  id: "user-officer",
-  displayName: "Officer Tan",
-  role: "OFFICER" as const,
-  siteIds: ["site-bedok", "site-tampines"],
-  householdIds: []
-};
-
 const adminUser = {
   id: "user-admin",
   displayName: "Admin Junny",
@@ -75,17 +67,28 @@ const adminUser = {
   householdIds: []
 };
 
+const caregiverUser = {
+  id: "user-caregiver",
+  displayName: "Caregiver Maya",
+  role: "CAREGIVER" as const,
+  siteIds: [],
+  householdIds: ["household-1"]
+};
+
 describe("household-management.service", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.isDatabaseConfigured.mockReturnValue(true);
-    mocks.canAccessOfficerSurface.mockReturnValue(true);
+    mocks.canAccessAdminSurface.mockImplementation((user: { role: string }) => user.role === "ADMIN");
     mocks.canViewHousehold.mockReturnValue(true);
     mocks.listByIds.mockResolvedValue([
       { id: "site-bedok", code: "SGO-BEDOK", name: "SGO Bedok", region: "East" },
       { id: "site-tampines", code: "SGO-TAMP", name: "SGO Tampines", region: "East" }
     ]);
-    mocks.listAll.mockResolvedValue([]);
+    mocks.listAll.mockResolvedValue([
+      { id: "site-bedok", code: "SGO-BEDOK", name: "SGO Bedok", region: "East" },
+      { id: "site-tampines", code: "SGO-TAMP", name: "SGO Tampines", region: "East" }
+    ]);
     mocks.findDuplicateAddress.mockResolvedValue(null);
     mocks.getById.mockResolvedValue({
       id: "household-1",
@@ -142,10 +145,10 @@ describe("household-management.service", () => {
     }));
   });
 
-  it("creates a household within an officer's assigned site scope", async () => {
+  it("allows admins to create a household", async () => {
     const { createHouseholdForUser } = await import("@/modules/households/services/household-management.service");
 
-    const household = await createHouseholdForUser(officerUser, {
+    const household = await createHouseholdForUser(adminUser, {
       siteId: "site-tampines",
       addressLine1: "Blk 18 Bedok South Road",
       unitNumber: "#05-123",
@@ -167,17 +170,16 @@ describe("household-management.service", () => {
     expect(household.id).toBe("household-new");
   });
 
-  it("rejects creation outside the officer's assigned site scope", async () => {
+  it("rejects household creation for caregivers", async () => {
     const { createHouseholdForUser } = await import("@/modules/households/services/household-management.service");
 
     await expect(
-      createHouseholdForUser(officerUser, {
-        siteId: "site-jurong",
+      createHouseholdForUser(caregiverUser, {
+        siteId: "site-bedok",
         addressLine1: "Blk 1 Jurong West Street 1"
       })
     ).rejects.toMatchObject({
-      statusCode: 403,
-      message: "Officers can only add households within their assigned satellite scope"
+      statusCode: 403
     });
 
     expect(mocks.create).not.toHaveBeenCalled();
@@ -198,7 +200,7 @@ describe("household-management.service", () => {
     });
 
     await expect(
-      createHouseholdForUser(officerUser, {
+      createHouseholdForUser(adminUser, {
         siteId: "site-bedok",
         addressLine1: "Blk 18 Bedok South Road",
         postalCode: "460018"
@@ -211,10 +213,10 @@ describe("household-management.service", () => {
     expect(mocks.create).not.toHaveBeenCalled();
   });
 
-  it("rejects household deletion by officers", async () => {
+  it("rejects household deletion by caregivers", async () => {
     const { deleteHouseholdForUser } = await import("@/modules/households/services/household-management.service");
 
-    await expect(deleteHouseholdForUser(officerUser, "household-1")).rejects.toMatchObject({
+    await expect(deleteHouseholdForUser(caregiverUser, "household-1")).rejects.toMatchObject({
       statusCode: 403
     });
 
@@ -233,7 +235,7 @@ describe("household-management.service", () => {
   it("assigns an existing caregiver to an in-scope household", async () => {
     const { assignCaregiverToHouseholdForUser } = await import("@/modules/households/services/household-management.service");
 
-    const result = await assignCaregiverToHouseholdForUser(officerUser, "household-1", {
+    const result = await assignCaregiverToHouseholdForUser(adminUser, "household-1", {
       email: "Maya.Lim@example.org"
     });
 
@@ -243,12 +245,12 @@ describe("household-management.service", () => {
     expect(result.caregiver.email).toBe("maya.lim@example.org");
   });
 
-  it("tells officers when the caregiver has not signed up yet", async () => {
+  it("tells admins when the caregiver has not signed up yet", async () => {
     const { assignCaregiverToHouseholdForUser } = await import("@/modules/households/services/household-management.service");
     mocks.findCaregiverByEmail.mockResolvedValueOnce(null);
 
     await expect(
-      assignCaregiverToHouseholdForUser(officerUser, "household-1", {
+      assignCaregiverToHouseholdForUser(adminUser, "household-1", {
         email: "missing@example.org"
       })
     ).rejects.toMatchObject({

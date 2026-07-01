@@ -5,7 +5,6 @@ import type { SignupInput } from "@/modules/auth/contracts/login.contract";
 import { hashPassword, verifyPassword } from "@/modules/auth/services/password.service";
 
 const mockCredentials: Record<string, { userId: string; password?: string; passwordHash?: string }> = {
-  "amina.tan@tapcare.sg": { userId: "user-officer-1", password: "TapCare1234!" },
   "maya.lim@example.org": { userId: "user-caregiver-1", password: "TapCare1234!" },
   "dev.admin@tapcare.sg": { userId: "user-admin-1", password: "TapCare1234!" }
 };

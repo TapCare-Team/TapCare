@@ -13,7 +13,7 @@ Privacy-safe operational analytics dashboard for TapCare's NFC and QR support sy
 
 ## Product shape
 
-- Officer-first outreach dashboard
+- Admin household management dashboard
 - Caregiver assigned-household view with sticker setup access
 - Separate admin analytics area
 - Explainable follow-up signals instead of opaque risk scores
@@ -56,7 +56,7 @@ npm run db:seed
 What gets seeded:
 
 - `SGO Bedok` site
-- officer, caregiver, and admin users
+- caregiver and admin users
 - three households with address-based identities
 - household assignments for the caregiver
 - six stickers across redirect and rendered-page modes
@@ -66,7 +66,6 @@ What gets seeded:
 Seeded login credentials:
 
 ```text
-Officer:   amina.tan@tapcare.sg / TapCare1234!
 Caregiver: maya.lim@example.org / TapCare1234!
 Admin:     dev.admin@tapcare.sg / TapCare1234!
 ```

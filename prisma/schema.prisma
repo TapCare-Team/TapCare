@@ -25,7 +25,7 @@ model User {
   passwordHash         String?
   displayName          String
   status               UserStatus            @default(ACTIVE)
-  globalRole           GlobalRole            @default(OFFICER)
+  globalRole           GlobalRole            @default(CAREGIVER)
   siteRoles            UserSiteRole[]
   householdAssignments HouseholdAssignment[]
   authSessions         AuthSession[]
@@ -253,14 +253,11 @@ model AuditLog {
 }
 
 enum GlobalRole {
-  OFFICER
   CAREGIVER
   ADMIN
-  DEVELOPER
 }
 
 enum SiteRole {
-  SITE_OFFICER
   SITE_MANAGER
   SITE_VIEWER
   CAREGIVER_VIEWER

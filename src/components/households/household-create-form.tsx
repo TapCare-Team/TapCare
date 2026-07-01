@@ -74,7 +74,7 @@ export function HouseholdCreateForm({
     setIsCheckingDuplicate(true);
 
     try {
-      const response = await fetch("/api/v1/officer/households/duplicate-check", {
+      const response = await fetch("/api/v1/admin/households/duplicate-check", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -141,7 +141,7 @@ export function HouseholdCreateForm({
     }
 
     try {
-      const response = await fetch("/api/v1/officer/households", {
+      const response = await fetch("/api/v1/admin/households", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -287,7 +287,7 @@ export function HouseholdCreateForm({
             setError(null);
           }}
           className="rounded-2xl border border-black/10 bg-white px-4 py-3 text-ink"
-          placeholder="Optional, for easier officer identification"
+          placeholder="Optional, for easier identification"
           disabled={!canPersist || isSubmitting}
         />
       </label>

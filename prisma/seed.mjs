@@ -28,13 +28,6 @@ const site = {
 
 const users = [
   {
-    id: "user-officer-1",
-    email: "amina.tan@tapcare.sg",
-    displayName: "Amina Tan",
-    globalRole: "OFFICER",
-    password: demoPassword
-  },
-  {
     id: "user-caregiver-1",
     email: "maya.lim@example.org",
     displayName: "Maya Lim",
@@ -297,23 +290,6 @@ async function main() {
       },
     });
   }
-
-  await prisma.userSiteRole.upsert({
-    where: {
-      userId_siteId_role: {
-        userId: "user-officer-1",
-        siteId: site.id,
-        role: "SITE_OFFICER"
-      }
-    },
-    update: {},
-    create: {
-      id: "user-site-role-1",
-      userId: "user-officer-1",
-      siteId: site.id,
-      role: "SITE_OFFICER"
-    }
-  });
 
   await prisma.userSiteRole.upsert({
     where: {

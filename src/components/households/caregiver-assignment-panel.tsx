@@ -25,7 +25,7 @@ export function CaregiverAssignmentPanel({
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(`/api/v1/officer/households/${householdId}/caregivers`, {
+      const response = await fetch(`/api/v1/admin/households/${householdId}/caregivers`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email })
