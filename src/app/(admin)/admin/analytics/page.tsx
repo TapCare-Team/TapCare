@@ -17,7 +17,10 @@ export default async function AdminAnalyticsPage() {
     <AppShell
       title="Admin Analytics"
       subtitle="System health and feature adoption are separated from officer triage."
-      nav={[{ href: "/", label: "Officer tools" }]}
+      nav={[
+        { href: "/admin/officers", label: "Officer access" },
+        { href: "/", label: "Officer tools" }
+      ]}
     >
       <div className="grid gap-4 md:grid-cols-4">
         <StatCard
