@@ -1,6 +1,10 @@
 import { isDatabaseConfigured } from "@/lib/db/database-mode";
 import type { SessionUser } from "@/modules/auth/domain/access";
-import { canAccessOfficerSurface } from "@/modules/auth/services/access-control.service";
+import { canAccessAdminSurface, canViewHousehold } from "@/modules/auth/services/access-control.service";
+import {
+  assignCaregiverSchema,
+  type AssignCaregiverInput
+} from "@/modules/households/contracts/household-caregiver-assignment.contract";
 import { createHouseholdSchema, type CreateHouseholdInput } from "@/modules/households/contracts/household-create.contract";
 import { MockHouseholdsRepository } from "@/modules/households/repositories/mock-households.repository";
 import { MockSitesRepository } from "@/modules/households/repositories/mock-sites.repository";
@@ -32,7 +36,7 @@ function normalizeAddressSegment(value?: string) {
   return value?.trim().replace(/\s+/g, " ") ?? "";
 }
 
-function buildDisplayAddress(input: Pick<CreateHouseholdInput, "addressLine1" | "addressLine2" | "unitNumber" | "postalCode">) {
+export function buildDisplayAddress(input: Pick<CreateHouseholdInput, "addressLine1" | "addressLine2" | "unitNumber" | "postalCode">) {
   const segments = [
     normalizeAddressSegment(input.addressLine1),
     normalizeAddressSegment(input.addressLine2),
@@ -50,11 +54,11 @@ async function resolveAllowedSites(user: SessionUser) {
     return repository.listAll();
   }
 
-  return repository.listByIds(user.siteIds);
+  return [];
 }
 
 export async function listCreatableSitesForUser(user: SessionUser) {
-  if (!canAccessOfficerSurface(user)) {
+  if (!canAccessAdminSurface(user)) {
     throw new ForbiddenError();
   }
 
@@ -66,7 +70,7 @@ export async function createHouseholdForUser(user: SessionUser, rawInput: Create
     throw new ConfigurationError(householdMessages.databaseUnavailable, "HOUSEHOLD_DATABASE_UNAVAILABLE");
   }
 
-  if (!canAccessOfficerSurface(user)) {
+  if (!canAccessAdminSurface(user)) {
     throw new ForbiddenError();
   }
 
@@ -97,7 +101,7 @@ export async function findDuplicateHouseholdForUser(user: SessionUser, rawInput:
     throw new ConfigurationError(householdMessages.databaseUnavailable, "HOUSEHOLD_DATABASE_UNAVAILABLE");
   }
 
-  if (!canAccessOfficerSurface(user)) {
+  if (!canAccessAdminSurface(user)) {
     throw new ForbiddenError();
   }
 
@@ -133,4 +137,47 @@ export async function deleteHouseholdForUser(user: SessionUser, householdId: str
   if (!deleted) {
     throw new NotFoundError(householdMessages.householdNotFound, "HOUSEHOLD_NOT_FOUND");
   }
+}
+
+export async function assignCaregiverToHouseholdForUser(
+  user: SessionUser,
+  householdId: string,
+  rawInput: AssignCaregiverInput
+) {
+  if (!isDatabaseConfigured()) {
+    throw new ConfigurationError(householdMessages.databaseUnavailable, "HOUSEHOLD_DATABASE_UNAVAILABLE");
+  }
+
+  if (!canAccessAdminSurface(user)) {
+    throw new ForbiddenError();
+  }
+
+  const input = assignCaregiverSchema.parse(rawInput);
+  const household = await prismaHouseholdsRepository.getById(householdId);
+
+  if (!household) {
+    throw new NotFoundError(householdMessages.householdNotFound, "HOUSEHOLD_NOT_FOUND");
+  }
+
+  if (!canViewHousehold(user, household.id, household.siteId)) {
+    throw new ForbiddenError();
+  }
+
+  const caregiver = await prismaHouseholdsRepository.findCaregiverByEmail(input.email);
+
+  if (!caregiver) {
+    throw new NotFoundError(householdMessages.caregiverNotFound, "CAREGIVER_NOT_FOUND");
+  }
+
+  const assignment = await prismaHouseholdsRepository.assignCaregiver(household.id, caregiver.id);
+
+  if (!assignment.household) {
+    throw new NotFoundError(householdMessages.householdNotFound, "HOUSEHOLD_NOT_FOUND");
+  }
+
+  return {
+    household: assignment.household,
+    caregiver,
+    alreadyAssigned: assignment.alreadyAssigned
+  };
 }

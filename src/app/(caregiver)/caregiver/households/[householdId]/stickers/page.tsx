@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { StickerSetupManager } from "@/components/setup/sticker-setup-manager";
+import { StickerPrivacyGuidance } from "@/components/setup/sticker-privacy-guidance";
 import { AppShell } from "@/components/shared/app-shell";
 import { Panel } from "@/components/shared/panel";
 import { requireUserWithRole } from "@/lib/auth";
@@ -45,6 +46,9 @@ export default async function CaregiverStickerSetupPage({
         <p className="text-sm text-muted">
           Caregivers can configure only the households they are assigned to. Edit or remove existing sticker setups here.
         </p>
+        <div className="mt-4">
+          <StickerPrivacyGuidance includeOperations />
+        </div>
       </Panel>
 
       <StickerSetupManager

@@ -13,8 +13,8 @@ Privacy-safe operational analytics dashboard for TapCare's NFC and QR support sy
 
 ## Product shape
 
-- Officer-first outreach dashboard
-- Caregiver read-only caseload view
+- Admin household management dashboard
+- Caregiver assigned-household view with sticker setup access
 - Separate admin analytics area
 - Explainable follow-up signals instead of opaque risk scores
 
@@ -38,6 +38,10 @@ npm run lint
 npm run build
 ```
 
+## Staging
+
+See [docs/staging-deployment.md](docs/staging-deployment.md) for hosted staging setup, environment variables, Google OAuth callback configuration, database migration, and NFC sticker testing.
+
 ## Seeding
 
 Use the included seed script to populate a demo site, users, households, stickers, page configs, destination configs, and interaction events.
@@ -52,12 +56,35 @@ npm run db:seed
 What gets seeded:
 
 - `SGO Bedok` site
-- officer, caregiver, and admin users
+- caregiver and admin users
 - three households with address-based identities
 - household assignments for the caregiver
 - six stickers across redirect and rendered-page modes
 - page and destination configs
 - interaction events to make the dashboard non-empty
+
+Seeded login credentials:
+
+```text
+Caregiver: maya.lim@example.org / TapCare1234!
+Admin:     dev.admin@tapcare.sg / TapCare1234!
+```
+
+Authentication notes:
+
+- Login uses email/password with hashed passwords.
+- Browser cookies store opaque session tokens, not user IDs.
+- Session tokens are stored hashed in the database.
+- Public signup creates caregiver accounts only.
+- Google signup also creates caregiver accounts only and does not require a TapCare password.
+- Newly signed-up caregivers see no household data until they are assigned households.
+- Logged-in users can change passwords from `/account/password`.
+- Google-created users can set a TapCare password from `/account/password` if they want email/password sign-in too.
+- Forgotten-password reset links use one-time hashed database tokens that expire after 30 minutes.
+- Local development shows the reset link after requesting a reset.
+- Production reset emails use Resend when `RESEND_API_KEY`, `AUTH_EMAIL_FROM`, and `APP_BASE_URL` are configured.
+- Google signup/sign-in is available when `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `APP_BASE_URL` are configured.
+- Google OAuth callback URL: `${APP_BASE_URL}/api/auth/google/callback`.
 
 Notes:
 

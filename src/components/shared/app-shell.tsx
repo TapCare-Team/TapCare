@@ -34,6 +34,12 @@ export function AppShell({ title, subtitle, children, nav, homeHref = "/" }: App
                 </Link>
               ))}
             </nav>
+            <Link
+              href="/account/password"
+              className="rounded-full border border-black/10 px-4 py-2 text-muted transition hover:bg-white"
+            >
+              Change password
+            </Link>
             <form action="/api/auth/logout" method="post">
               <button
                 type="submit"

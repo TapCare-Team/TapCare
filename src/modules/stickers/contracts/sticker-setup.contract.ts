@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { findPageConfigPrivacyIssue } from "@/modules/privacy/sticker-content-policy";
 
 export const destinationConfigSchema = z.object({
   type: z.enum(["WHATSAPP", "PHONE", "EXTERNAL_URL"]),
@@ -106,6 +107,18 @@ function validatePurposeConfig(
   },
   context: z.RefinementCtx
 ) {
+  if (value.page) {
+    const privacyIssue = findPageConfigPrivacyIssue(value.page);
+
+    if (privacyIssue) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["page", "content"],
+        message: privacyIssue
+      });
+    }
+  }
+
   if (
     value.destination &&
     (value.destination.type === "PHONE" || value.destination.type === "WHATSAPP") &&

@@ -14,10 +14,8 @@ describe("sticker code service", () => {
     expect(buildDisplayCodeCandidate("CURATED_RESOURCES", 103)).toBe("RS-0103");
   });
 
-  it("generates opaque public codes as uuids", () => {
-    expect(generatePublicCode()).toMatch(
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
-    );
+  it("generates long opaque public codes", () => {
+    expect(generatePublicCode()).toMatch(/^[0-9a-f]{48}$/);
   });
 
   it("derives the next household-scoped display code from existing values in one pass", () => {

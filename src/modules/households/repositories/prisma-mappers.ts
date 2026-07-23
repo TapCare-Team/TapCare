@@ -22,7 +22,11 @@ type PrismaHouseholdRecord = Prisma.HouseholdGetPayload<{
   include: {
     site: true;
     seniors: true;
-    assignments: true;
+    assignments: {
+      include: {
+        caregiver: true;
+      };
+    };
     stickers: {
       include: {
         destinationConfig: true;
@@ -160,6 +164,14 @@ export function mapPrismaHousehold(household: PrismaHouseholdRecord): Household 
     caregiverIds: household.assignments
       .filter((assignment) => assignment.endedAt === null)
       .map((assignment) => assignment.caregiverId),
+    caregiverAssignments: household.assignments
+      .filter((assignment) => assignment.endedAt === null)
+      .map((assignment) => ({
+        caregiverId: assignment.caregiverId,
+        displayName: assignment.caregiver.displayName,
+        email: assignment.caregiver.email,
+        assignedAt: assignment.assignedAt.toISOString()
+      })),
     stickers: household.stickers.map(mapPrismaSticker)
   };
 }

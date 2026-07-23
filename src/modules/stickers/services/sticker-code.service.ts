@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { randomBytes } from "node:crypto";
 import type { StickerType } from "@/modules/analytics/domain/analytics";
 import { PrismaStickersRepository } from "@/modules/stickers/repositories/prisma-stickers.repository";
 import { setupMessages } from "@/modules/shared/messages";
@@ -42,5 +42,5 @@ export async function generateDisplayCode(householdId: string, stickerType: Stic
 }
 
 export function generatePublicCode() {
-  return randomUUID();
+  return randomBytes(24).toString("hex");
 }

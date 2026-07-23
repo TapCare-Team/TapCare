@@ -1,0 +1,45 @@
+import { NextResponse } from "next/server";
+import { getCurrentUser } from "@/lib/auth";
+import { canAccessAdminSurface } from "@/modules/auth/services/access-control.service";
+import { getHouseholdDetail } from "@/modules/households/services/household-analytics.service";
+import { deleteHouseholdForUser } from "@/modules/households/services/household-management.service";
+import { toHouseholdRouteErrorResponse } from "@/modules/households/services/household-route.service";
+import { householdMessages } from "@/modules/shared/messages";
+
+export async function GET(
+  _request: Request,
+  { params }: { params: { householdId: string } }
+) {
+  const user = await getCurrentUser();
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (!canAccessAdminSurface(user)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const detail = await getHouseholdDetail(user, params.householdId);
+
+  if (!detail) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  return NextResponse.json(detail);
+}
+
+export async function DELETE(
+  _request: Request,
+  { params }: { params: { householdId: string } }
+) {
+  const user = await getCurrentUser();
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    await deleteHouseholdForUser(user, params.householdId);
+    return new NextResponse(null, { status: 204 });
+  } catch (error) {
+    return toHouseholdRouteErrorResponse(error, householdMessages.deleteFailed);
+  }
+}

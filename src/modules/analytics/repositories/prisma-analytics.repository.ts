@@ -31,9 +31,10 @@ export class PrismaAnalyticsRepository {
   }
 
   async createEvent(event: InteractionEvent) {
+    const occurredAt = new Date(event.occurredAt);
     const created = await prisma.interactionEvent.create({
       data: {
-        occurredAt: new Date(event.occurredAt),
+        occurredAt,
         siteId: event.siteId,
         householdId: event.householdId,
         seniorProfileId: event.seniorProfileId,
@@ -49,6 +50,16 @@ export class PrismaAnalyticsRepository {
         metadata: event.metadata
       }
     });
+
+    if (event.householdId && event.eventType === "STICKER_OPENED") {
+      await prisma.household.updateMany({
+        where: {
+          id: event.householdId,
+          OR: [{ lastActiveAt: null }, { lastActiveAt: { lt: occurredAt } }]
+        },
+        data: { lastActiveAt: occurredAt }
+      });
+    }
 
     return mapPrismaInteractionEvent(created);
   }

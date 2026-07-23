@@ -112,6 +112,11 @@ export class PrismaStickersRepository {
     }
 
     const updated = await prisma.$transaction(async (tx) => {
+      const destinationConfigIdToDelete =
+        patch.runtimeMode === "RENDER_PAGE" && patch.page ? current.destinationConfigId : null;
+      const pageConfigIdToDelete =
+        patch.runtimeMode === "DIRECT_REDIRECT" && patch.destination ? current.pageConfigId : null;
+
       if (patch.destination) {
         if (current.destinationConfigId) {
           await tx.destinationConfig.update({
@@ -162,7 +167,7 @@ export class PrismaStickersRepository {
         }
       }
 
-      return tx.sticker.update({
+      const updatedSticker = await tx.sticker.update({
         where: { id: stickerId },
         data: {
           displayCode: patch.displayCode,
@@ -177,6 +182,20 @@ export class PrismaStickersRepository {
         },
         include: stickerInclude
       });
+
+      if (destinationConfigIdToDelete) {
+        await tx.destinationConfig.delete({
+          where: { id: destinationConfigIdToDelete }
+        });
+      }
+
+      if (pageConfigIdToDelete) {
+        await tx.pageConfig.delete({
+          where: { id: pageConfigIdToDelete }
+        });
+      }
+
+      return updatedSticker;
     });
 
     return mapPrismaSticker(updated);

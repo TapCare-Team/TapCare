@@ -3,9 +3,12 @@ import { notFound } from "next/navigation";
 import { AppShell } from "@/components/shared/app-shell";
 import { Panel } from "@/components/shared/panel";
 import { RecentActivityFilter } from "@/components/shared/recent-activity-filter";
+import {
+  getStickerUseEvents,
+  RecentStickerActivityList
+} from "@/components/shared/recent-sticker-activity-list";
 import { SignalBadge } from "@/components/shared/signal-badge";
 import { requireUserWithRole } from "@/lib/auth";
-import { labelForStickerType } from "@/modules/analytics/services/feature-analytics.service";
 import { getSearchParamValue, normalizeActivityPreset } from "@/modules/households/domain/activity-range";
 import { getHouseholdDetail } from "@/modules/households/services/household-analytics.service";
 
@@ -30,6 +33,8 @@ export default async function CaregiverHouseholdPage({
   if (!detail) {
     notFound();
   }
+
+  const stickerUseEvents = getStickerUseEvents(detail.recentEvents);
 
   return (
     <AppShell
@@ -85,7 +90,7 @@ export default async function CaregiverHouseholdPage({
         </Panel>
       </div>
 
-      <Panel title="Recent activity" eyebrow={`${detail.recentEvents.length} events in selected range`}>
+      <Panel title="Sticker usage" eyebrow={`${stickerUseEvents.length} uses in selected range`}>
         <RecentActivityFilter
           basePath={`/caregiver/households/${detail.household.id}`}
           preset={detail.activityWindow.preset}
@@ -94,26 +99,10 @@ export default async function CaregiverHouseholdPage({
           minDate={detail.activityBounds.earliest}
           maxDate={detail.activityBounds.latest}
         />
-        <div className="space-y-3">
-          {detail.recentEvents.length === 0 ? (
-            <p className="text-sm text-muted">No activity matched the selected date range.</p>
-          ) : (
-            detail.recentEvents.map((event) => (
-              <div key={event.id} className="rounded-2xl border border-black/5 bg-white p-4">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="font-medium">
-                    {event.stickerType ? labelForStickerType(event.stickerType) : "Unknown sticker"}
-                  </p>
-                  <p className="text-sm text-muted">{new Date(event.occurredAt).toLocaleString()}</p>
-                </div>
-                <p className="text-sm text-muted">
-                  {event.eventType} | {event.outcome}
-                  {event.failureReason ? ` | ${event.failureReason}` : ""}
-                </p>
-              </div>
-            ))
-          )}
-        </div>
+        <RecentStickerActivityList
+          events={detail.recentEvents}
+          emptyMessage="No sticker use matched the selected date range."
+        />
       </Panel>
     </AppShell>
   );

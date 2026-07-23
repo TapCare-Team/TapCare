@@ -2,8 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
+import { StickerPrivacyGuidance } from "@/components/setup/sticker-privacy-guidance";
 import type { DestinationType } from "@/modules/analytics/domain/analytics";
 import type { Household } from "@/modules/households/domain/household";
+import { findPublicStickerContentIssue } from "@/modules/privacy/sticker-content-policy";
 import type {
   ChecklistPageConfig,
   DestinationConfig,
@@ -32,6 +34,10 @@ type EditableSticker = {
   pageTitle: string;
   pageContentText: string;
 };
+
+type StickerFieldErrors = Partial<
+  Record<"name" | "destinationLabel" | "destinationValue" | "pageTitle" | "pageContentText", string>
+>;
 
 const purposeLabels: Record<Sticker["stickerType"], string> = {
   EMERGENCY_CONTACT: "Emergency contact",
@@ -189,70 +195,139 @@ function buildPageContent(pageType: PageConfig["pageType"], raw: string) {
 }
 
 function validateForm(form: EditableSticker) {
+  const fieldErrors = getStickerFieldErrors(form);
+  return (
+    fieldErrors.name ||
+    fieldErrors.destinationLabel ||
+    fieldErrors.destinationValue ||
+    fieldErrors.pageTitle ||
+    fieldErrors.pageContentText ||
+    ""
+  );
+}
+
+function validateResourceLinks(raw: string) {
+  const lines = raw
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  const invalidLine = lines.find((line) => {
+    const [label, href, extra] = line.split("|").map((part) => part.trim());
+
+    if (!label || !href || extra !== undefined) {
+      return true;
+    }
+
+    try {
+      const url = new URL(href);
+      return url.protocol !== "http:" && url.protocol !== "https:";
+    } catch {
+      return true;
+    }
+  });
+
+  return invalidLine ? "Resource links must use the format Label | https://example.org." : "";
+}
+
+function validateChecklistLines(raw: string) {
+  const invalidChecklistLink = raw
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.includes("|"))
+    .find((line) => {
+      const [label, href, extra] = line.split("|").map((part) => part.trim());
+
+      if (!label || !href || extra !== undefined) {
+        return true;
+      }
+
+      try {
+        const url = new URL(href);
+        return url.protocol !== "http:" && url.protocol !== "https:";
+      } catch {
+        return true;
+      }
+    });
+
+  return invalidChecklistLink ? "Checklist links must use the format Label | https://example.org." : "";
+}
+
+function validateHelpProfileLines(raw: string) {
+  const invalidLine = raw
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .find((line) => {
+      const [label, ...rest] = line.split(":");
+      return !label?.trim() || !rest.join(":").trim();
+    });
+
+  return invalidLine ? "Help profile lines must use the format Label: Value." : "";
+}
+
+function getStickerFieldErrors(form: EditableSticker): StickerFieldErrors {
+  const errors: StickerFieldErrors = {};
+
   if (!form.name.trim()) {
-    return "Sticker label is required.";
+    errors.name = "Sticker label is required.";
   }
 
   if (runtimeModeForPurpose(form.stickerType) === "DIRECT_REDIRECT") {
     if (!form.destinationLabel.trim()) {
-      return "Contact name is required.";
+      errors.destinationLabel = "Contact name is required.";
     }
 
     const contactError = contactInputError(form.destinationValue);
 
     if (contactError) {
-      return contactError;
+      errors.destinationValue = contactError;
     }
   }
 
   if (runtimeModeForPurpose(form.stickerType) === "RENDER_PAGE") {
     if (!form.pageTitle.trim()) {
-      return "Page heading is required.";
+      errors.pageTitle = "Page heading is required.";
     }
 
     if (!form.pageContentText.trim()) {
-      return "Page details are required.";
+      errors.pageContentText = "Page details are required.";
+      return errors;
+    }
+
+    const privacyIssue = findPublicStickerContentIssue(`${form.pageTitle}\n${form.pageContentText}`);
+
+    if (privacyIssue) {
+      errors.pageContentText = privacyIssue;
+      return errors;
     }
   }
 
   if (pageTypeForPurpose(form.stickerType) === "RESOURCES") {
-    const invalidLine = form.pageContentText
-      .split("\n")
-      .map((line) => line.trim())
-      .filter(Boolean)
-      .find((line) => !line.includes("|"));
+    const resourceError = validateResourceLinks(form.pageContentText);
 
-    if (invalidLine) {
-      return "Resource links must use the format Label | https://example.org.";
+    if (resourceError) {
+      errors.pageContentText = resourceError;
     }
   }
 
   if (pageTypeForPurpose(form.stickerType) === "CHECKLIST") {
-    const invalidChecklistLink = form.pageContentText
-      .split("\n")
-      .map((line) => line.trim())
-      .filter((line) => line.includes("|"))
-      .find((line) => {
-        const [label, href] = line.split("|").map((part) => part.trim());
+    const checklistError = validateChecklistLines(form.pageContentText);
 
-        if (!label || !href) {
-          return true;
-        }
-
-        try {
-          const url = new URL(href);
-          return url.protocol !== "http:" && url.protocol !== "https:";
-        } catch {
-          return true;
-        }
-      });
-
-    if (invalidChecklistLink) {
-      return "Checklist links must use the format Label | https://example.org.";
+    if (checklistError) {
+      errors.pageContentText = checklistError;
     }
   }
 
-  return "";
+  if (pageTypeForPurpose(form.stickerType) === "HELP_PROFILE") {
+    const helpProfileError = validateHelpProfileLines(form.pageContentText);
+
+    if (helpProfileError) {
+      errors.pageContentText = helpProfileError;
+    }
+  }
+
+  return errors;
 }
 
 function buildPayload(householdId: string, form: EditableSticker) {
@@ -313,7 +388,7 @@ function pageContentLabel(stickerType: Sticker["stickerType"]) {
 
 function pageContentPlaceholder(stickerType: Sticker["stickerType"]) {
   if (stickerType === "HELP_PROFILE") {
-    return "Name: Mdm Lee\nIf found: Please call her daughter\nPreferred language: Mandarin\nHome area: Bedok North";
+    return "Name: Mdm Lee\nPreferred language: Mandarin\nSafe return instructions: Please call her daughter and wait with her\nHome area: Bedok North\nContact: +6591234567";
   }
 
   if (stickerType === "CURATED_RESOURCES") {
@@ -333,7 +408,7 @@ function helperText(form: EditableSticker) {
   }
 
   if (form.stickerType === "HELP_PROFILE") {
-    return "Use one field per line in the format Label: Value.";
+    return "Use one field per line in the format Label: Value. Contact fields render as call buttons; prefer safe return instructions over private medical or address details.";
   }
 
   if (form.stickerType === "CURATED_RESOURCES") {
@@ -366,6 +441,12 @@ function StickerEditor({
 }) {
   const isContactSticker = runtimeModeForPurpose(form.stickerType) === "DIRECT_REDIRECT";
   const isEmergencyContact = form.stickerType === "EMERGENCY_CONTACT";
+  const liveFieldErrors = getStickerFieldErrors(form);
+  const submitOnlyError =
+    validationError &&
+    !Object.values(liveFieldErrors).some((fieldError) => fieldError === validationError)
+      ? validationError
+      : "";
 
   return (
     <div className="space-y-4 rounded-2xl border border-black/5 bg-white p-5">
@@ -385,6 +466,7 @@ function StickerEditor({
             placeholder="Example: Bathroom emergency sticker"
             className="w-full rounded-xl border border-black/10 bg-white px-3 py-2 text-ink"
           />
+          {liveFieldErrors.name ? <span className="block text-sm text-red-600">{liveFieldErrors.name}</span> : null}
         </label>
         <label className="space-y-2 text-sm text-muted">
           Sticker purpose
@@ -452,6 +534,9 @@ function StickerEditor({
               placeholder="Example: Daughter A"
               className="w-full rounded-xl border border-black/10 bg-white px-3 py-2 text-ink"
             />
+            {liveFieldErrors.destinationLabel ? (
+              <span className="block text-sm text-red-600">{liveFieldErrors.destinationLabel}</span>
+            ) : null}
           </label>
           <label className="space-y-2 text-sm text-muted md:col-span-2">
             Contact number
@@ -461,10 +546,14 @@ function StickerEditor({
               placeholder="Example: +6591234567"
               className="w-full rounded-xl border border-black/10 bg-white px-3 py-2 text-ink"
             />
+            {liveFieldErrors.destinationValue ? (
+              <span className="block text-sm text-red-600">{liveFieldErrors.destinationValue}</span>
+            ) : null}
           </label>
         </div>
       ) : (
         <div className="grid gap-4">
+          <StickerPrivacyGuidance compact />
           <label className="space-y-2 text-sm text-muted">
             Page heading
             <input
@@ -479,6 +568,9 @@ function StickerEditor({
               }
               className="w-full rounded-xl border border-black/10 bg-white px-3 py-2 text-ink"
             />
+            {liveFieldErrors.pageTitle ? (
+              <span className="block text-sm text-red-600">{liveFieldErrors.pageTitle}</span>
+            ) : null}
           </label>
           <label className="space-y-2 text-sm text-muted">
             {pageContentLabel(form.stickerType)}
@@ -489,6 +581,9 @@ function StickerEditor({
               placeholder={pageContentPlaceholder(form.stickerType)}
               className="w-full rounded-xl border border-black/10 bg-white px-3 py-2 text-ink"
             />
+            {liveFieldErrors.pageContentText ? (
+              <span className="block text-sm text-red-600">{liveFieldErrors.pageContentText}</span>
+            ) : null}
           </label>
         </div>
       )}
@@ -504,9 +599,9 @@ function StickerEditor({
           {busy ? "Saving..." : actionLabel}
         </button>
       </div>
-      {validationError ? (
+      {submitOnlyError ? (
         <div className="rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-          {validationError}
+          {submitOnlyError}
         </div>
       ) : null}
       <input type="hidden" value={householdId} readOnly />

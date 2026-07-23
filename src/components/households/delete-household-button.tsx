@@ -20,7 +20,7 @@ export function DeleteHouseholdButton({
     setIsDeleting(true);
 
     try {
-      const response = await fetch(`/api/v1/officer/households/${householdId}`, {
+      const response = await fetch(`/api/v1/admin/households/${householdId}`, {
         method: "DELETE"
       });
 

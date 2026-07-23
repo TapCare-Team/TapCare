@@ -8,29 +8,77 @@ datasource db {
 }
 
 model Site {
-  id         String         @id @default(cuid())
-  code       String         @unique
-  name       String
-  region     String?
-  households Household[]
-  users      UserSiteRole[]
-  stickers   Sticker[]
-  createdAt  DateTime       @default(now())
-  updatedAt  DateTime       @updatedAt
+  id                      String                   @id @default(cuid())
+  code                    String                   @unique
+  name                    String
+  region                  String?
+  households              Household[]
+  householdAccessRequests HouseholdAccessRequest[]
+  users                   UserSiteRole[]
+  stickers                Sticker[]
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
 }
 
 model User {
-  id                   String                @id @default(cuid())
-  email                String                @unique
-  displayName          String
-  status               UserStatus            @default(ACTIVE)
-  globalRole           GlobalRole            @default(OFFICER)
-  siteRoles            UserSiteRole[]
-  householdAssignments HouseholdAssignment[]
-  reviews              FollowUpReview[]
-  auditLogs            AuditLog[]
-  createdAt            DateTime              @default(now())
-  updatedAt            DateTime              @updatedAt
+  id                              String                   @id @default(cuid())
+  email                           String                   @unique
+  passwordHash                    String?
+  displayName                     String
+  status                          UserStatus               @default(ACTIVE)
+  globalRole                      GlobalRole               @default(CAREGIVER)
+  siteRoles                       UserSiteRole[]
+  householdAssignments            HouseholdAssignment[]
+  householdAccessRequests         HouseholdAccessRequest[] @relation("HouseholdAccessRequester")
+  reviewedHouseholdAccessRequests HouseholdAccessRequest[] @relation("HouseholdAccessReviewer")
+  authSessions                    AuthSession[]
+  authIdentities                  AuthIdentity[]
+  passwordResetTokens             PasswordResetToken[]
+  reviews                         FollowUpReview[]
+  auditLogs                       AuditLog[]
+  createdAt                       DateTime                 @default(now())
+  updatedAt                       DateTime                 @updatedAt
+}
+
+model AuthIdentity {
+  id             String       @id @default(cuid())
+  userId         String
+  provider       AuthProvider
+  providerUserId String
+  email          String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([provider, providerUserId])
+  @@unique([userId, provider])
+  @@index([email])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+
+  @@index([userId, expiresAt])
+  @@index([expiresAt, usedAt])
+}
+
+model AuthSession {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+
+  @@index([userId, expiresAt])
+  @@index([expiresAt, revokedAt])
 }
 
 model UserSiteRole {
@@ -60,24 +108,52 @@ model HouseholdAssignment {
 }
 
 model Household {
-  id              String                @id @default(cuid())
-  siteId          String
-  status          HouseholdStatus       @default(ACTIVE)
-  addressLine1    String
-  addressLine2    String?
-  unitNumber      String?
-  postalCode      String?
-  displayAddress  String
-  lastActiveAt    DateTime?
-  site            Site                  @relation(fields: [siteId], references: [id])
-  assignments     HouseholdAssignment[]
-  seniors         SeniorProfile[]
-  stickers        Sticker[]
-  events          InteractionEvent[]
-  signals         FollowUpSignal[]
-  reviews         FollowUpReview[]
-  createdAt       DateTime              @default(now())
-  updatedAt       DateTime              @updatedAt
+  id                     String                   @id @default(cuid())
+  siteId                 String
+  status                 HouseholdStatus          @default(ACTIVE)
+  addressLine1           String
+  addressLine2           String?
+  unitNumber             String?
+  postalCode             String?
+  displayAddress         String
+  lastActiveAt           DateTime?
+  site                   Site                     @relation(fields: [siteId], references: [id])
+  assignments            HouseholdAssignment[]
+  accessRequests         HouseholdAccessRequest[]
+  seniors                SeniorProfile[]
+  stickers               Sticker[]
+  events                 InteractionEvent[]
+  signals                FollowUpSignal[]
+  reviews                FollowUpReview[]
+  createdAt              DateTime                 @default(now())
+  updatedAt              DateTime                 @updatedAt
+}
+
+model HouseholdAccessRequest {
+  id                  String                       @id @default(cuid())
+  requesterId         String
+  siteId              String
+  approvedHouseholdId String?
+  status              HouseholdAccessRequestStatus @default(PENDING)
+  addressLine1        String
+  addressLine2        String?
+  unitNumber          String?
+  postalCode          String?
+  displayAddress      String
+  seniorDisplayName   String?
+  requesterNote       String?
+  reviewedById        String?
+  reviewedAt          DateTime?
+  requester           User                         @relation("HouseholdAccessRequester", fields: [requesterId], references: [id])
+  site                Site                         @relation(fields: [siteId], references: [id])
+  approvedHousehold   Household?                   @relation(fields: [approvedHouseholdId], references: [id])
+  reviewedBy          User?                        @relation("HouseholdAccessReviewer", fields: [reviewedById], references: [id])
+  createdAt           DateTime                     @default(now())
+  updatedAt           DateTime                     @updatedAt
+
+  @@index([requesterId, status])
+  @@index([siteId, status])
+  @@index([status, createdAt])
 }
 
 model SeniorProfile {
@@ -208,14 +284,11 @@ model AuditLog {
 }
 
 enum GlobalRole {
-  OFFICER
   CAREGIVER
   ADMIN
-  DEVELOPER
 }
 
 enum SiteRole {
-  SITE_OFFICER
   SITE_MANAGER
   SITE_VIEWER
   CAREGIVER_VIEWER
@@ -224,6 +297,16 @@ enum SiteRole {
 enum UserStatus {
   ACTIVE
   DISABLED
+}
+
+enum HouseholdAccessRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum AuthProvider {
+  GOOGLE
 }
 
 enum HouseholdStatus {

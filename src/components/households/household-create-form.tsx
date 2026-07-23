@@ -34,13 +34,29 @@ export function HouseholdCreateForm({
   const [error, setError] = useState<string | null>(null);
   const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
   const [isCheckingDuplicate, setIsCheckingDuplicate] = useState(false);
+  const [hasSubmitted, setHasSubmitted] = useState(false);
+
+  const fieldErrors = {
+    addressLine1: validateHouseholdAddressLine1(addressLine1),
+    addressLine2: validateOptionalAddressLine2(addressLine2),
+    unitNumber: validateOptionalUnitNumber(unitNumber),
+    postalCode: validateOptionalPostalCode(postalCode)
+  };
+
+  function visibleFieldError(field: keyof typeof fieldErrors, value: string) {
+    if (!fieldErrors[field]) {
+      return "";
+    }
+
+    return hasSubmitted || value.trim().length > 0 ? fieldErrors[field] : "";
+  }
 
   function validateForm() {
     return (
-      validateHouseholdAddressLine1(addressLine1) ||
-      validateOptionalAddressLine2(addressLine2) ||
-      validateOptionalUnitNumber(unitNumber) ||
-      validateOptionalPostalCode(postalCode)
+      fieldErrors.addressLine1 ||
+      fieldErrors.addressLine2 ||
+      fieldErrors.unitNumber ||
+      fieldErrors.postalCode
     );
   }
 
@@ -58,7 +74,7 @@ export function HouseholdCreateForm({
     setIsCheckingDuplicate(true);
 
     try {
-      const response = await fetch("/api/v1/officer/households/duplicate-check", {
+      const response = await fetch("/api/v1/admin/households/duplicate-check", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -114,6 +130,7 @@ export function HouseholdCreateForm({
 
     setIsSubmitting(true);
     setError(null);
+    setHasSubmitted(true);
 
     const validationError = validateForm();
 
@@ -124,7 +141,7 @@ export function HouseholdCreateForm({
     }
 
     try {
-      const response = await fetch("/api/v1/officer/households", {
+      const response = await fetch("/api/v1/admin/households", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -198,6 +215,9 @@ export function HouseholdCreateForm({
           disabled={!canPersist || isSubmitting}
           required
         />
+        {visibleFieldError("addressLine1", addressLine1) ? (
+          <span className="text-sm text-red-600">{visibleFieldError("addressLine1", addressLine1)}</span>
+        ) : null}
       </label>
 
       <label className="flex flex-col gap-2 text-sm text-muted">
@@ -213,6 +233,9 @@ export function HouseholdCreateForm({
           placeholder="e.g. Opposite market or lift lobby"
           disabled={!canPersist || isSubmitting}
         />
+        {visibleFieldError("addressLine2", addressLine2) ? (
+          <span className="text-sm text-red-600">{visibleFieldError("addressLine2", addressLine2)}</span>
+        ) : null}
       </label>
 
       <div className="grid gap-4 md:grid-cols-2">
@@ -229,6 +252,9 @@ export function HouseholdCreateForm({
             placeholder="#05-123"
             disabled={!canPersist || isSubmitting}
           />
+          {visibleFieldError("unitNumber", unitNumber) ? (
+            <span className="text-sm text-red-600">{visibleFieldError("unitNumber", unitNumber)}</span>
+          ) : null}
         </label>
 
         <label className="flex flex-col gap-2 text-sm text-muted">
@@ -236,16 +262,19 @@ export function HouseholdCreateForm({
           <input
             value={postalCode}
             onChange={(event) => {
-              setPostalCode(event.target.value.replace(/\D/g, "").slice(0, 6));
+              setPostalCode(event.target.value);
               setError(null);
             }}
             onBlur={checkDuplicate}
             className="rounded-2xl border border-black/10 bg-white px-4 py-3 text-ink"
             placeholder="460018"
             inputMode="numeric"
-            maxLength={6}
+            maxLength={12}
             disabled={!canPersist || isSubmitting}
           />
+          {visibleFieldError("postalCode", postalCode) ? (
+            <span className="text-sm text-red-600">{visibleFieldError("postalCode", postalCode)}</span>
+          ) : null}
         </label>
       </div>
 
@@ -258,7 +287,7 @@ export function HouseholdCreateForm({
             setError(null);
           }}
           className="rounded-2xl border border-black/10 bg-white px-4 py-3 text-ink"
-          placeholder="Optional, for easier officer identification"
+          placeholder="Optional, for easier identification"
           disabled={!canPersist || isSubmitting}
         />
       </label>

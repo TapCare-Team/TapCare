@@ -1,22 +1,23 @@
 import { AppShell } from "@/components/shared/app-shell";
 import { Panel } from "@/components/shared/panel";
 import { StatCard } from "@/components/shared/stat-card";
-import { FeatureSnapshotGrid } from "@/components/officer/feature-snapshot-grid";
+import { FeatureSnapshotGrid } from "@/components/admin/feature-snapshot-grid";
+import { StickerPrivacyGuidance } from "@/components/setup/sticker-privacy-guidance";
 import { requireUserWithRole } from "@/lib/auth";
 import { getAdminAnalyticsSummary } from "@/modules/analytics/services/admin-analytics.service";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminAnalyticsPage() {
-  const user = await requireUserWithRole(["ADMIN", "DEVELOPER"]);
+  const user = await requireUserWithRole(["ADMIN"]);
   const summary = await getAdminAnalyticsSummary(user);
   const failureEntries = Object.entries(summary.failurePatterns.byReason).sort(([, left], [, right]) => right - left);
 
   return (
     <AppShell
       title="Admin Analytics"
-      subtitle="System health and feature adoption are separated from officer triage."
-      nav={[{ href: "/", label: "Officer tools" }]}
+      subtitle="System health and feature adoption for TapCare."
+      nav={[{ href: "/", label: "Manage households" }]}
     >
       <div className="grid gap-4 md:grid-cols-4">
         <StatCard
@@ -56,6 +57,10 @@ export default async function AdminAnalyticsPage() {
             ? new Date(summary.ingestionHealth.lastEventAt).toLocaleString()
             : "No events yet"}
         </p>
+      </Panel>
+
+      <Panel title="Public sticker guardrails" eyebrow="Privacy and monitoring">
+        <StickerPrivacyGuidance includeOperations />
       </Panel>
 
       <Panel title="Routing failures" eyebrow="Failure patterns">

@@ -21,9 +21,9 @@ import { reviewFollowUpSignal } from "@/modules/signals/services/follow-up-revie
 function buildUser(overrides: Partial<SessionUser> = {}): SessionUser {
   return {
     id: "user-1",
-    displayName: "Officer One",
-    role: "OFFICER",
-    siteIds: ["site-1"],
+    displayName: "Admin One",
+    role: "ADMIN",
+    siteIds: [],
     householdIds: [],
     ...overrides
   };

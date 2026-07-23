@@ -18,6 +18,7 @@ const mockHouseholds: Household[] = [
     lastActiveAt: "2025-04-03T10:00:00.000Z",
     seniorAliases: ["Mdm Lee"],
     caregiverIds: [],
+    caregiverAssignments: [],
     stickers: [
       {
         id: "sticker-1",
@@ -40,6 +41,7 @@ const mockHouseholds: Household[] = [
     lastActiveAt: "2025-03-22T08:00:00.000Z",
     seniorAliases: ["Mr Goh"],
     caregiverIds: [],
+    caregiverAssignments: [],
     stickers: [
       {
         id: "sticker-2",
@@ -168,6 +170,18 @@ describe("deriveFollowUpSignals", () => {
     expect(signals.some((signal) => signal.signalType === "REPEATED_EMERGENCY_USAGE")).toBe(true);
   });
 
+  it("keeps first and last observed dates correct when events are newest first", () => {
+    const signals = deriveFollowUpSignals({
+      households: [mockHouseholds[0]],
+      events: [...mockInteractionEvents.filter((event) => event.householdId === mockHouseholdIds.lee)].reverse(),
+      now: new Date("2025-04-04T09:00:00.000Z")
+    });
+    const signal = signals.find((candidate) => candidate.signalType === "REPEATED_EMERGENCY_USAGE");
+
+    expect(signal?.firstObservedAt).toBe("2025-03-30T08:00:00.000Z");
+    expect(signal?.lastObservedAt).toBe("2025-04-03T10:00:00.000Z");
+  });
+
   it("creates inactivity signal only when there is a baseline and no recent sticker activity", () => {
     const signals = deriveFollowUpSignals({
       households: [mockHouseholds[1]],
@@ -214,14 +228,14 @@ describe("deriveFollowUpSignals", () => {
           review: {
             status: "REVIEWED",
             reviewedAt: "2025-04-04T12:00:00.000Z",
-            note: "Reviewed by officer"
+            note: "Reviewed by admin"
           }
         }
       ]
     );
 
     expect(mergedSignals[0]?.status).toBe("REVIEWED");
-    expect(mergedSignals[0]?.review?.note).toBe("Reviewed by officer");
+    expect(mergedSignals[0]?.review?.note).toBe("Reviewed by admin");
   });
 
   it("treats future snoozed signals as non-actionable until the snooze expires", () => {

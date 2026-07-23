@@ -29,11 +29,16 @@ function normalizeContactDestinationUrl(destination: RuntimeRecord["sticker"]["d
   const value = destination.value.trim();
 
   if (destination.type === "PHONE") {
+    const digitsOnly = value.replace(/[^\d]/g, "");
+
     if (value.startsWith("tel:")) {
-      return value;
+      if (digitsOnly.length >= 8 && digitsOnly.length <= 15) {
+        return value.startsWith("tel:+") ? `tel:+${digitsOnly}` : `tel:${digitsOnly}`;
+      }
+
+      return null;
     }
 
-    const digitsOnly = value.replace(/[^\d]/g, "");
     if (digitsOnly.length >= 8 && digitsOnly.length <= 15) {
       return value.startsWith("+") ? `tel:+${digitsOnly}` : `tel:${digitsOnly}`;
     }
@@ -153,14 +158,6 @@ export async function resolvePublicRuntime(publicCode: string): Promise<PublicRu
       stickerId: record.sticker.id,
       destinationType: record.sticker.destination.type
     });
-    await recordRuntimeEvent({
-      publicCode: normalized,
-      household: record.household,
-      sticker: record.sticker,
-      eventType: "REDIRECT_ISSUED",
-      outcome: "SUCCESS",
-      destinationType: record.sticker.destination.type
-    });
     return {
       kind: "DIRECT_REDIRECT",
       publicCode: normalized,
@@ -200,21 +197,4 @@ export async function resolvePublicRuntime(publicCode: string): Promise<PublicRu
     household: record.household,
     sticker: record.sticker
   };
-}
-
-export async function recordRenderedRuntimePage(resolution: Extract<PublicRuntimeResolution, { kind: "RENDER_PAGE" }>) {
-  logger.info("page_rendered", {
-    publicCode: resolution.publicCode,
-    householdId: resolution.household.id,
-    stickerId: resolution.sticker.id,
-    pageType: resolution.page.pageType
-  });
-
-  await recordRuntimeEvent({
-    publicCode: resolution.publicCode,
-    household: resolution.household,
-    sticker: resolution.sticker,
-    eventType: "PAGE_RENDERED",
-    outcome: "SUCCESS"
-  });
 }
