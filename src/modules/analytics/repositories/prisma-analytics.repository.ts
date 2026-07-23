@@ -12,6 +12,18 @@ export class PrismaAnalyticsRepository {
     return events.map(mapPrismaInteractionEvent);
   }
 
+  async listRecentEventsBySiteIds(siteIds: string[], since: Date) {
+    const events = await prisma.interactionEvent.findMany({
+      where: {
+        siteId: { in: siteIds },
+        occurredAt: { gte: since }
+      },
+      orderBy: { occurredAt: "desc" }
+    });
+
+    return events.map(mapPrismaInteractionEvent);
+  }
+
   async listEventsBySite(siteId: string) {
     const events = await prisma.interactionEvent.findMany({
       where: { siteId },
@@ -24,6 +36,18 @@ export class PrismaAnalyticsRepository {
   async listEventsByHouseholdIds(householdIds: string[]) {
     const events = await prisma.interactionEvent.findMany({
       where: { householdId: { in: householdIds } },
+      orderBy: { occurredAt: "desc" }
+    });
+
+    return events.map(mapPrismaInteractionEvent);
+  }
+
+  async listRecentEventsByHouseholdIds(householdIds: string[], since: Date) {
+    const events = await prisma.interactionEvent.findMany({
+      where: {
+        householdId: { in: householdIds },
+        occurredAt: { gte: since }
+      },
       orderBy: { occurredAt: "desc" }
     });
 

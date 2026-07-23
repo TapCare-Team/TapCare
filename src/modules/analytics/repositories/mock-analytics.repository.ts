@@ -6,6 +6,12 @@ export class MockAnalyticsRepository {
     return mockInteractionEvents.filter((event) => siteIds.includes(event.siteId));
   }
 
+  async listRecentEventsBySiteIds(siteIds: string[], since: Date) {
+    return mockInteractionEvents.filter(
+      (event) => siteIds.includes(event.siteId) && new Date(event.occurredAt).getTime() >= since.getTime()
+    );
+  }
+
   async listEventsBySite(siteId: string) {
     return mockInteractionEvents.filter((event) => event.siteId === siteId);
   }
@@ -13,6 +19,15 @@ export class MockAnalyticsRepository {
   async listEventsByHouseholdIds(householdIds: string[]) {
     return mockInteractionEvents.filter(
       (event) => event.householdId && householdIds.includes(event.householdId)
+    );
+  }
+
+  async listRecentEventsByHouseholdIds(householdIds: string[], since: Date) {
+    return mockInteractionEvents.filter(
+      (event) =>
+        event.householdId &&
+        householdIds.includes(event.householdId) &&
+        new Date(event.occurredAt).getTime() >= since.getTime()
     );
   }
 

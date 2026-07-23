@@ -21,10 +21,10 @@ export default async function AdminHouseholdDashboardPage({
   const selectedReason = normalizeFollowUpReasonFilter(
     Array.isArray(searchParams?.reason) ? searchParams?.reason[0] : searchParams?.reason
   );
-  const households = await getAdminHouseholds();
-  const pendingRequests = isDatabaseConfigured()
-    ? await listPendingHouseholdAccessRequestsForAdmin(user)
-    : [];
+  const [households, pendingRequests] = await Promise.all([
+    getAdminHouseholds(),
+    isDatabaseConfigured() ? listPendingHouseholdAccessRequestsForAdmin(user) : Promise.resolve([])
+  ]);
   const filteredHouseholds =
     selectedReason === "all"
       ? households
