@@ -1,16 +1,16 @@
 import type { PageConfig } from "@/modules/stickers/domain/sticker";
 
 export const publicStickerPrivacyGuidance = [
-  "Do not enter full NRIC, FIN, passport numbers, exact medical diagnosis, full home address, unit number, or private notes.",
-  "Use preferred language, safe return instructions, broad home area, and a contact button instead.",
-  "Anyone with the physical sticker or QR code can open the public sticker page."
+  "Do not add NRIC, FIN, passport numbers, exact diagnoses, full addresses, unit numbers, or private notes.",
+  "Use practical details: preferred language, broad home area, safe return steps, and a contact button.",
+  "Treat every sticker page as public. Anyone who scans the sticker or QR code can open it."
 ];
 
 export const publicStickerOperationalGuidance = [
-  "Stickers can be disabled immediately from household sticker setup.",
-  "Public sticker codes are long random codes, not household names or serial numbers.",
-  "Do not publish a list of all public sticker URLs. Share only the physical sticker or a single setup link when needed.",
-  "TapCare records privacy-safe access events so admins can monitor usage and failures."
+  "Disable a sticker immediately if it is lost, misplaced, or no longer needed.",
+  "Sticker links use long random codes. They should never contain names, addresses, or serial numbers.",
+  "Do not share a public list of sticker URLs. Share only the physical sticker or one setup link when needed.",
+  "TapCare records privacy-safe scan events so admins can see usage and failures."
 ];
 
 type SensitiveContentRule = {

@@ -36,7 +36,7 @@ function normalizeAddressSegment(value?: string) {
   return value?.trim().replace(/\s+/g, " ") ?? "";
 }
 
-function buildDisplayAddress(input: Pick<CreateHouseholdInput, "addressLine1" | "addressLine2" | "unitNumber" | "postalCode">) {
+export function buildDisplayAddress(input: Pick<CreateHouseholdInput, "addressLine1" | "addressLine2" | "unitNumber" | "postalCode">) {
   const segments = [
     normalizeAddressSegment(input.addressLine1),
     normalizeAddressSegment(input.addressLine2),

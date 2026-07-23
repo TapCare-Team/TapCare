@@ -10,6 +10,16 @@ function firstError(errors: SignupFieldErrors, field: keyof SignupFieldErrors) {
   return errors[field]?.[0] ?? "";
 }
 
+function passwordChecks(password: string) {
+  return [
+    { label: "12 characters", met: password.length >= 12 },
+    { label: "uppercase letter", met: /[A-Z]/.test(password) },
+    { label: "lowercase letter", met: /[a-z]/.test(password) },
+    { label: "number", met: /\d/.test(password) },
+    { label: "symbol", met: /[^A-Za-z0-9]/.test(password) }
+  ];
+}
+
 function PasswordInput({
   name,
   label,
@@ -178,9 +188,19 @@ export function SignupForm() {
         placeholder="Confirm password"
       />
 
-      <p className="text-xs text-muted">
-        Use at least 12 characters with uppercase, lowercase, number, and symbol.
-      </p>
+      <div className="rounded-xl border border-black/5 bg-panel px-4 py-3 text-xs text-muted">
+        <p className="font-medium text-ink">Password must include:</p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {passwordChecks(password).map((check) => (
+            <span
+              key={check.label}
+              className={`rounded-full px-3 py-1 ${check.met ? "bg-accentSoft text-accent" : "bg-white text-muted"}`}
+            >
+              {check.label}
+            </span>
+          ))}
+        </div>
+      </div>
 
       <button
         type="submit"
