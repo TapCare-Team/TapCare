@@ -23,6 +23,13 @@ import {
 
 const prismaSitesRepository = new PrismaSitesRepository();
 const mockSitesRepository = new MockSitesRepository();
+const SIGNAL_LOOKBACK_DAYS = 90;
+
+function daysAgo(days: number) {
+  const date = new Date();
+  date.setDate(date.getDate() - days);
+  return date;
+}
 
 function normalizeSiteIds(siteIds: string[]) {
   return Array.from(new Set(siteIds.filter(Boolean)));
@@ -47,12 +54,13 @@ async function derivePersistedSignals(households: Household[], events: Interacti
 async function deriveScopedSignals(siteIds: string | string[]) {
   const normalizedSiteIds = toSiteScope(siteIds);
   const { householdsRepository, eventsRepository } = getHouseholdAnalyticsRepositories();
+  const signalSince = daysAgo(SIGNAL_LOOKBACK_DAYS);
   const [households, events]: [Household[], InteractionEvent[]] =
     normalizedSiteIds.length === 0
       ? [[], []]
       : await Promise.all([
           householdsRepository.listBySiteIds(normalizedSiteIds),
-          eventsRepository.listEventsBySiteIds(normalizedSiteIds)
+          eventsRepository.listRecentEventsBySiteIds(normalizedSiteIds, signalSince)
         ]);
 
   const householdsWithLastActive = withDerivedLastActiveAt(households, events);
@@ -105,9 +113,10 @@ export async function getAdminHouseholds(siteIds?: string | string[]) {
 
 export async function getHouseholdsByIds(householdIds: string[]) {
   const { householdsRepository, eventsRepository } = getHouseholdAnalyticsRepositories();
+  const signalSince = daysAgo(SIGNAL_LOOKBACK_DAYS);
   const [households, events] = await Promise.all([
     householdsRepository.listByIds(householdIds),
-    eventsRepository.listEventsByHouseholdIds(householdIds)
+    eventsRepository.listRecentEventsByHouseholdIds(householdIds, signalSince)
   ]);
   const householdsWithLastActive = withDerivedLastActiveAt(households, events);
   const signals = await derivePersistedSignals(householdsWithLastActive, events);
@@ -128,9 +137,10 @@ export async function getSignalsForSites(siteIds?: string | string[]) {
 
 export async function getSignalsForHouseholds(householdIds: string[]) {
   const { householdsRepository, eventsRepository } = getHouseholdAnalyticsRepositories();
+  const signalSince = daysAgo(SIGNAL_LOOKBACK_DAYS);
   const [households, events] = await Promise.all([
     householdsRepository.listByIds(householdIds),
-    eventsRepository.listEventsByHouseholdIds(householdIds)
+    eventsRepository.listRecentEventsByHouseholdIds(householdIds, signalSince)
   ]);
   const householdsWithLastActive = withDerivedLastActiveAt(households, events);
 

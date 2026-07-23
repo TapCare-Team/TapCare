@@ -13,7 +13,11 @@ export type HouseholdAnalyticsHouseholdsRepository = Pick<
 
 export type HouseholdAnalyticsEventsRepository = Pick<
   PrismaAnalyticsRepository,
-  "listEventsBySite" | "listEventsBySiteIds" | "listEventsByHouseholdIds"
+  | "listEventsBySite"
+  | "listEventsBySiteIds"
+  | "listRecentEventsBySiteIds"
+  | "listEventsByHouseholdIds"
+  | "listRecentEventsByHouseholdIds"
 >;
 
 const mockAnalyticsRepository = new MockAnalyticsRepository();
@@ -45,8 +49,10 @@ export function getHouseholdAnalyticsRepositories(): {
   };
   eventsRepository: {
     listEventsBySiteIds(siteIds: string[]): Promise<InteractionEvent[]>;
+    listRecentEventsBySiteIds(siteIds: string[], since: Date): Promise<InteractionEvent[]>;
     listEventsBySite(siteId: string): Promise<InteractionEvent[]>;
     listEventsByHouseholdIds(householdIds: string[]): Promise<InteractionEvent[]>;
+    listRecentEventsByHouseholdIds(householdIds: string[], since: Date): Promise<InteractionEvent[]>;
   };
 } {
   return {
@@ -73,6 +79,11 @@ export function getHouseholdAnalyticsRepositories(): {
         invokePrisma: (siteIds: string[]) => prismaAnalyticsRepository.listEventsBySiteIds(siteIds),
         invokeMock: (siteIds: string[]) => mockAnalyticsRepository.listEventsBySiteIds(siteIds)
       }),
+      listRecentEventsBySiteIds: buildReadRepository({
+        invokePrisma: (siteIds: string[], since: Date) =>
+          prismaAnalyticsRepository.listRecentEventsBySiteIds(siteIds, since),
+        invokeMock: (siteIds: string[], since: Date) => mockAnalyticsRepository.listRecentEventsBySiteIds(siteIds, since)
+      }),
       listEventsBySite: buildReadRepository({
         invokePrisma: (siteId: string) => prismaAnalyticsRepository.listEventsBySite(siteId),
         invokeMock: (siteId: string) => mockAnalyticsRepository.listEventsBySite(siteId)
@@ -80,6 +91,12 @@ export function getHouseholdAnalyticsRepositories(): {
       listEventsByHouseholdIds: buildReadRepository({
         invokePrisma: (householdIds: string[]) => prismaAnalyticsRepository.listEventsByHouseholdIds(householdIds),
         invokeMock: (householdIds: string[]) => mockAnalyticsRepository.listEventsByHouseholdIds(householdIds)
+      }),
+      listRecentEventsByHouseholdIds: buildReadRepository({
+        invokePrisma: (householdIds: string[], since: Date) =>
+          prismaAnalyticsRepository.listRecentEventsByHouseholdIds(householdIds, since),
+        invokeMock: (householdIds: string[], since: Date) =>
+          mockAnalyticsRepository.listRecentEventsByHouseholdIds(householdIds, since)
       })
     }
   };
