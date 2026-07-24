@@ -6,6 +6,10 @@ export class MockAnalyticsRepository {
     return mockInteractionEvents;
   }
 
+  async listEventsSince(since: Date) {
+    return mockInteractionEvents.filter((event) => new Date(event.occurredAt).getTime() >= since.getTime());
+  }
+
   async listEventsBySiteIds(siteIds: string[]) {
     return mockInteractionEvents.filter((event) => siteIds.includes(event.siteId));
   }

@@ -158,6 +158,14 @@ export async function resolvePublicRuntime(publicCode: string): Promise<PublicRu
       stickerId: record.sticker.id,
       destinationType: record.sticker.destination.type
     });
+    await recordRuntimeEvent({
+      publicCode: normalized,
+      household: record.household,
+      sticker: record.sticker,
+      eventType: "REDIRECT_ISSUED",
+      outcome: "SUCCESS",
+      destinationType: record.sticker.destination.type
+    });
     return {
       kind: "DIRECT_REDIRECT",
       publicCode: normalized,
@@ -168,6 +176,13 @@ export async function resolvePublicRuntime(publicCode: string): Promise<PublicRu
   }
 
   if (record.sticker.runtimeMode === "RENDER_PAGE" && record.sticker.page) {
+    await recordRuntimeEvent({
+      publicCode: normalized,
+      household: record.household,
+      sticker: record.sticker,
+      eventType: "PAGE_RENDERED",
+      outcome: "SUCCESS"
+    });
     return {
       kind: "RENDER_PAGE",
       publicCode: normalized,

@@ -10,9 +10,14 @@ import { ForbiddenError } from "@/modules/shared/errors";
 
 const prismaSitesRepository = new PrismaSitesRepository();
 const mockSitesRepository = new MockSitesRepository();
+const ADMIN_ANALYTICS_WINDOW_HOURS = 48;
 
 function getSitesRepository() {
   return isDatabaseConfigured() ? prismaSitesRepository : mockSitesRepository;
+}
+
+function hoursAgo(hours: number) {
+  return new Date(Date.now() - hours * 60 * 60 * 1000);
 }
 
 function emptyEventCounts() {
@@ -41,12 +46,15 @@ export function buildIngestionHealth(events: InteractionEvent[], now = new Date(
   );
   const lastEvent = sortedEvents[0];
   const last24hStart = now.getTime() - 24 * 60 * 60 * 1000;
+  const last48hStart = now.getTime() - 48 * 60 * 60 * 1000;
   const eventsLast24h = events.filter((event) => new Date(event.occurredAt).getTime() >= last24hStart).length;
+  const eventsLast48h = events.filter((event) => new Date(event.occurredAt).getTime() >= last48hStart).length;
   const failedEvents = events.filter((event) => event.outcome === "FAILED").length;
 
   return {
     totalEvents: events.length,
     eventsLast24h,
+    eventsLast48h,
     lastEventAt: lastEvent?.occurredAt ?? null,
     failedEvents,
     failureRate: events.length === 0 ? 0 : Number((failedEvents / events.length).toFixed(2)),
@@ -85,12 +93,13 @@ export function buildFeatureAdoption(events: InteractionEvent[]) {
 async function loadAdminEvents() {
   const sitesRepository = getSitesRepository();
   const eventsRepository = getHouseholdAnalyticsRepositories().eventsRepository;
+  const since = hoursAgo(ADMIN_ANALYTICS_WINDOW_HOURS);
   const [sites, events] = await Promise.all([
     sitesRepository.listAll(),
-    eventsRepository.listEvents()
+    eventsRepository.listEventsSince(since)
   ]);
 
-  return { sites, events } satisfies { sites: SiteSummary[]; events: InteractionEvent[] };
+  return { sites, events, since } satisfies { sites: SiteSummary[]; events: InteractionEvent[]; since: Date };
 }
 
 export async function getAdminAnalyticsSummary(user: SessionUser) {
@@ -98,10 +107,12 @@ export async function getAdminAnalyticsSummary(user: SessionUser) {
     throw new ForbiddenError();
   }
 
-  const { sites, events } = await loadAdminEvents();
+  const { sites, events, since } = await loadAdminEvents();
 
   return {
     dataSource: isDatabaseConfigured() ? "database" : "mock",
+    windowHours: ADMIN_ANALYTICS_WINDOW_HOURS,
+    windowStartAt: since.toISOString(),
     siteCount: sites.length,
     ingestionHealth: buildIngestionHealth(events),
     failurePatterns: buildFailurePatterns(events),
@@ -114,10 +125,12 @@ export async function getAdminIngestionHealth(user: SessionUser) {
     throw new ForbiddenError();
   }
 
-  const { sites, events } = await loadAdminEvents();
+  const { sites, events, since } = await loadAdminEvents();
 
   return {
     dataSource: isDatabaseConfigured() ? "database" : "mock",
+    windowHours: ADMIN_ANALYTICS_WINDOW_HOURS,
+    windowStartAt: since.toISOString(),
     siteCount: sites.length,
     ...buildIngestionHealth(events)
   };
@@ -139,4 +152,19 @@ export async function getAdminFeatureAdoption(user: SessionUser) {
 
   const { events } = await loadAdminEvents();
   return buildFeatureAdoption(events);
+}
+
+export async function getAdminInteractionEvents(user: SessionUser) {
+  if (!canAccessAdminSurface(user)) {
+    throw new ForbiddenError();
+  }
+
+  const { events, since } = await loadAdminEvents();
+
+  return {
+    dataSource: isDatabaseConfigured() ? "database" : "mock",
+    windowHours: ADMIN_ANALYTICS_WINDOW_HOURS,
+    windowStartAt: since.toISOString(),
+    events
+  };
 }

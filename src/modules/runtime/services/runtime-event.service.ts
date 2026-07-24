@@ -17,7 +17,8 @@ export async function recordRuntimeEvent(params: RuntimeEventInput) {
     eventType: params.eventType,
     outcome: params.outcome,
     destinationType: params.destinationType,
-    failureReason: params.failureReason
+    failureReason: params.failureReason,
+    metadata: params.metadata
   } as const;
 
   try {

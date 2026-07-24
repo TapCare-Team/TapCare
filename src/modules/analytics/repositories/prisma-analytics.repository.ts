@@ -11,6 +11,15 @@ export class PrismaAnalyticsRepository {
     return events.map(mapPrismaInteractionEvent);
   }
 
+  async listEventsSince(since: Date) {
+    const events = await prisma.interactionEvent.findMany({
+      where: { occurredAt: { gte: since } },
+      orderBy: { occurredAt: "desc" }
+    });
+
+    return events.map(mapPrismaInteractionEvent);
+  }
+
   async listEventsBySiteIds(siteIds: string[]) {
     const events = await prisma.interactionEvent.findMany({
       where: { siteId: { in: siteIds } },

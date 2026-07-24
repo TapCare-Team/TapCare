@@ -56,6 +56,7 @@ describe("admin analytics summaries", () => {
     expect(health).toMatchObject({
       totalEvents: 4,
       eventsLast24h: 4,
+      eventsLast48h: 4,
       lastEventAt: "2026-06-24T01:30:00.000Z",
       failedEvents: 2,
       failureRate: 0.5

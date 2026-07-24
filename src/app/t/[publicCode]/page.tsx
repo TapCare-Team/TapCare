@@ -1,10 +1,14 @@
 import { notFound, redirect } from "next/navigation";
 import Script from "next/script";
+import {
+  type PublicActionTrackingContext,
+  TrackedPublicActionLink
+} from "@/components/runtime/tracked-public-action-link";
 import { loadPublicRuntime } from "@/modules/runtime/controllers/public-runtime.controller";
 
 export const dynamic = "force-dynamic";
 
-function TelRedirectPage({ href }: { href: string }) {
+function TelRedirectPage({ href, tracking }: { href: string; tracking: PublicActionTrackingContext }) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-canvas px-6 text-ink">
       <Script id="tapcare-tel-redirect" strategy="afterInteractive">
@@ -12,15 +16,15 @@ function TelRedirectPage({ href }: { href: string }) {
       </Script>
       <div className="rounded-3xl border border-black/5 bg-white p-8 text-center shadow-panel">
         <p className="font-medium">Opening contact action...</p>
-        <a className="mt-3 inline-block text-sm font-medium text-accent" href={href}>
+        <TrackedPublicActionLink className="mt-3 inline-block text-sm font-medium text-accent" href={href} tracking={tracking}>
           Continue if nothing happens
-        </a>
+        </TrackedPublicActionLink>
       </div>
     </div>
   );
 }
 
-function ChecklistItem({ item }: { item: string }) {
+function ChecklistItem({ item, tracking }: { item: string; tracking: PublicActionTrackingContext }) {
   const labelledLinkMatch = item.match(/^(.+?)\s*\|\s*(https?:\/\/\S+)$/);
 
   if (labelledLinkMatch) {
@@ -30,9 +34,13 @@ function ChecklistItem({ item }: { item: string }) {
     return (
       <div className="space-y-2">
         <p className="font-medium text-ink">{label.trim()}</p>
-        <a className="break-all font-medium text-accent" href={href}>
+        <TrackedPublicActionLink
+          className="break-all font-medium text-accent"
+          href={href}
+          tracking={{ ...tracking, destinationType: "EXTERNAL_URL", actionKey: "open_link" }}
+        >
           {href}
-        </a>
+        </TrackedPublicActionLink>
       </div>
     );
   }
@@ -50,9 +58,13 @@ function ChecklistItem({ item }: { item: string }) {
   return (
     <>
       {before}
-      <a className="font-medium text-accent" href={href}>
+      <TrackedPublicActionLink
+        className="font-medium text-accent"
+        href={href}
+        tracking={{ ...tracking, destinationType: "EXTERNAL_URL", actionKey: "open_link" }}
+      >
         {href}
-      </a>
+      </TrackedPublicActionLink>
       {after}
     </>
   );
@@ -77,17 +89,26 @@ function contactHref(value: string) {
   return "";
 }
 
-function HelpProfileValue({ label, value }: { label: string; value: string }) {
+function HelpProfileValue({
+  label,
+  value,
+  tracking
+}: {
+  label: string;
+  value: string;
+  tracking: PublicActionTrackingContext;
+}) {
   const href = /\b(?:contact|call|phone)\b/i.test(label) ? contactHref(value) : "";
 
   if (href) {
     return (
-      <a
+      <TrackedPublicActionLink
         className="inline-flex rounded-full border border-accent/20 bg-accentSoft px-4 py-2 text-sm font-semibold text-accent"
         href={href}
+        tracking={{ ...tracking, destinationType: "PHONE", actionKey: "call" }}
       >
         Call contact
-      </a>
+      </TrackedPublicActionLink>
     );
   }
 
@@ -118,13 +139,36 @@ export default async function PublicStickerPage({
 
   if (resolution.kind === "DIRECT_REDIRECT") {
     if (resolution.destinationUrl.startsWith("tel:")) {
-      return <TelRedirectPage href={resolution.destinationUrl} />;
+      return (
+        <TelRedirectPage
+          href={resolution.destinationUrl}
+          tracking={{
+            siteId: resolution.household.siteId,
+            householdId: resolution.household.id,
+            stickerId: resolution.sticker.id,
+            publicCode: resolution.publicCode,
+            stickerType: resolution.sticker.stickerType,
+            runtimeMode: resolution.sticker.runtimeMode,
+            destinationType: "PHONE",
+            actionKey: "call"
+          }}
+        />
+      );
     }
 
     redirect(resolution.destinationUrl);
   }
 
   const { sticker, page } = resolution;
+  const tracking = {
+    siteId: resolution.household.siteId,
+    householdId: resolution.household.id,
+    stickerId: sticker.id,
+    publicCode: resolution.publicCode,
+    stickerType: sticker.stickerType,
+    runtimeMode: sticker.runtimeMode,
+    actionKey: "open_link"
+  } satisfies PublicActionTrackingContext;
 
   return (
     <div className="mx-auto flex min-h-screen max-w-3xl flex-col gap-6 px-6 py-10">
@@ -141,7 +185,7 @@ export default async function PublicStickerPage({
           <ul className="space-y-3">
             {page.content.checklistItems?.map((item) => (
               <li key={item} className="rounded-2xl border border-black/5 p-4">
-                <ChecklistItem item={item} />
+                <ChecklistItem item={item} tracking={tracking} />
               </li>
             ))}
           </ul>
@@ -155,7 +199,7 @@ export default async function PublicStickerPage({
               <div key={field.label}>
                 <dt className="text-sm text-muted">{field.label}</dt>
                 <dd className="font-medium">
-                  <HelpProfileValue label={field.label} value={field.value} />
+                  <HelpProfileValue label={field.label} value={field.value} tracking={tracking} />
                 </dd>
               </div>
             ))}
@@ -167,14 +211,15 @@ export default async function PublicStickerPage({
         <div className="rounded-3xl border border-black/5 bg-white p-6 shadow-panel">
           <div className="space-y-3">
             {page.content.links?.map((link) => (
-              <a
+              <TrackedPublicActionLink
                 key={link.href}
                 className="block rounded-2xl border border-black/5 p-4 hover:bg-accentSoft"
                 href={link.href}
+                tracking={{ ...tracking, destinationType: "EXTERNAL_URL", actionKey: "open_link" }}
               >
                 <span className="block font-medium">{link.label}</span>
                 <span className="mt-1 block break-all text-sm text-accent">{link.href}</span>
-              </a>
+              </TrackedPublicActionLink>
             ))}
           </div>
         </div>

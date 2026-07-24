@@ -15,6 +15,7 @@ export type HouseholdAnalyticsEventsRepository = Pick<
   PrismaAnalyticsRepository,
   | "listEventsBySite"
   | "listEvents"
+  | "listEventsSince"
   | "listEventsBySiteIds"
   | "listRecentEventsBySiteIds"
   | "listEventsByHouseholdIds"
@@ -50,6 +51,7 @@ export function getHouseholdAnalyticsRepositories(): {
   };
   eventsRepository: {
     listEvents(): Promise<InteractionEvent[]>;
+    listEventsSince(since: Date): Promise<InteractionEvent[]>;
     listEventsBySiteIds(siteIds: string[]): Promise<InteractionEvent[]>;
     listRecentEventsBySiteIds(siteIds: string[], since: Date): Promise<InteractionEvent[]>;
     listEventsBySite(siteId: string): Promise<InteractionEvent[]>;
@@ -80,6 +82,10 @@ export function getHouseholdAnalyticsRepositories(): {
       listEvents: buildReadRepository({
         invokePrisma: () => prismaAnalyticsRepository.listEvents(),
         invokeMock: () => mockAnalyticsRepository.listEvents()
+      }),
+      listEventsSince: buildReadRepository({
+        invokePrisma: (since: Date) => prismaAnalyticsRepository.listEventsSince(since),
+        invokeMock: (since: Date) => mockAnalyticsRepository.listEventsSince(since)
       }),
       listEventsBySiteIds: buildReadRepository({
         invokePrisma: (siteIds: string[]) => prismaAnalyticsRepository.listEventsBySiteIds(siteIds),

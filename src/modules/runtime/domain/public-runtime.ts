@@ -45,6 +45,7 @@ export type RuntimeEventInput = RuntimeEventContext & {
   outcome: InteractionEvent["outcome"];
   destinationType?: DestinationType;
   failureReason?: FailureReason;
+  metadata?: InteractionEvent["metadata"];
 };
 
 export type PublicRuntimeResolution =
