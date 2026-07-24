@@ -43,6 +43,9 @@ export default async function AdminAnalyticsPage() {
       </div>
 
       <Panel title="Ingestion health" eyebrow="Developer diagnostics">
+        <p className="mb-4 text-sm text-muted">
+          Data source: {summary.dataSource === "database" ? "Live database interaction events" : "Local demo data"}
+        </p>
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {Object.entries(summary.ingestionHealth.eventCounts).map(([eventType, count]) => (
             <div key={eventType} className="rounded-2xl border border-black/5 bg-white p-4">

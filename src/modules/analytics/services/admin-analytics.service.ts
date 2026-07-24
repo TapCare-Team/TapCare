@@ -55,7 +55,9 @@ export function buildIngestionHealth(events: InteractionEvent[], now = new Date(
 }
 
 export function buildFailurePatterns(events: InteractionEvent[]) {
-  const failedEvents = events.filter((event) => event.outcome === "FAILED");
+  const failedEvents = events
+    .filter((event) => event.outcome === "FAILED")
+    .sort((left, right) => new Date(right.occurredAt).getTime() - new Date(left.occurredAt).getTime());
 
   return {
     totalFailures: failedEvents.length,
@@ -83,9 +85,10 @@ export function buildFeatureAdoption(events: InteractionEvent[]) {
 async function loadAdminEvents() {
   const sitesRepository = getSitesRepository();
   const eventsRepository = getHouseholdAnalyticsRepositories().eventsRepository;
-  const sites = await sitesRepository.listAll();
-  const siteIds = sites.map((site) => site.id);
-  const events = siteIds.length === 0 ? [] : await eventsRepository.listEventsBySiteIds(siteIds);
+  const [sites, events] = await Promise.all([
+    sitesRepository.listAll(),
+    eventsRepository.listEvents()
+  ]);
 
   return { sites, events } satisfies { sites: SiteSummary[]; events: InteractionEvent[] };
 }
@@ -98,6 +101,7 @@ export async function getAdminAnalyticsSummary(user: SessionUser) {
   const { sites, events } = await loadAdminEvents();
 
   return {
+    dataSource: isDatabaseConfigured() ? "database" : "mock",
     siteCount: sites.length,
     ingestionHealth: buildIngestionHealth(events),
     failurePatterns: buildFailurePatterns(events),
@@ -113,6 +117,7 @@ export async function getAdminIngestionHealth(user: SessionUser) {
   const { sites, events } = await loadAdminEvents();
 
   return {
+    dataSource: isDatabaseConfigured() ? "database" : "mock",
     siteCount: sites.length,
     ...buildIngestionHealth(events)
   };

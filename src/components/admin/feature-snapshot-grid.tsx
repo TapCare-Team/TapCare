@@ -10,7 +10,8 @@ export function FeatureSnapshotGrid({ snapshots }: { snapshots: FeatureSnapshot[
           <p className="mt-3 text-2xl font-semibold">{snapshot.successfulEvents}</p>
           <p className="text-sm text-muted">{snapshot.uniqueHouseholds} households used this</p>
           <p className="mt-2 text-xs text-muted">
-            Used more than once: {snapshot.repeatHouseholds} households | Failed attempts: {Math.round(snapshot.failureRate * 100)}%
+            Repeat households: {snapshot.repeatHouseholds} | Failed scans: {snapshot.failedEvents} (
+            {Math.round(snapshot.failureRate * 100)}%)
           </p>
         </div>
       ))}

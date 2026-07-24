@@ -2,6 +2,10 @@ import type { InteractionEvent } from "@/modules/analytics/domain/analytics";
 import { mockInteractionEvents } from "@/lib/mock-data";
 
 export class MockAnalyticsRepository {
+  async listEvents() {
+    return mockInteractionEvents;
+  }
+
   async listEventsBySiteIds(siteIds: string[]) {
     return mockInteractionEvents.filter((event) => siteIds.includes(event.siteId));
   }

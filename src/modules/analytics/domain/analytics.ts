@@ -47,6 +47,7 @@ export type FeatureSnapshot = {
   stickerType: StickerType;
   totalEvents: number;
   successfulEvents: number;
+  failedEvents: number;
   uniqueHouseholds: number;
   repeatHouseholds: number;
   failureRate: number;
