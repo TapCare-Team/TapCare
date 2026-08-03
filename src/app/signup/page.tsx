@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { SignupForm } from "@/components/auth/signup-form";
+import { SupportContact } from "@/components/shared/support-contact";
 import { getCurrentUser } from "@/lib/auth";
 import { defaultRouteForUser } from "@/modules/auth/services/session.service";
 
@@ -67,6 +68,8 @@ export default async function SignupPage({
             Sign in
           </Link>
         </p>
+
+        <SupportContact className="mt-4 text-center text-sm text-muted" />
       </section>
     </main>
   );

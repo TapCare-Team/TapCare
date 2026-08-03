@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ForgotPasswordForm } from "@/components/auth/forgot-password-form";
+import { SupportContact } from "@/components/shared/support-contact";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +22,8 @@ export default function ForgotPasswordPage() {
             Sign in
           </Link>
         </p>
+
+        <SupportContact className="mt-4 text-center text-sm text-muted" />
       </div>
     </div>
   );

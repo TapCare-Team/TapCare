@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ResetPasswordForm } from "@/components/auth/reset-password-form";
+import { SupportContact } from "@/components/shared/support-contact";
 
 export const dynamic = "force-dynamic";
 
@@ -34,6 +35,8 @@ export default function ResetPasswordPage({
         ) : (
           <ResetPasswordForm token={token} />
         )}
+
+        <SupportContact className="mt-6 text-center text-sm text-muted" />
       </div>
     </div>
   );
