@@ -24,7 +24,7 @@ export function HouseholdCreateForm({
   canPersist: boolean;
 }) {
   const router = useRouter();
-  const [siteId, setSiteId] = useState(siteOptions[0]?.id ?? "");
+  const siteId = siteOptions[0]?.id ?? "";
   const [addressLine1, setAddressLine1] = useState("");
   const [addressLine2, setAddressLine2] = useState("");
   const [unitNumber, setUnitNumber] = useState("");
@@ -89,7 +89,7 @@ export function HouseholdCreateForm({
       });
 
       const payload = (await response.json()) as {
-        duplicate?: { id: string; displayAddress: string; siteName: string } | null;
+        duplicate?: { id: string; displayAddress: string } | null;
         error?: string;
       };
 
@@ -100,7 +100,7 @@ export function HouseholdCreateForm({
 
       if (payload.duplicate) {
         setDuplicateWarning(
-          `Possible duplicate: ${payload.duplicate.displayAddress} already exists under ${payload.duplicate.siteName}.`
+          `Possible duplicate: ${payload.duplicate.displayAddress} already exists.`
         );
         return;
       }
@@ -174,30 +174,9 @@ export function HouseholdCreateForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
-      {siteOptions.length > 1 ? (
-        <label className="flex flex-col gap-2 text-sm text-muted">
-          Satellite office
-          <select
-            value={siteId}
-            onChange={(event) => setSiteId(event.target.value)}
-            className="rounded-2xl border border-black/10 bg-white px-4 py-3 text-ink"
-            disabled={!canPersist || isSubmitting}
-          >
-            {siteOptions.map((site) => (
-              <option key={site.id} value={site.id}>
-                {site.name}
-                {site.region ? ` (${site.region})` : ""}
-              </option>
-            ))}
-          </select>
-        </label>
-      ) : siteOptions[0] ? (
-        <div className="rounded-2xl border border-black/5 bg-panel p-4">
-          <p className="text-xs uppercase tracking-[0.3em] text-muted">Satellite office</p>
-          <p className="mt-2 font-medium">
-            {siteOptions[0].name}
-            {siteOptions[0].region ? ` (${siteOptions[0].region})` : ""}
-          </p>
+      {!siteId ? (
+        <div className="rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          Household creation needs one configured site record before records can be saved.
         </div>
       ) : null}
 

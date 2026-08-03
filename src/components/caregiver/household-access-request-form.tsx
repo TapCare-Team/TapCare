@@ -42,7 +42,7 @@ export function HouseholdAccessRequestForm({
   canRequest: boolean;
 }) {
   const router = useRouter();
-  const [siteId, setSiteId] = useState(sites[0]?.id ?? "");
+  const siteId = sites[0]?.id ?? "";
   const [addressLine1, setAddressLine1] = useState("");
   const [addressLine2, setAddressLine2] = useState("");
   const [unitNumber, setUnitNumber] = useState("");
@@ -110,22 +110,11 @@ export function HouseholdAccessRequestForm({
           </div>
         ) : null}
 
-        <label className="flex flex-col gap-2 text-sm text-muted">
-          Satellite office
-          <select
-            value={siteId}
-            onChange={(event) => setSiteId(event.target.value)}
-            disabled={!canRequest}
-            className="rounded-xl border border-black/10 bg-panel px-4 py-3 text-ink outline-none transition focus:border-ink"
-          >
-            {sites.map((site) => (
-              <option key={site.id} value={site.id}>
-                {site.name} ({site.code})
-              </option>
-            ))}
-          </select>
-          {firstError(errors, "siteId") ? <span className="text-sm text-red-600">{firstError(errors, "siteId")}</span> : null}
-        </label>
+        {canRequest && !siteId ? (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            Household requests need one configured site record before they can be submitted.
+          </div>
+        ) : null}
 
         <label className="flex flex-col gap-2 text-sm text-muted">
           Address line 1
@@ -199,7 +188,7 @@ export function HouseholdAccessRequestForm({
 
         <button
           type="submit"
-          disabled={!canRequest || isSubmitting}
+          disabled={!canRequest || isSubmitting || !siteId}
           className="w-full rounded-xl bg-ink px-5 py-3 text-sm font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isSubmitting ? "Submitting..." : "Request household access"}
@@ -216,7 +205,6 @@ export function HouseholdAccessRequestForm({
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <p className="font-semibold">{request.displayAddress}</p>
-                  <p className="text-sm text-muted">{request.siteName}</p>
                 </div>
                 <span className="rounded-full bg-accentSoft px-3 py-1 text-sm text-accent">
                   {statusLabel(request.status)}

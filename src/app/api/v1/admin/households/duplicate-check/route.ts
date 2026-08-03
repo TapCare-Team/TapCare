@@ -23,8 +23,7 @@ export async function POST(request: Request) {
       duplicate: duplicate
         ? {
             id: duplicate.id,
-            displayAddress: duplicate.displayAddress,
-            siteName: duplicate.siteName
+            displayAddress: duplicate.displayAddress
           }
         : null
     });

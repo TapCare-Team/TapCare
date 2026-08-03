@@ -28,9 +28,7 @@ export function CaseloadTable({ households }: { households: AwaitedHouseholdList
             <tr key={household.id}>
               <td className="px-4 py-4 align-top">
                 <p className="font-medium">{household.displayAddress}</p>
-                <p className="text-sm text-muted">
-                  {household.seniorAliases.join(", ") || "No senior aliases"} | {household.siteName}
-                </p>
+                <p className="text-sm text-muted">{household.seniorAliases.join(", ") || "No senior aliases"}</p>
               </td>
               <td className="px-4 py-4 align-top">
                 {household.signal ? <SignalBadge signalType={household.signal.signalType} /> : (

@@ -51,7 +51,7 @@ export function HouseholdAccessRequestReviewPanel({
             <div>
               <p className="font-semibold">{request.displayAddress}</p>
               <p className="text-sm text-muted">
-                {request.requesterName} | {request.requesterEmail} | {request.siteName}
+                {request.requesterName} | {request.requesterEmail}
               </p>
               {request.seniorDisplayName ? (
                 <p className="mt-2 text-sm text-muted">Senior: {request.seniorDisplayName}</p>
