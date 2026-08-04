@@ -16,7 +16,7 @@ export const dynamic = "force-dynamic";
 export default async function CaregiverDashboardPage() {
   const user = await requireUserWithRole(["CAREGIVER"]);
   const households = await getHouseholdsByIds(user.householdIds);
-  const canRequest = user.role === "CAREGIVER" && isDatabaseConfigured();
+  const canRequest = isDatabaseConfigured();
   const [sites, requests] = canRequest
     ? await Promise.all([
         listRequestableSitesForCaregiver(user),

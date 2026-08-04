@@ -5,30 +5,16 @@ import { defaultRouteForUser } from "@/modules/auth/services/session.service";
 
 export const dynamic = "force-dynamic";
 
-function roleLabel(role: UserRole) {
-  return role === "ADMIN" ? "admin" : "caregiver";
-}
+const accountLabels: Record<UserRole, string> = {
+  ADMIN: "an admin account",
+  CAREGIVER: "a caregiver account"
+};
 
-function accountLabel(role: UserRole) {
-  return role === "ADMIN" ? "an admin account" : "a caregiver account";
-}
-
-function neededRoleLabel(value?: string | string[]) {
-  const rawValue = Array.isArray(value) ? value[0] : value;
-  const roles = rawValue
+function parseNeededRoles(value?: string | string[]) {
+  return (Array.isArray(value) ? value[0] : value)
     ?.split(",")
     .map((role) => role.trim())
-    .filter((role): role is UserRole => role === "ADMIN" || role === "CAREGIVER");
-
-  if (!roles || roles.length === 0) {
-    return "a different account type";
-  }
-
-  if (roles.length === 1) {
-    return accountLabel(roles[0]);
-  }
-
-  return `${roles.map(roleLabel).join(" or ")} account`;
+    .filter((role): role is UserRole => role === "ADMIN" || role === "CAREGIVER") ?? [];
 }
 
 export default async function WrongAccountPage({
@@ -37,6 +23,8 @@ export default async function WrongAccountPage({
   searchParams?: { needed?: string | string[] };
 }) {
   const user = await requireUser();
+  const neededRoles = parseNeededRoles(searchParams?.needed);
+  const neededAccount = neededRoles.map((role) => accountLabels[role]).join(" or ") || "a different account type";
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-panel px-6 py-10">
@@ -44,8 +32,8 @@ export default async function WrongAccountPage({
         <p className="text-sm font-semibold uppercase tracking-[0.28em] text-accent">TapCare</p>
         <h1 className="mt-5 text-3xl font-semibold tracking-normal text-ink">Wrong account type</h1>
         <p className="mt-4 text-sm leading-6 text-muted">
-          You are currently signed in as {user.displayName} with {accountLabel(user.role)}. This page needs{" "}
-          {neededRoleLabel(searchParams?.needed)}.
+          You are currently signed in as {user.displayName} with {accountLabels[user.role]}. This page needs{" "}
+          {neededAccount}.
         </p>
         <p className="mt-3 text-sm leading-6 text-muted">
           Log out and sign in with the correct account to continue.
