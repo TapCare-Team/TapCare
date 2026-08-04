@@ -40,7 +40,7 @@ export class PrismaHouseholdsRepository {
 
   async listByIds(householdIds: string[]) {
     const households = await prisma.household.findMany({
-      where: { id: { in: householdIds } },
+      where: { id: { in: householdIds }, status: "ACTIVE" },
       include: householdInclude,
       orderBy: { displayAddress: "asc" }
     });
@@ -49,8 +49,8 @@ export class PrismaHouseholdsRepository {
   }
 
   async getById(householdId: string) {
-    const household = await prisma.household.findUnique({
-      where: { id: householdId },
+    const household = await prisma.household.findFirst({
+      where: { id: householdId, status: "ACTIVE" },
       include: householdInclude
     });
 
@@ -59,7 +59,7 @@ export class PrismaHouseholdsRepository {
 
   async getByStickerPublicCode(publicCode: string) {
     const household = await prisma.household.findFirst({
-      where: { stickers: { some: { publicCode } } },
+      where: { status: "ACTIVE", stickers: { some: { publicCode } } },
       include: householdInclude
     });
 
@@ -132,6 +132,11 @@ export class PrismaHouseholdsRepository {
       await tx.sticker.updateMany({
         where: { householdId },
         data: { status: "DISABLED" }
+      });
+
+      await tx.householdAssignment.updateMany({
+        where: { householdId, endedAt: null },
+        data: { endedAt: new Date() }
       });
     });
 
