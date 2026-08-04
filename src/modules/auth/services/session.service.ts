@@ -72,7 +72,7 @@ export async function requireUser() {
 export async function requireUserWithRole(roles: UserRole[]) {
   const user = await requireUser();
   if (!roles.includes(user.role)) {
-    redirect(defaultRouteForUser(user));
+    redirect(`/wrong-account?needed=${roles.join(",")}`);
   }
 
   return user;
