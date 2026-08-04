@@ -25,7 +25,7 @@ export function toHouseholdRouteErrorResponse(error: unknown, fallbackMessage: s
   }
 
   return NextResponse.json(
-    { error: error instanceof Error ? error.message : fallbackMessage, code: "UNKNOWN_ERROR" },
+    { error: fallbackMessage, code: "UNKNOWN_ERROR" },
     { status: 400 }
   );
 }

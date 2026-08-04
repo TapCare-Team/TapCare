@@ -4,7 +4,7 @@ import { canAccessAdminSurface } from "@/modules/auth/services/access-control.se
 import { getHouseholdDetail } from "@/modules/households/services/household-analytics.service";
 import { deleteHouseholdForUser } from "@/modules/households/services/household-management.service";
 import { toHouseholdRouteErrorResponse } from "@/modules/households/services/household-route.service";
-import { householdMessages } from "@/modules/shared/messages";
+import { commonMessages, householdMessages } from "@/modules/shared/messages";
 
 export async function GET(
   _request: Request,
@@ -12,16 +12,16 @@ export async function GET(
 ) {
   const user = await getCurrentUser();
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: commonMessages.unauthorized }, { status: 401 });
   }
   if (!canAccessAdminSurface(user)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return NextResponse.json({ error: commonMessages.forbidden }, { status: 403 });
   }
 
   const detail = await getHouseholdDetail(user, params.householdId);
 
   if (!detail) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+    return NextResponse.json({ error: householdMessages.householdNotFound }, { status: 404 });
   }
 
   return NextResponse.json(detail);
@@ -33,7 +33,7 @@ export async function DELETE(
 ) {
   const user = await getCurrentUser();
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: commonMessages.unauthorized }, { status: 401 });
   }
 
   try {

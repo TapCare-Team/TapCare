@@ -633,7 +633,12 @@ export function StickerSetupManager({
     setStickers(Object.fromEntries(initialStickers.map((sticker) => [sticker.id, stickerToFormState(sticker)])));
   }, [initialStickers]);
 
-  async function submitRequest(url: string, method: "POST" | "PATCH" | "DELETE", body?: unknown) {
+  async function submitRequest(
+    url: string,
+    method: "POST" | "PATCH" | "DELETE",
+    fallbackMessage: string,
+    body?: unknown
+  ) {
     const response = await fetch(url, {
       method,
       headers: body ? { "Content-Type": "application/json" } : undefined,
@@ -642,7 +647,11 @@ export function StickerSetupManager({
 
     if (!response.ok) {
       const payload = (await response.json().catch(() => null)) as { error?: string } | null;
-      throw new Error(payload?.error ?? "Request failed");
+      throw new Error(
+        response.status === 401
+          ? "Your sign-in session expired. Please sign in again and retry."
+          : payload?.error ?? fallbackMessage
+      );
     }
   }
 
@@ -665,7 +674,12 @@ export function StickerSetupManager({
     setBusyId("create");
 
     try {
-      await submitRequest("/api/v1/setup/stickers", "POST", buildPayload(household.id, createForm));
+      await submitRequest(
+        "/api/v1/setup/stickers",
+        "POST",
+        "Unable to create sticker. Please check the details and try again.",
+        buildPayload(household.id, createForm)
+      );
       setCreateForm(stickerToFormState());
       setSavedStickerId(null);
       if (afterCreateHref) {
@@ -673,7 +687,11 @@ export function StickerSetupManager({
       }
       refreshWithMessage("Sticker created.");
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Unable to create sticker");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Unable to create sticker. Please check the details and try again."
+      );
     } finally {
       setBusyId(null);
     }
@@ -697,13 +715,18 @@ export function StickerSetupManager({
       await submitRequest(
         `/api/v1/setup/stickers/${stickerId}`,
         "PATCH",
+        "Unable to save sticker changes. Please check the details and try again.",
         buildPayload(household.id, stickers[stickerId])
       );
       setDeleteCandidateId(null);
       setSavedStickerId(stickerId);
       refreshWithMessage("Sticker updated.");
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Unable to update sticker");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Unable to save sticker changes. Please check the details and try again."
+      );
     } finally {
       setBusyId(null);
     }
@@ -715,12 +738,16 @@ export function StickerSetupManager({
     setBusyId(`delete:${stickerId}`);
 
     try {
-      await submitRequest(`/api/v1/setup/stickers/${stickerId}`, "DELETE");
+      await submitRequest(
+        `/api/v1/setup/stickers/${stickerId}`,
+        "DELETE",
+        "Unable to delete sticker. Please try again."
+      );
       setDeleteCandidateId(null);
       setSavedStickerId(null);
       refreshWithMessage("Sticker deleted.");
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Unable to delete sticker");
+      setError(requestError instanceof Error ? requestError.message : "Unable to delete sticker. Please try again.");
     } finally {
       setBusyId(null);
     }
@@ -730,7 +757,7 @@ export function StickerSetupManager({
     <div className="space-y-6">
       {!canPersist ? (
         <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-          Setup writes require `DATABASE_URL`. The seeded dashboard can still be browsed in read-only mode.
+          Sticker setup is currently read-only because the database is not connected. Please contact TapCare support.
         </div>
       ) : null}
       {error ? <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div> : null}

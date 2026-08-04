@@ -112,7 +112,7 @@ describe("POST /api/v1/admin/follow-up-signals/[signalId]/review", () => {
 
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({
-      error: "DATABASE_URL is required for signal reviews"
+      error: signalMessages.reviewFailed
     });
   });
 

@@ -10,6 +10,7 @@ import { PrismaHouseholdsRepository } from "@/modules/households/repositories/pr
 import { PrismaSitesRepository } from "@/modules/households/repositories/prisma-sites.repository";
 import { buildDisplayAddress } from "@/modules/households/services/household-management.service";
 import { ConfigurationError, ForbiddenError, NotFoundError } from "@/modules/shared/errors";
+import { householdMessages } from "@/modules/shared/messages";
 
 const requestsRepository = new PrismaHouseholdAccessRequestsRepository();
 const householdsRepository = new PrismaHouseholdsRepository();
@@ -17,7 +18,7 @@ const sitesRepository = new PrismaSitesRepository();
 
 function requireDatabase() {
   if (!isDatabaseConfigured()) {
-    throw new ConfigurationError("DATABASE_URL is required for household access requests.");
+    throw new ConfigurationError(householdMessages.databaseUnavailable);
   }
 }
 
@@ -88,7 +89,7 @@ export async function approveHouseholdAccessRequestForAdmin(user: SessionUser, r
   const request = await requestsRepository.getPendingById(requestId);
 
   if (!request) {
-    throw new NotFoundError("Household request not found.", "HOUSEHOLD_REQUEST_NOT_FOUND");
+    throw new NotFoundError("Household request could not be found.", "HOUSEHOLD_REQUEST_NOT_FOUND");
   }
 
   const existingHousehold = await householdsRepository.findDuplicateAddress(request.siteId, request.displayAddress);
@@ -117,7 +118,7 @@ export async function rejectHouseholdAccessRequestForAdmin(user: SessionUser, re
   const request = await requestsRepository.getPendingById(requestId);
 
   if (!request) {
-    throw new NotFoundError("Household request not found.", "HOUSEHOLD_REQUEST_NOT_FOUND");
+    throw new NotFoundError("Household request could not be found.", "HOUSEHOLD_REQUEST_NOT_FOUND");
   }
 
   return requestsRepository.reject(request.id, user.id);

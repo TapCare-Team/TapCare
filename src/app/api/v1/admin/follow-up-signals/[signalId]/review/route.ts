@@ -33,7 +33,7 @@ export async function POST(
     }
 
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : signalMessages.reviewFailed },
+      { error: signalMessages.reviewFailed },
       { status: 400 }
     );
   }

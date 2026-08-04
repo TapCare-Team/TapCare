@@ -26,14 +26,19 @@ export function DeleteHouseholdButton({
 
       if (!response.ok) {
         const payload = (await response.json().catch(() => null)) as { error?: string } | null;
-        setError(payload?.error ?? "Unable to delete household");
+        if (response.status === 401) {
+          setError("Your sign-in session expired. Please sign in again and retry.");
+          return;
+        }
+
+        setError(payload?.error ?? "Unable to delete household. Please try again.");
         return;
       }
 
       router.push("/");
       router.refresh();
-    } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Unable to delete household");
+    } catch {
+      setError("Unable to delete household. Please refresh the page and try again.");
     } finally {
       setIsDeleting(false);
     }

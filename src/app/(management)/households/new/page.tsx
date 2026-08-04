@@ -20,8 +20,8 @@ export default async function NewHouseholdPage() {
       <Panel title="Household details" eyebrow="Admin setup">
         {!isDatabaseConfigured() ? (
           <div className="mb-5 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-            Household creation requires <code>DATABASE_URL</code>. You can still browse the seeded dashboard in
-            read-only mode.
+            Household creation is currently read-only because the database is not connected. Please contact TapCare
+            support.
           </div>
         ) : null}
         <HouseholdCreateForm siteOptions={siteOptions} canPersist={isDatabaseConfigured()} />

@@ -122,8 +122,8 @@ export function SignupForm() {
 
       router.replace("/caregiver");
       router.refresh();
-    } catch (error) {
-      setFormError(error instanceof Error ? error.message : "Unable to create account.");
+    } catch {
+      setFormError("Unable to create account. Please refresh the page and try again.");
     } finally {
       setIsSubmitting(false);
     }

@@ -37,7 +37,12 @@ export function CaregiverAssignmentPanel({
       } | null;
 
       if (!response.ok) {
-        setError(payload?.error ?? "Unable to assign caregiver");
+        if (response.status === 401) {
+          setError("Your sign-in session expired. Please sign in again and retry.");
+          return;
+        }
+
+        setError(payload?.error ?? "Unable to assign caregiver. Please check the email and try again.");
         return;
       }
 
@@ -49,8 +54,8 @@ export function CaregiverAssignmentPanel({
       );
       setEmail("");
       router.refresh();
-    } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Unable to assign caregiver");
+    } catch {
+      setError("Unable to assign caregiver. Please refresh the page and try again.");
     } finally {
       setIsSubmitting(false);
     }

@@ -32,7 +32,11 @@ export function HouseholdAccessRequestReviewPanel({
       setMessage(action === "approve" ? "Request approved and caregiver assigned." : "Request rejected.");
       router.refresh();
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : `Unable to ${action} request.`);
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : `Unable to ${action} household request. Please refresh the page and try again.`
+      );
     } finally {
       setActiveRequestId("");
     }

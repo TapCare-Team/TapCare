@@ -4,6 +4,7 @@ import { logger } from "@/lib/logging/logger";
 import { isDatabaseConfigured } from "@/lib/db/database-mode";
 import { MockAnalyticsRepository } from "@/modules/analytics/repositories/mock-analytics.repository";
 import { PrismaAnalyticsRepository } from "@/modules/analytics/repositories/prisma-analytics.repository";
+import { analyticsMessages } from "@/modules/shared/messages";
 
 const mockAnalyticsRepository = new MockAnalyticsRepository();
 const prismaAnalyticsRepository = new PrismaAnalyticsRepository();
@@ -18,7 +19,7 @@ export async function POST(request: Request) {
 
   if (!parsed.success) {
     return NextResponse.json(
-      { error: "Invalid interaction event payload", details: parsed.error.flatten() },
+      { error: analyticsMessages.invalidInteractionEventPayload, details: parsed.error.flatten() },
       { status: 400 }
     );
   }

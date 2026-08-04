@@ -1,6 +1,6 @@
 export const commonMessages = {
-  unauthorized: "Unauthorized",
-  forbidden: "Forbidden"
+  unauthorized: "Please sign in to continue.",
+  forbidden: "You do not have permission to do this."
 } as const;
 
 export const authMessages = {
@@ -11,44 +11,44 @@ export const authMessages = {
 } as const;
 
 export const setupMessages = {
-  invalidCreatePayload: "Invalid sticker payload",
-  invalidUpdatePayload: "Invalid sticker update payload",
-  invalidAssignPayload: "Invalid assign payload",
-  listFailed: "Unable to list stickers",
-  createFailed: "Unable to create sticker",
-  updateFailed: "Unable to update sticker",
-  deleteFailed: "Unable to delete sticker",
-  activateFailed: "Unable to activate sticker",
-  disableFailed: "Unable to disable sticker",
-  assignFailed: "Unable to assign sticker",
-  databaseUnavailable: "DATABASE_URL is required for setup APIs",
-  householdNotFound: "Household not found",
-  stickerNotFound: "Sticker not found",
-  displayCodeConflict: "Unable to create sticker after retrying display code generation",
-  uniqueDisplayCodeFailed: "Unable to generate a unique sticker reference code"
+  invalidCreatePayload: "Please check the sticker details and try again.",
+  invalidUpdatePayload: "Please check the sticker details and try again.",
+  invalidAssignPayload: "Please choose a valid household for this sticker.",
+  listFailed: "Unable to load stickers. Please refresh the page.",
+  createFailed: "Unable to create sticker. Please check the details and try again.",
+  updateFailed: "Unable to save sticker changes. Please check the details and try again.",
+  deleteFailed: "Unable to delete sticker. Please try again.",
+  activateFailed: "Unable to activate sticker. Please try again.",
+  disableFailed: "Unable to disable sticker. Please try again.",
+  assignFailed: "Unable to move this sticker to the selected household.",
+  databaseUnavailable: "The database is not connected yet. Please contact TapCare support.",
+  householdNotFound: "Household could not be found.",
+  stickerNotFound: "Sticker could not be found.",
+  displayCodeConflict: "We could not create a unique sticker code. Please try again.",
+  uniqueDisplayCodeFailed: "We could not create a unique sticker code. Please try again."
 } as const;
 
 export const signalMessages = {
-  databaseUnavailable: "DATABASE_URL is required for signal reviews",
-  invalidReviewPayload: "Invalid review payload",
-  reviewFailed: "Unable to review follow-up signal",
-  signalNotFound: "Signal not found"
+  databaseUnavailable: "The database is not connected yet. Please contact TapCare support.",
+  invalidReviewPayload: "Please choose a valid follow-up action.",
+  reviewFailed: "Unable to save this follow-up review. Please try again.",
+  signalNotFound: "Follow-up item could not be found."
 } as const;
 
 export const analyticsMessages = {
-  invalidInteractionEventPayload: "Invalid interaction event payload"
+  invalidInteractionEventPayload: "Please check the interaction event details and try again."
 } as const;
 
 export const householdMessages = {
-  databaseUnavailable: "DATABASE_URL is required for household setup",
-  invalidCreatePayload: "Invalid household payload",
-  createFailed: "Unable to create household",
-  deleteFailed: "Unable to delete household",
-  assignCaregiverFailed: "Unable to assign caregiver",
-  duplicateCheckFailed: "Unable to check for duplicate households",
-  duplicateAddress: "A household with the same address already exists in this satellite office",
-  householdNotFound: "Household not found",
+  databaseUnavailable: "The database is not connected yet. Please contact TapCare support.",
+  invalidCreatePayload: "Please check the household details and try again.",
+  createFailed: "Unable to create household. Please check the details and try again.",
+  deleteFailed: "Unable to delete household. Please try again.",
+  assignCaregiverFailed: "Unable to assign caregiver. Please check the email and try again.",
+  duplicateCheckFailed: "Unable to check for duplicate households right now. Please try again.",
+  duplicateAddress: "A household with the same address already exists.",
+  householdNotFound: "Household could not be found.",
   caregiverNotFound: "Caregiver needs to sign up first.",
   caregiverAlreadyAssigned: "This caregiver is already assigned to the household.",
-  outOfScopeSite: "Choose a satellite office that exists in this workspace"
+  outOfScopeSite: "Household requests are not configured yet."
 } as const;

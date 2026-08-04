@@ -109,7 +109,7 @@ export function HouseholdAccessRequestForm({
       setStatus("Request submitted. Admin will review and assign the household if approved.");
       router.refresh();
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : "Unable to submit request.");
+      setStatus(error instanceof Error ? error.message : "Unable to submit request. Please try again.");
     } finally {
       setIsSubmitting(false);
     }

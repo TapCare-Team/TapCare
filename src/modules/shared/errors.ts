@@ -18,19 +18,19 @@ export class ForbiddenError extends DomainError {
 }
 
 export class NotFoundError extends DomainError {
-  constructor(message = "Not found", code = "NOT_FOUND") {
+  constructor(message = "The requested item could not be found.", code = "NOT_FOUND") {
     super(message, 404, code);
   }
 }
 
 export class ConflictError extends DomainError {
-  constructor(message = "Conflict", code = "CONFLICT") {
+  constructor(message = "This could not be saved because it conflicts with an existing record.", code = "CONFLICT") {
     super(message, 409, code);
   }
 }
 
 export class ConfigurationError extends DomainError {
-  constructor(message = "Configuration error", code = "CONFIGURATION_ERROR") {
+  constructor(message = "This feature is not configured yet. Please contact TapCare support.", code = "CONFIGURATION_ERROR") {
     super(message, 500, code);
   }
 }

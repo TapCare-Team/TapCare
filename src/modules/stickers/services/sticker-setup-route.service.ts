@@ -7,7 +7,7 @@ export function toSetupRouteErrorResponse(error: unknown, fallbackMessage: strin
   }
 
   return NextResponse.json(
-    { error: error instanceof Error ? error.message : fallbackMessage, code: "UNKNOWN_ERROR" },
+    { error: fallbackMessage, code: "UNKNOWN_ERROR" },
     { status: 400 }
   );
 }

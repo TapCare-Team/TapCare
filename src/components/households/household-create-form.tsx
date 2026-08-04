@@ -16,6 +16,16 @@ type SiteOption = {
   region?: string;
 };
 
+async function readJsonResponse(response: Response) {
+  const contentType = response.headers.get("content-type") ?? "";
+
+  if (contentType.includes("application/json")) {
+    return (await response.json()) as { error?: string; id?: string };
+  }
+
+  return null;
+}
+
 export function HouseholdCreateForm({
   siteOptions,
   canPersist
@@ -156,17 +166,22 @@ export function HouseholdCreateForm({
         })
       });
 
-      const payload = (await response.json()) as { id?: string; error?: string };
+      const payload = await readJsonResponse(response);
 
-      if (!response.ok || !payload.id) {
-        setError(payload.error ?? "Unable to create household");
+      if (!response.ok || !payload?.id) {
+        if (response.status === 401) {
+          setError("Your sign-in session expired. Please sign in again and create the household.");
+          return;
+        }
+
+        setError(payload?.error ?? "Unable to create household. Please check the details and try again.");
         return;
       }
 
       router.replace("/");
       router.refresh();
-    } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Unable to create household");
+    } catch {
+      setError("Unable to create household. Please refresh the page and try again.");
     } finally {
       setIsSubmitting(false);
     }
