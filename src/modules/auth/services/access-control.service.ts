@@ -13,7 +13,7 @@ export function canReviewSignals(user: SessionUser) {
 }
 
 export function canAccessCaregiverSurface(user: SessionUser) {
-  return user.role === "CAREGIVER" || user.role === "ADMIN";
+  return user.role === "CAREGIVER";
 }
 
 export function canAccessAdminSurface(user: SessionUser) {

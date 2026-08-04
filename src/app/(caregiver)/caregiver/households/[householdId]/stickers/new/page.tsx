@@ -13,7 +13,7 @@ export default async function NewCaregiverStickerPage({
 }: {
   params: { householdId: string };
 }) {
-  const user = await requireUserWithRole(["CAREGIVER", "ADMIN"]);
+  const user = await requireUserWithRole(["CAREGIVER"]);
   const detail = await getHouseholdDetail(user, params.householdId, { preset: "all" });
 
   if (!detail) {

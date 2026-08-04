@@ -22,7 +22,7 @@ export default async function CaregiverHouseholdPage({
   searchParams?: { preset?: string | string[]; from?: string | string[]; to?: string | string[] };
 }) {
   const { householdId } = params;
-  const user = await requireUserWithRole(["CAREGIVER", "ADMIN"]);
+  const user = await requireUserWithRole(["CAREGIVER"]);
   const preset = normalizeActivityPreset(getSearchParamValue(searchParams?.preset));
   const detail = await getHouseholdDetail(user, householdId, {
     preset,
