@@ -43,7 +43,7 @@ export async function createHouseholdAccessRequestForCaregiver(
   const sites = await sitesRepository.listAll();
 
   if (!sites.some((site) => site.id === input.siteId)) {
-    throw new NotFoundError("Choose an existing satellite office.", "SITE_NOT_FOUND");
+    throw new NotFoundError("Household requests are not configured yet.", "SITE_NOT_FOUND");
   }
 
   const displayAddress = buildDisplayAddress(input);

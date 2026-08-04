@@ -32,6 +32,16 @@ function statusLabel(status: HouseholdAccessRequest["status"]) {
   return "Pending review";
 }
 
+async function readJsonResponse(response: Response) {
+  const contentType = response.headers.get("content-type") ?? "";
+
+  if (contentType.includes("application/json")) {
+    return (await response.json()) as { error?: string };
+  }
+
+  return null;
+}
+
 export function HouseholdAccessRequestForm({
   sites,
   initialRequests,
@@ -80,10 +90,14 @@ export function HouseholdAccessRequestForm({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(parsed.data)
       });
-      const payload = await response.json();
+      const payload = await readJsonResponse(response);
 
       if (!response.ok) {
-        throw new Error(payload.error ?? "Unable to submit request.");
+        if (response.status === 401) {
+          throw new Error("Your sign-in session expired. Please sign in again and resubmit the request.");
+        }
+
+        throw new Error(payload?.error ?? "Unable to submit request. Please try again.");
       }
 
       setAddressLine1("");

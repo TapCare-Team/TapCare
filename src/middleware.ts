@@ -26,6 +26,10 @@ export function middleware(request: NextRequest) {
 
   const session = request.cookies.get(SESSION_COOKIE_NAME)?.value;
   if (!session) {
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.json({ error: "Please sign in again." }, { status: 401 });
+    }
+
     const loginUrl = new URL("/login", request.url);
     return NextResponse.redirect(loginUrl);
   }
