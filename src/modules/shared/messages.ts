@@ -50,5 +50,6 @@ export const householdMessages = {
   householdNotFound: "Household could not be found.",
   caregiverNotFound: "Caregiver needs to sign up first.",
   caregiverAlreadyAssigned: "This caregiver is already assigned to the household.",
+  caregiverRequestsOnly: "Only caregiver accounts can request household access. Please sign in with a caregiver account.",
   outOfScopeSite: "Household requests are not configured yet."
 } as const;

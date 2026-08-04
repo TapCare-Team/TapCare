@@ -24,7 +24,7 @@ function requireDatabase() {
 
 export async function listRequestableSitesForCaregiver(user: SessionUser) {
   if (user.role !== "CAREGIVER") {
-    throw new ForbiddenError();
+    throw new ForbiddenError(householdMessages.caregiverRequestsOnly);
   }
 
   requireDatabase();
@@ -36,7 +36,7 @@ export async function createHouseholdAccessRequestForCaregiver(
   rawInput: RequestHouseholdAccessInput
 ) {
   if (user.role !== "CAREGIVER") {
-    throw new ForbiddenError();
+    throw new ForbiddenError(householdMessages.caregiverRequestsOnly);
   }
 
   requireDatabase();
@@ -64,7 +64,7 @@ export async function createHouseholdAccessRequestForCaregiver(
 
 export async function listHouseholdAccessRequestsForCaregiver(user: SessionUser) {
   if (user.role !== "CAREGIVER") {
-    throw new ForbiddenError();
+    throw new ForbiddenError(householdMessages.caregiverRequestsOnly);
   }
 
   requireDatabase();
