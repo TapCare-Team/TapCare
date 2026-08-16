@@ -28,6 +28,16 @@ Privacy-safe operational analytics dashboard for TapCare's NFC and QR support sy
 6. Seed demo data with `npm run db:seed`.
 7. Run the app with `npm run dev`.
 
+Database mode is the default and requires a non-empty `DATABASE_URL`. The seeded PostgreSQL setup above is the preferred development path because it exercises the production persistence layer.
+
+For read and authentication flows that explicitly need local mock data, set:
+
+```bash
+TAPCARE_DATA_MODE=mock npm run dev
+```
+
+Mock mode is limited to local development and tests. It is rejected in production and on Vercel preview or production deployments. If `DATABASE_URL` is missing and mock mode is not explicitly enabled, TapCare reports a configuration error instead of falling back to mock users or data. Database-only setup and write operations remain unavailable in mock mode.
+
 ## Verification
 
 Run these before pushing changes:
@@ -90,9 +100,8 @@ Notes:
 
 - the seed is rerunnable and uses fixed IDs
 - setup APIs require a working `DATABASE_URL`
-- read flows still fall back to mock data if the database is not configured, but future developers should prefer running the seed so the Prisma-backed paths are exercised
+- database-backed reads and authentication also require `DATABASE_URL` unless explicit local mock mode is enabled
 
 ## Notes
 
-- Read paths can fall back to mock data when `DATABASE_URL` is not configured, but setup APIs require Postgres.
-- Prisma schema and initial migration are included for the production data model.
+- Prisma schema and migrations are included for the production data model.

@@ -1,4 +1,4 @@
-import { isDatabaseConfigured } from "@/lib/db/database-mode";
+import { getDataMode } from "@/lib/db/database-mode";
 import type { InteractionEvent } from "@/modules/analytics/domain/analytics";
 import { buildFeatureSnapshots, labelForStickerType } from "@/modules/analytics/services/feature-analytics.service";
 import type { SessionUser } from "@/modules/auth/domain/access";
@@ -13,7 +13,7 @@ const mockSitesRepository = new MockSitesRepository();
 const ADMIN_ANALYTICS_WINDOW_HOURS = 48;
 
 function getSitesRepository() {
-  return isDatabaseConfigured() ? prismaSitesRepository : mockSitesRepository;
+  return getDataMode() === "database" ? prismaSitesRepository : mockSitesRepository;
 }
 
 function hoursAgo(hours: number) {
@@ -110,7 +110,7 @@ export async function getAdminAnalyticsSummary(user: SessionUser) {
   const { sites, events, since } = await loadAdminEvents();
 
   return {
-    dataSource: isDatabaseConfigured() ? "database" : "mock",
+    dataSource: getDataMode(),
     windowHours: ADMIN_ANALYTICS_WINDOW_HOURS,
     windowStartAt: since.toISOString(),
     siteCount: sites.length,
@@ -128,7 +128,7 @@ export async function getAdminIngestionHealth(user: SessionUser) {
   const { sites, events, since } = await loadAdminEvents();
 
   return {
-    dataSource: isDatabaseConfigured() ? "database" : "mock",
+    dataSource: getDataMode(),
     windowHours: ADMIN_ANALYTICS_WINDOW_HOURS,
     windowStartAt: since.toISOString(),
     siteCount: sites.length,
@@ -162,7 +162,7 @@ export async function getAdminInteractionEvents(user: SessionUser) {
   const { events, since } = await loadAdminEvents();
 
   return {
-    dataSource: isDatabaseConfigured() ? "database" : "mock",
+    dataSource: getDataMode(),
     windowHours: ADMIN_ANALYTICS_WINDOW_HOURS,
     windowStartAt: since.toISOString(),
     events

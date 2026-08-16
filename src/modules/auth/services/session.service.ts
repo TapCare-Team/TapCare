@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { isDatabaseConfigured } from "@/lib/db/database-mode";
+import { getDataMode } from "@/lib/db/database-mode";
 import { logger } from "@/lib/logging/logger";
 import {
   changePasswordSchema,
@@ -29,8 +29,8 @@ const mockAuthRepository = new MockAuthRepository();
 const prismaAuthRepository = new PrismaAuthRepository();
 const PASSWORD_RESET_MAX_AGE_MINUTES = 30;
 
-async function getAuthRepository() {
-  return isDatabaseConfigured() ? prismaAuthRepository : mockAuthRepository;
+function getAuthRepository() {
+  return getDataMode() === "database" ? prismaAuthRepository : mockAuthRepository;
 }
 
 export function defaultRouteForUser(user: Pick<SessionUser, "role">) {
@@ -49,8 +49,9 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
     return null;
   }
 
+  const repository = getAuthRepository();
+
   try {
-    const repository = await getAuthRepository();
     return await repository.getSessionUserBySessionToken(sessionToken);
   } catch (error) {
     logger.warn("auth_lookup_failed", {
@@ -79,12 +80,12 @@ export async function requireUserWithRole(roles: UserRole[]) {
 }
 
 export async function authenticateUser(email: string, password: string) {
-  const repository = await getAuthRepository();
+  const repository = getAuthRepository();
   return repository.authenticateByEmailPassword(email, password);
 }
 
 export async function createUserSession(userId: string) {
-  const repository = await getAuthRepository();
+  const repository = getAuthRepository();
   const sessionToken = generateSessionToken();
   const expiresAt = new Date(Date.now() + SESSION_MAX_AGE_SECONDS * 1000);
 
@@ -94,13 +95,13 @@ export async function createUserSession(userId: string) {
 }
 
 export async function revokeUserSession(sessionToken: string) {
-  const repository = await getAuthRepository();
+  const repository = getAuthRepository();
   await repository.revokeSession(sessionToken);
 }
 
 export async function signupCaregiver(rawInput: SignupInput) {
   const input = signupSchema.parse(rawInput);
-  const repository = await getAuthRepository();
+  const repository = getAuthRepository();
   const passwordHash = await hashPassword(input.password);
 
   return repository.createCaregiverUser({
@@ -116,7 +117,7 @@ export async function signInWithVerifiedOAuthProfile(input: {
   email: string;
   displayName: string;
 }) {
-  const repository = await getAuthRepository();
+  const repository = getAuthRepository();
   return repository.findOrCreateOAuthCaregiverUser({
     provider: input.provider,
     providerUserId: input.providerUserId,
@@ -127,7 +128,7 @@ export async function signInWithVerifiedOAuthProfile(input: {
 
 export async function requestPasswordReset(rawInput: ForgotPasswordInput) {
   const input = forgotPasswordSchema.parse(rawInput);
-  const repository = await getAuthRepository();
+  const repository = getAuthRepository();
   const user = await repository.findActiveUserByEmail(input.email);
 
   if (!user) {
@@ -150,7 +151,7 @@ export async function requestPasswordReset(rawInput: ForgotPasswordInput) {
 
 export async function resetPassword(rawInput: ResetPasswordInput) {
   const input = resetPasswordSchema.parse(rawInput);
-  const repository = await getAuthRepository();
+  const repository = getAuthRepository();
   const passwordHash = await hashPassword(input.password);
   const user = await repository.consumePasswordResetToken(hashPasswordResetToken(input.token), passwordHash);
 
@@ -164,7 +165,7 @@ export async function resetPassword(rawInput: ResetPasswordInput) {
 
 export async function changePasswordForUser(user: SessionUser, rawInput: ChangePasswordInput) {
   const input = changePasswordSchema.parse(rawInput);
-  const repository = await getAuthRepository();
+  const repository = getAuthRepository();
   const currentPasswordHash = await repository.getPasswordHashByUserId(user.id);
 
   if (currentPasswordHash && (!input.currentPassword || !(await verifyPassword(input.currentPassword, currentPasswordHash)))) {
@@ -178,6 +179,6 @@ export async function changePasswordForUser(user: SessionUser, rawInput: ChangeP
 }
 
 export async function userHasPassword(user: SessionUser) {
-  const repository = await getAuthRepository();
+  const repository = getAuthRepository();
   return Boolean(await repository.getPasswordHashByUserId(user.id));
 }

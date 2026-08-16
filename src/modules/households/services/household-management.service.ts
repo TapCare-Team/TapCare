@@ -1,4 +1,4 @@
-import { isDatabaseConfigured } from "@/lib/db/database-mode";
+import { getDataMode, isDatabaseConfigured } from "@/lib/db/database-mode";
 import type { SessionUser } from "@/modules/auth/domain/access";
 import { canAccessAdminSurface, canViewHousehold } from "@/modules/auth/services/access-control.service";
 import {
@@ -25,11 +25,11 @@ const prismaSitesRepository = new PrismaSitesRepository();
 const mockSitesRepository = new MockSitesRepository();
 
 function getHouseholdsRepository() {
-  return isDatabaseConfigured() ? prismaHouseholdsRepository : mockHouseholdsRepository;
+  return getDataMode() === "database" ? prismaHouseholdsRepository : mockHouseholdsRepository;
 }
 
 function getSitesRepository() {
-  return isDatabaseConfigured() ? prismaSitesRepository : mockSitesRepository;
+  return getDataMode() === "database" ? prismaSitesRepository : mockSitesRepository;
 }
 
 function normalizeAddressSegment(value?: string) {

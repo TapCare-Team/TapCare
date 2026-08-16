@@ -6,9 +6,11 @@ import { FollowUpReasonFilterBar } from "@/components/admin/follow-up-reason-fil
 import { HouseholdTriageList } from "@/components/admin/household-triage-list";
 import { requireUserWithRole } from "@/lib/auth";
 import { isDatabaseConfigured } from "@/lib/db/database-mode";
+import type { Household } from "@/modules/households/domain/household";
 import { getAdminHouseholds } from "@/modules/households/services/household-analytics.service";
 import { listPendingHouseholdAccessRequestsForAdmin } from "@/modules/households/services/household-access-request.service";
 import { normalizeFollowUpReasonFilter } from "@/modules/signals/domain/follow-up-filter";
+import type { FollowUpSignal } from "@/modules/signals/domain/follow-up-signal";
 
 export const dynamic = "force-dynamic";
 
@@ -28,7 +30,10 @@ export default async function AdminHouseholdDashboardPage({
   const filteredHouseholds =
     selectedReason === "all"
       ? households
-      : households.filter((household) => household.signal?.signalType === selectedReason);
+      : households.filter(
+          (household: Household & { signal: FollowUpSignal | null }) =>
+            household.signal?.signalType === selectedReason
+        );
 
   return (
     <AppShell

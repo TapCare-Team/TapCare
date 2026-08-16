@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { interactionEventSchema } from "@/modules/analytics/contracts/event-contract";
 import { logger } from "@/lib/logging/logger";
-import { isDatabaseConfigured } from "@/lib/db/database-mode";
+import { getDataMode } from "@/lib/db/database-mode";
 import { MockAnalyticsRepository } from "@/modules/analytics/repositories/mock-analytics.repository";
 import { PrismaAnalyticsRepository } from "@/modules/analytics/repositories/prisma-analytics.repository";
 import { analyticsMessages } from "@/modules/shared/messages";
@@ -10,7 +10,7 @@ const mockAnalyticsRepository = new MockAnalyticsRepository();
 const prismaAnalyticsRepository = new PrismaAnalyticsRepository();
 
 function getEventsRepository() {
-  return isDatabaseConfigured() ? prismaAnalyticsRepository : mockAnalyticsRepository;
+  return getDataMode() === "database" ? prismaAnalyticsRepository : mockAnalyticsRepository;
 }
 
 export async function POST(request: Request) {

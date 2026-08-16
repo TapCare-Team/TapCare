@@ -1,11 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
+  getDataMode: vi.fn(),
   isDatabaseConfigured: vi.fn(),
   createEvent: vi.fn()
 }));
 
 vi.mock("@/lib/db/database-mode", () => ({
+  getDataMode: mocks.getDataMode,
   isDatabaseConfigured: mocks.isDatabaseConfigured
 }));
 
@@ -38,6 +40,7 @@ function postInteraction(body: unknown) {
 describe("POST /api/v1/events/interactions", () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    mocks.getDataMode.mockReturnValue("database");
     mocks.isDatabaseConfigured.mockReturnValue(true);
     mocks.createEvent.mockResolvedValue(undefined);
   });

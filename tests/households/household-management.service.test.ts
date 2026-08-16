@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
+  getDataMode: vi.fn(),
   isDatabaseConfigured: vi.fn(),
   canAccessAdminSurface: vi.fn(),
   canViewHousehold: vi.fn(),
@@ -15,6 +16,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@/lib/db/database-mode", () => ({
+  getDataMode: mocks.getDataMode,
   isDatabaseConfigured: mocks.isDatabaseConfigured
 }));
 
@@ -78,6 +80,7 @@ const caregiverUser = {
 describe("household-management.service", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.getDataMode.mockReturnValue("database");
     mocks.isDatabaseConfigured.mockReturnValue(true);
     mocks.canAccessAdminSurface.mockImplementation((user: { role: string }) => user.role === "ADMIN");
     mocks.canViewHousehold.mockReturnValue(true);

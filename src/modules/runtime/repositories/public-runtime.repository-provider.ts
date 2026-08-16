@@ -1,4 +1,4 @@
-import { isDatabaseConfigured } from "@/lib/db/database-mode";
+import { getDataMode } from "@/lib/db/database-mode";
 import { MockAnalyticsRepository } from "@/modules/analytics/repositories/mock-analytics.repository";
 import { PrismaAnalyticsRepository } from "@/modules/analytics/repositories/prisma-analytics.repository";
 import { logger } from "@/lib/logging/logger";
@@ -13,10 +13,12 @@ const mockAnalyticsRepository = new MockAnalyticsRepository();
 const prismaAnalyticsRepository = new PrismaAnalyticsRepository();
 
 export function getPublicRuntimeRepositories() {
+  const dataMode = getDataMode();
+
   return {
     runtimeRepository: {
       async getByPublicCode(publicCode: string): Promise<RuntimeRecord | null> {
-        if (!isDatabaseConfigured()) {
+        if (dataMode === "mock") {
           return mockPublicRuntimeRepository.getByPublicCode(publicCode);
         }
 
@@ -25,7 +27,7 @@ export function getPublicRuntimeRepositories() {
     },
     eventsRepository: {
       async createEvent(event: InteractionEvent) {
-        if (!isDatabaseConfigured()) {
+        if (dataMode === "mock") {
           return mockAnalyticsRepository.createEvent(event);
         }
 

@@ -12,7 +12,7 @@ import { MockSitesRepository } from "@/modules/households/repositories/mock-site
 import { PrismaSitesRepository } from "@/modules/households/repositories/prisma-sites.repository";
 import type { Household } from "@/modules/households/domain/household";
 import type { InteractionEvent } from "@/modules/analytics/domain/analytics";
-import { isDatabaseConfigured } from "@/lib/db/database-mode";
+import { getDataMode } from "@/lib/db/database-mode";
 import type { FollowUpSignal } from "@/modules/signals/domain/follow-up-signal";
 import { getFollowUpStateRepository } from "@/modules/signals/repositories/follow-up-state.repository-provider";
 import {
@@ -77,7 +77,7 @@ async function deriveScopedSignals(siteIds: string | string[]) {
 }
 
 async function deriveScopedSignalsForAdmin() {
-  const sitesRepository = isDatabaseConfigured() ? prismaSitesRepository : mockSitesRepository;
+  const sitesRepository = getDataMode() === "database" ? prismaSitesRepository : mockSitesRepository;
   const sites = await sitesRepository.listAll();
   return deriveScopedSignals(sites.map((site) => site.id));
 }
@@ -99,7 +99,9 @@ export async function getAdminDashboardSummary(siteIds?: string | string[]) {
   };
 }
 
-export async function getAdminHouseholds(siteIds?: string | string[]) {
+export async function getAdminHouseholds(
+  siteIds?: string | string[]
+): Promise<Array<Household & { signal: FollowUpSignal | null }>> {
   const { households, signals } = siteIds ? await deriveScopedSignals(siteIds) : await deriveScopedSignalsForAdmin();
   const signalMap = new Map(
     signals.filter((signal) => isSignalActionable(signal)).map((signal) => [signal.householdId, signal])
