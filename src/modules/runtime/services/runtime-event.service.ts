@@ -30,4 +30,6 @@ export async function recordRuntimeEvent(params: RuntimeEventInput) {
       error: error instanceof Error ? error.message : "unknown"
     });
   }
+
+  return event;
 }

@@ -1,22 +1,47 @@
 import { NextResponse } from "next/server";
-import { interactionEventSchema } from "@/modules/analytics/contracts/event-contract";
 import { logger } from "@/lib/logging/logger";
-import { getDataMode } from "@/lib/db/database-mode";
-import { MockAnalyticsRepository } from "@/modules/analytics/repositories/mock-analytics.repository";
-import { PrismaAnalyticsRepository } from "@/modules/analytics/repositories/prisma-analytics.repository";
+import { publicActionEventSchema } from "@/modules/analytics/contracts/event-contract";
+import { recordPublicActionClick } from "@/modules/runtime/services/public-action-event.service";
+import { isDomainError } from "@/modules/shared/errors";
 import { analyticsMessages } from "@/modules/shared/messages";
 
-const mockAnalyticsRepository = new MockAnalyticsRepository();
-const prismaAnalyticsRepository = new PrismaAnalyticsRepository();
+const MAX_PUBLIC_ACTION_BODY_BYTES = 4 * 1024;
 
-function getEventsRepository() {
-  return getDataMode() === "database" ? prismaAnalyticsRepository : mockAnalyticsRepository;
+function hasJsonContentType(request: Request) {
+  return request.headers.get("content-type")?.toLowerCase().startsWith("application/json") ?? false;
+}
+
+function hasAllowedOrigin(request: Request) {
+  const origin = request.headers.get("origin");
+  return !origin || origin === new URL(request.url).origin;
 }
 
 export async function POST(request: Request) {
-  const body = await request.json();
-  const parsed = interactionEventSchema.safeParse(body);
+  if (!hasJsonContentType(request)) {
+    return NextResponse.json({ error: analyticsMessages.invalidInteractionEventPayload }, { status: 400 });
+  }
 
+  if (!hasAllowedOrigin(request)) {
+    return NextResponse.json({ error: "Cross-origin interaction events are not allowed." }, { status: 403 });
+  }
+
+  const contentLength = Number(request.headers.get("content-length"));
+  if (Number.isFinite(contentLength) && contentLength > MAX_PUBLIC_ACTION_BODY_BYTES) {
+    return NextResponse.json({ error: analyticsMessages.invalidInteractionEventPayload }, { status: 413 });
+  }
+
+  let body: unknown;
+  try {
+    const rawBody = await request.text();
+    if (new TextEncoder().encode(rawBody).byteLength > MAX_PUBLIC_ACTION_BODY_BYTES) {
+      return NextResponse.json({ error: analyticsMessages.invalidInteractionEventPayload }, { status: 413 });
+    }
+    body = JSON.parse(rawBody);
+  } catch {
+    return NextResponse.json({ error: analyticsMessages.invalidInteractionEventPayload }, { status: 400 });
+  }
+
+  const parsed = publicActionEventSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
       { error: analyticsMessages.invalidInteractionEventPayload, details: parsed.error.flatten() },
@@ -24,42 +49,19 @@ export async function POST(request: Request) {
     );
   }
 
-  const event = {
-    id: parsed.data.eventId,
-    occurredAt: parsed.data.occurredAt,
-    siteId: parsed.data.siteId,
-    householdId: parsed.data.householdId,
-    seniorProfileId: parsed.data.seniorProfileId,
-    stickerId: parsed.data.stickerId,
-    publicCode: parsed.data.publicCode,
-    stickerType: parsed.data.stickerType,
-    runtimeMode: parsed.data.runtimeMode,
-    eventType: parsed.data.eventType,
-    outcome: parsed.data.outcome,
-    destinationType: parsed.data.destinationType,
-    failureReason: parsed.data.failureReason,
-    sessionTokenHash: parsed.data.sessionTokenHash,
-    metadata: parsed.data.metadata
-  };
-
   try {
-    await getEventsRepository().createEvent(event);
+    const event = await recordPublicActionClick(parsed.data);
+    return NextResponse.json({ ok: true, eventId: event.id }, { status: 201 });
   } catch (error) {
-    logger.warn("interaction_event_persist_failed", {
-      eventId: event.id,
-      siteId: event.siteId,
-      eventType: event.eventType,
+    if (isDomainError(error)) {
+      return NextResponse.json({ error: error.message, code: error.code }, { status: error.statusCode });
+    }
+
+    logger.warn("public_action_event_failed", {
+      publicCode: parsed.data.publicCode,
+      actionKey: parsed.data.actionKey,
       error: error instanceof Error ? error.message : "unknown"
     });
-
     return NextResponse.json({ error: "Interaction event could not be recorded" }, { status: 500 });
   }
-
-  logger.info("interaction_event_received", {
-    siteId: parsed.data.siteId,
-    eventType: parsed.data.eventType,
-    outcome: parsed.data.outcome
-  });
-
-  return NextResponse.json({ ok: true, eventId: event.id }, { status: 201 });
 }

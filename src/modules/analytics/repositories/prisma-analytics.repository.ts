@@ -73,34 +73,39 @@ export class PrismaAnalyticsRepository {
 
   async createEvent(event: InteractionEvent) {
     const occurredAt = new Date(event.occurredAt);
-    const created = await prisma.interactionEvent.create({
-      data: {
-        occurredAt,
-        siteId: event.siteId,
-        householdId: event.householdId,
-        seniorProfileId: event.seniorProfileId,
-        stickerId: event.stickerId,
-        publicCode: event.publicCode,
-        stickerType: event.stickerType,
-        runtimeMode: event.runtimeMode,
-        eventType: event.eventType,
-        outcome: event.outcome,
-        destinationType: event.destinationType,
-        failureReason: event.failureReason,
-        sessionTokenHash: event.sessionTokenHash,
-        metadata: event.metadata
-      }
-    });
-
-    if (event.householdId && event.eventType === "STICKER_OPENED") {
-      await prisma.household.updateMany({
-        where: {
-          id: event.householdId,
-          OR: [{ lastActiveAt: null }, { lastActiveAt: { lt: occurredAt } }]
-        },
-        data: { lastActiveAt: occurredAt }
+    const created = await prisma.$transaction(async (transaction) => {
+      const createdEvent = await transaction.interactionEvent.create({
+        data: {
+          id: event.id,
+          occurredAt,
+          siteId: event.siteId,
+          householdId: event.householdId,
+          seniorProfileId: event.seniorProfileId,
+          stickerId: event.stickerId,
+          publicCode: event.publicCode,
+          stickerType: event.stickerType,
+          runtimeMode: event.runtimeMode,
+          eventType: event.eventType,
+          outcome: event.outcome,
+          destinationType: event.destinationType,
+          failureReason: event.failureReason,
+          sessionTokenHash: event.sessionTokenHash,
+          metadata: event.metadata
+        }
       });
-    }
+
+      if (event.householdId && event.eventType === "STICKER_OPENED") {
+        await transaction.household.updateMany({
+          where: {
+            id: event.householdId,
+            OR: [{ lastActiveAt: null }, { lastActiveAt: { lt: occurredAt } }]
+          },
+          data: { lastActiveAt: occurredAt }
+        });
+      }
+
+      return createdEvent;
+    });
 
     return mapPrismaInteractionEvent(created);
   }

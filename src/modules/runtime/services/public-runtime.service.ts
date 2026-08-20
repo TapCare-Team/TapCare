@@ -1,15 +1,8 @@
 import { logger } from "@/lib/logging/logger";
 import type { PublicRuntimeResolution, RuntimeRecord } from "@/modules/runtime/domain/public-runtime";
 import { getPublicRuntimeRepositories } from "@/modules/runtime/repositories/public-runtime.repository-provider";
+import { isValidPublicCode, normalizePublicCode } from "@/modules/runtime/services/public-code.service";
 import { recordRuntimeEvent } from "@/modules/runtime/services/runtime-event.service";
-
-function normalizePublicCode(publicCode: string) {
-  return publicCode.trim().toLowerCase();
-}
-
-function isValidPublicCode(publicCode: string) {
-  return /^[a-z0-9][a-z0-9-]{5,79}$/.test(publicCode);
-}
 
 function logStickerOpened(record: RuntimeRecord) {
   logger.info("sticker_opened", {

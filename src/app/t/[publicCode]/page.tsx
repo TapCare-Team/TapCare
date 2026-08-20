@@ -37,7 +37,7 @@ function ChecklistItem({ item, tracking }: { item: string; tracking: PublicActio
         <TrackedPublicActionLink
           className="break-all font-medium text-accent"
           href={href}
-          tracking={{ ...tracking, destinationType: "EXTERNAL_URL", actionKey: "open_link" }}
+          tracking={{ ...tracking, actionKey: "open_link" }}
         >
           {href}
         </TrackedPublicActionLink>
@@ -61,7 +61,7 @@ function ChecklistItem({ item, tracking }: { item: string; tracking: PublicActio
       <TrackedPublicActionLink
         className="font-medium text-accent"
         href={href}
-        tracking={{ ...tracking, destinationType: "EXTERNAL_URL", actionKey: "open_link" }}
+        tracking={{ ...tracking, actionKey: "open_link" }}
       >
         {href}
       </TrackedPublicActionLink>
@@ -105,7 +105,7 @@ function HelpProfileValue({
       <TrackedPublicActionLink
         className="inline-flex rounded-full border border-accent/20 bg-accentSoft px-4 py-2 text-sm font-semibold text-accent"
         href={href}
-        tracking={{ ...tracking, destinationType: "PHONE", actionKey: "call" }}
+        tracking={{ ...tracking, actionKey: "call" }}
       >
         Call contact
       </TrackedPublicActionLink>
@@ -143,13 +143,7 @@ export default async function PublicStickerPage({
         <TelRedirectPage
           href={resolution.destinationUrl}
           tracking={{
-            siteId: resolution.household.siteId,
-            householdId: resolution.household.id,
-            stickerId: resolution.sticker.id,
             publicCode: resolution.publicCode,
-            stickerType: resolution.sticker.stickerType,
-            runtimeMode: resolution.sticker.runtimeMode,
-            destinationType: "PHONE",
             actionKey: "call"
           }}
         />
@@ -161,12 +155,7 @@ export default async function PublicStickerPage({
 
   const { sticker, page } = resolution;
   const tracking = {
-    siteId: resolution.household.siteId,
-    householdId: resolution.household.id,
-    stickerId: sticker.id,
     publicCode: resolution.publicCode,
-    stickerType: sticker.stickerType,
-    runtimeMode: sticker.runtimeMode,
     actionKey: "open_link"
   } satisfies PublicActionTrackingContext;
 
@@ -215,7 +204,7 @@ export default async function PublicStickerPage({
                 key={link.href}
                 className="block rounded-2xl border border-black/5 p-4 hover:bg-accentSoft"
                 href={link.href}
-                tracking={{ ...tracking, destinationType: "EXTERNAL_URL", actionKey: "open_link" }}
+                tracking={{ ...tracking, actionKey: "open_link" }}
               >
                 <span className="block font-medium">{link.label}</span>
                 <span className="mt-1 block break-all text-sm text-accent">{link.href}</span>

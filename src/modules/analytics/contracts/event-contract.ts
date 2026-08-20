@@ -42,3 +42,12 @@ export const interactionEventSchema = z.object({
 });
 
 export type InteractionEventInput = z.infer<typeof interactionEventSchema>;
+
+export const publicActionEventSchema = z
+  .object({
+    publicCode: z.string().min(1),
+    actionKey: z.enum(["open_link", "call", "whatsapp"])
+  })
+  .strict();
+
+export type PublicActionEventInput = z.infer<typeof publicActionEventSchema>;

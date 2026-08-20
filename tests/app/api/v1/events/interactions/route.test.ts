@@ -1,38 +1,22 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { DomainError, NotFoundError } from "@/modules/shared/errors";
 
 const mocks = vi.hoisted(() => ({
-  getDataMode: vi.fn(),
-  isDatabaseConfigured: vi.fn(),
-  createEvent: vi.fn()
+  recordPublicActionClick: vi.fn()
 }));
 
-vi.mock("@/lib/db/database-mode", () => ({
-  getDataMode: mocks.getDataMode,
-  isDatabaseConfigured: mocks.isDatabaseConfigured
-}));
-
-vi.mock("@/modules/analytics/repositories/prisma-analytics.repository", () => ({
-  PrismaAnalyticsRepository: class {
-    createEvent = mocks.createEvent;
-  }
-}));
-
-vi.mock("@/modules/analytics/repositories/mock-analytics.repository", () => ({
-  MockAnalyticsRepository: class {
-    createEvent = mocks.createEvent;
-  }
+vi.mock("@/modules/runtime/services/public-action-event.service", () => ({
+  recordPublicActionClick: mocks.recordPublicActionClick
 }));
 
 import { POST } from "@/app/api/v1/events/interactions/route";
 
-function postInteraction(body: unknown) {
+function postInteraction(body: string, headers: HeadersInit = { "Content-Type": "application/json" }) {
   return POST(
     new Request("http://localhost/api/v1/events/interactions", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(body)
+      headers,
+      body
     })
   );
 }
@@ -40,72 +24,83 @@ function postInteraction(body: unknown) {
 describe("POST /api/v1/events/interactions", () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    mocks.getDataMode.mockReturnValue("database");
-    mocks.isDatabaseConfigured.mockReturnValue(true);
-    mocks.createEvent.mockResolvedValue(undefined);
+    mocks.recordPublicActionClick.mockResolvedValue({ id: "server-event-1" });
   });
 
-  it("persists valid interaction events for admin analytics", async () => {
-    const response = await postInteraction({
-      eventId: "event-1",
-      occurredAt: "2026-07-24T01:00:00.000Z",
-      siteId: "site-sgo-bedok",
-      householdId: "household-1",
-      stickerId: "sticker-1",
-      publicCode: "abc123",
-      stickerType: "HELP_PROFILE",
-      runtimeMode: "RENDER_PAGE",
-      eventType: "STICKER_OPENED",
-      outcome: "SUCCESS"
-    });
+  it("records a valid narrow public action payload", async () => {
+    const response = await postInteraction(JSON.stringify({ publicCode: "abc123", actionKey: "open_link" }));
 
-    expect(mocks.createEvent).toHaveBeenCalledWith({
-      id: "event-1",
-      occurredAt: "2026-07-24T01:00:00.000Z",
-      siteId: "site-sgo-bedok",
-      householdId: "household-1",
-      seniorProfileId: undefined,
-      stickerId: "sticker-1",
-      publicCode: "abc123",
-      stickerType: "HELP_PROFILE",
-      runtimeMode: "RENDER_PAGE",
-      eventType: "STICKER_OPENED",
-      outcome: "SUCCESS",
-      destinationType: undefined,
-      failureReason: undefined,
-      sessionTokenHash: undefined,
-      metadata: undefined
-    });
+    expect(mocks.recordPublicActionClick).toHaveBeenCalledWith({ publicCode: "abc123", actionKey: "open_link" });
     expect(response.status).toBe(201);
-    await expect(response.json()).resolves.toEqual({ ok: true, eventId: "event-1" });
+    await expect(response.json()).resolves.toEqual({ ok: true, eventId: "server-event-1" });
   });
 
-  it("rejects invalid payloads without recording them", async () => {
-    const response = await postInteraction({
-      eventId: "event-1",
-      occurredAt: "not-a-date",
-      siteId: "site-sgo-bedok",
-      eventType: "STICKER_OPENED",
-      outcome: "SUCCESS"
-    });
+  it("rejects a forged sticker-open event before it reaches the service", async () => {
+    const response = await postInteraction(
+      JSON.stringify({
+        publicCode: "abc123",
+        actionKey: "open_link",
+        eventType: "STICKER_OPENED",
+        siteId: "site-target",
+        householdId: "household-target",
+        occurredAt: "2099-01-01T00:00:00.000Z"
+      })
+    );
 
-    expect(mocks.createEvent).not.toHaveBeenCalled();
     expect(response.status).toBe(400);
+    expect(mocks.recordPublicActionClick).not.toHaveBeenCalled();
   });
 
-  it("returns a server error when a valid event cannot be recorded", async () => {
-    mocks.createEvent.mockRejectedValue(new Error("write failed"));
+  it("rejects invalid action keys", async () => {
+    const response = await postInteraction(JSON.stringify({ publicCode: "abc123", actionKey: "mark_household_active" }));
 
-    const response = await postInteraction({
-      eventId: "event-1",
-      occurredAt: "2026-07-24T01:00:00.000Z",
-      siteId: "site-sgo-bedok",
-      eventType: "STICKER_OPENED",
-      outcome: "FAILED",
-      failureReason: "INVALID_CODE"
+    expect(response.status).toBe(400);
+    expect(mocks.recordPublicActionClick).not.toHaveBeenCalled();
+  });
+
+  it("rejects malformed JSON", async () => {
+    const response = await postInteraction("{bad json");
+
+    expect(response.status).toBe(400);
+    expect(mocks.recordPublicActionClick).not.toHaveBeenCalled();
+  });
+
+  it("maps unknown stickers to not found", async () => {
+    mocks.recordPublicActionClick.mockRejectedValue(new NotFoundError("Public sticker could not be found.", "PUBLIC_STICKER_NOT_FOUND"));
+
+    const response = await postInteraction(JSON.stringify({ publicCode: "abc123", actionKey: "open_link" }));
+
+    expect(response.status).toBe(404);
+  });
+
+  it("maps disabled stickers to gone", async () => {
+    mocks.recordPublicActionClick.mockRejectedValue(
+      new DomainError("This TapCare sticker is currently disabled.", 410, "PUBLIC_STICKER_DISABLED")
+    );
+
+    const response = await postInteraction(JSON.stringify({ publicCode: "abc123", actionKey: "open_link" }));
+
+    expect(response.status).toBe(410);
+  });
+
+  it("requires JSON and rejects cross-origin requests", async () => {
+    const nonJsonResponse = await postInteraction(JSON.stringify({ publicCode: "abc123", actionKey: "open_link" }), {
+      "Content-Type": "text/plain"
+    });
+    const crossOriginResponse = await postInteraction(JSON.stringify({ publicCode: "abc123", actionKey: "open_link" }), {
+      "Content-Type": "application/json",
+      Origin: "https://other.example"
     });
 
-    expect(response.status).toBe(500);
-    await expect(response.json()).resolves.toEqual({ error: "Interaction event could not be recorded" });
+    expect(nonJsonResponse.status).toBe(400);
+    expect(crossOriginResponse.status).toBe(403);
+    expect(mocks.recordPublicActionClick).not.toHaveBeenCalled();
+  });
+
+  it("rejects oversized request bodies", async () => {
+    const response = await postInteraction(JSON.stringify({ publicCode: "abc123", actionKey: "open_link", padding: "x".repeat(4096) }));
+
+    expect(response.status).toBe(413);
+    expect(mocks.recordPublicActionClick).not.toHaveBeenCalled();
   });
 });

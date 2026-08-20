@@ -1,9 +1,6 @@
 import { mockHouseholds } from "@/lib/mock-data";
 import type { RuntimeRecord } from "@/modules/runtime/domain/public-runtime";
-
-function normalizePublicCode(publicCode: string) {
-  return publicCode.trim().toLowerCase();
-}
+import { normalizePublicCode } from "@/modules/runtime/services/public-code.service";
 
 export class MockPublicRuntimeRepository {
   async getByPublicCode(publicCode: string): Promise<RuntimeRecord | null> {
