@@ -178,6 +178,7 @@ model Sticker {
   stickerType         StickerType
   runtimeMode         RuntimeMode
   status              StickerStatus     @default(ACTIVE)
+  physicalTagTestedAt DateTime?
   destinationConfigId String?           @unique
   pageConfigId        String?           @unique
   household           Household         @relation(fields: [householdId], references: [id])

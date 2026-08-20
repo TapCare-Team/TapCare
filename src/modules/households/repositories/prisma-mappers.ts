@@ -138,6 +138,7 @@ export function mapPrismaSticker(sticker: PrismaStickerRecord): Sticker {
     status: sticker.status,
     name: sticker.name,
     isCritical: sticker.isCritical,
+    physicalTagTestedAt: sticker.physicalTagTestedAt?.toISOString() ?? null,
     destination: sticker.destinationConfig
       ? {
           type: sticker.destinationConfig.destinationType as DestinationType,

@@ -1,13 +1,15 @@
 import { prisma } from "@/lib/db/prisma";
 import type { Sticker } from "@/modules/stickers/domain/sticker";
 import { mapPrismaSticker } from "@/modules/households/repositories/prisma-mappers";
+import { ConflictError } from "@/modules/shared/errors";
 
 const stickerInclude = {
   destinationConfig: true,
   pageConfig: true
 } as const;
 
-type CreateStickerInput = Omit<Sticker, "id"> & { householdId: string; siteId: string };
+type CreateStickerInput = Omit<Sticker, "id" | "physicalTagTestedAt"> & { householdId: string; siteId: string };
+type EditableStickerInput = Pick<Sticker, "name" | "stickerType" | "runtimeMode" | "status" | "isCritical" | "destination" | "page">;
 
 export class PrismaStickersRepository {
   async existsByDisplayCode(householdId: string, displayCode: string) {
@@ -101,7 +103,7 @@ export class PrismaStickersRepository {
     return mapPrismaSticker(created);
   }
 
-  async update(stickerId: string, patch: Partial<Sticker>) {
+  async update(stickerId: string, patch: Partial<EditableStickerInput>) {
     const current = await prisma.sticker.findUnique({
       where: { id: stickerId },
       include: stickerInclude
@@ -170,8 +172,6 @@ export class PrismaStickersRepository {
       const updatedSticker = await tx.sticker.update({
         where: { id: stickerId },
         data: {
-          displayCode: patch.displayCode,
-          publicCode: patch.publicCode,
           name: patch.name,
           isCritical: patch.isCritical,
           stickerType: patch.stickerType,
@@ -207,12 +207,17 @@ export class PrismaStickersRepository {
       select: {
         id: true,
         destinationConfigId: true,
-        pageConfigId: true
+        pageConfigId: true,
+        physicalTagTestedAt: true
       }
     });
 
     if (!current) {
       return false;
+    }
+
+    if (current.physicalTagTestedAt) {
+      throw new ConflictError("This sticker has a tested physical tag. Remove or reset the physical setup before deleting it.", "TESTED_STICKER_DELETE_BLOCKED");
     }
 
     await prisma.$transaction(async (tx) => {
@@ -244,10 +249,15 @@ export class PrismaStickersRepository {
   async assignHousehold(stickerId: string, householdId: string, siteId: string) {
     const updated = await prisma.sticker.update({
       where: { id: stickerId },
-      data: { householdId, siteId },
+      data: { householdId, siteId, physicalTagTestedAt: null },
       include: stickerInclude
     });
 
     return mapPrismaSticker(updated);
+  }
+
+  async setPhysicalTagTestedAt(stickerId: string, physicalTagTestedAt: Date | null) {
+    const sticker = await prisma.sticker.update({ where: { id: stickerId }, data: { physicalTagTestedAt }, include: stickerInclude });
+    return mapPrismaSticker(sticker);
   }
 }

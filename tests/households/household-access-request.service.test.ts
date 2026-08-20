@@ -121,4 +121,25 @@ describe("household-access-request.service", () => {
       message: householdMessages.caregiverRequestsOnly
     });
   });
+
+  it("rejects caregivers from the global admin request queue and guessed request IDs", async () => {
+    const {
+      approveHouseholdAccessRequestForAdmin,
+      listPendingHouseholdAccessRequestsForAdmin,
+      rejectHouseholdAccessRequestForAdmin
+    } = await import("@/modules/households/services/household-access-request.service");
+
+    await expect(listPendingHouseholdAccessRequestsForAdmin(caregiverUser)).rejects.toMatchObject({ statusCode: 403 });
+    await expect(approveHouseholdAccessRequestForAdmin(caregiverUser, "guessed-request-id")).rejects.toMatchObject({
+      statusCode: 403
+    });
+    await expect(rejectHouseholdAccessRequestForAdmin(caregiverUser, "guessed-request-id")).rejects.toMatchObject({
+      statusCode: 403
+    });
+
+    expect(mocks.listPending).not.toHaveBeenCalled();
+    expect(mocks.getPendingById).not.toHaveBeenCalled();
+    expect(mocks.approveRequest).not.toHaveBeenCalled();
+    expect(mocks.rejectRequest).not.toHaveBeenCalled();
+  });
 });

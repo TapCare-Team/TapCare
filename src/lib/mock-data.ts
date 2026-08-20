@@ -56,6 +56,7 @@ export const mockHouseholds: Household[] = [
         status: "ACTIVE",
         name: "Bathroom emergency sticker",
         isCritical: true,
+        physicalTagTestedAt: "2026-08-20T09:00:00.000Z",
         destination: {
           type: "WHATSAPP",
           value: "https://wa.me/6591234567",
@@ -71,6 +72,7 @@ export const mockHouseholds: Household[] = [
         status: "ACTIVE",
         name: "Wearable help profile tag",
         isCritical: true,
+        physicalTagTestedAt: null,
         page: {
           pageType: "HELP_PROFILE",
           title: "Help profile",
@@ -107,6 +109,7 @@ export const mockHouseholds: Household[] = [
         status: "ACTIVE",
         name: "Resources sticker",
         isCritical: false,
+        physicalTagTestedAt: null,
         page: {
           pageType: "RESOURCES",
           title: "Recommended resources",
@@ -127,6 +130,7 @@ export const mockHouseholds: Household[] = [
         status: "DISABLED",
         name: "Emergency contact sticker",
         isCritical: true,
+        physicalTagTestedAt: "2026-08-19T09:00:00.000Z",
         destination: {
           type: "PHONE",
           value: "tel:+6591112222",
@@ -164,6 +168,7 @@ export const mockHouseholds: Household[] = [
         status: "ACTIVE",
         name: "Daily reminders sticker",
         isCritical: false,
+        physicalTagTestedAt: null,
         page: {
           pageType: "CHECKLIST",
           title: "Morning reminders",
@@ -181,6 +186,7 @@ export const mockHouseholds: Household[] = [
         status: "ACTIVE",
         name: "Frequent contact sticker",
         isCritical: false,
+        physicalTagTestedAt: null,
         destination: {
           type: "PHONE",
           value: "tel:+6598765432",

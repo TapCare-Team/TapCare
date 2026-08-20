@@ -13,7 +13,7 @@ import {
 } from "@/modules/shared/errors";
 import { setupMessages } from "@/modules/shared/messages";
 
-type CreateStickerInput = Omit<Sticker, "id" | "displayCode" | "publicCode"> & {
+type CreateStickerInput = Omit<Sticker, "id" | "displayCode" | "publicCode" | "physicalTagTestedAt"> & {
   householdId: string;
 };
 
@@ -177,4 +177,14 @@ export async function getStickerScope(stickerId: string) {
 
 export async function setStickerStatusForUser(user: SessionUser, stickerId: string, status: Sticker["status"]) {
   return updateStickerForUser(user, stickerId, { status });
+}
+
+export async function markStickerPhysicalTagTestedForUser(user: SessionUser, stickerId: string) {
+  await getManageableStickerScope(user, stickerId);
+  return stickersRepository.setPhysicalTagTestedAt(stickerId, new Date());
+}
+
+export async function resetStickerPhysicalTagTestForUser(user: SessionUser, stickerId: string) {
+  await getManageableStickerScope(user, stickerId);
+  return stickersRepository.setPhysicalTagTestedAt(stickerId, null);
 }

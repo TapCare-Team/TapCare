@@ -41,6 +41,7 @@ export type Sticker = {
   status: "ACTIVE" | "DISABLED";
   name: string;
   isCritical: boolean;
+  physicalTagTestedAt: string | null;
   destination?: DestinationConfig;
   page?: PageConfig;
 };
