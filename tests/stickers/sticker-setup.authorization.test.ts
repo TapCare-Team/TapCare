@@ -1,0 +1,85 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const mocks = vi.hoisted(() => ({
+  isDatabaseConfigured: vi.fn(),
+  canConfigureHousehold: vi.fn(),
+  getHouseholdById: vi.fn(),
+  getScopeById: vi.fn(),
+  createSticker: vi.fn(),
+  updateSticker: vi.fn(),
+  generateDisplayCode: vi.fn(),
+  generatePublicCode: vi.fn()
+}));
+
+vi.mock("@/lib/db/database-mode", () => ({ isDatabaseConfigured: mocks.isDatabaseConfigured }));
+vi.mock("@/modules/auth/services/access-control.service", () => ({
+  canConfigureHousehold: mocks.canConfigureHousehold
+}));
+vi.mock("@/modules/households/repositories/prisma-households.repository", () => ({
+  PrismaHouseholdsRepository: class { getById = mocks.getHouseholdById; }
+}));
+vi.mock("@/modules/stickers/repositories/prisma-stickers.repository", () => ({
+  PrismaStickersRepository: class {
+    getScopeById = mocks.getScopeById;
+    create = mocks.createSticker;
+    update = mocks.updateSticker;
+  }
+}));
+vi.mock("@/modules/stickers/services/sticker-code.service", () => ({
+  generateDisplayCode: mocks.generateDisplayCode,
+  generatePublicCode: mocks.generatePublicCode
+}));
+
+import { createStickerForUser, updateStickerForUser } from "@/modules/stickers/services/sticker-setup.service";
+
+const caregiver = {
+  id: "caregiver-a",
+  displayName: "Caregiver A",
+  role: "CAREGIVER" as const,
+  siteIds: [],
+  householdIds: ["household-a"]
+};
+const admin = { ...caregiver, id: "admin", role: "ADMIN" as const, householdIds: [] };
+
+describe("sticker setup authorization", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    mocks.isDatabaseConfigured.mockReturnValue(true);
+    mocks.canConfigureHousehold.mockImplementation((user: { role: string; householdIds: string[] }, householdId: string) =>
+      user.role === "ADMIN" || user.householdIds.includes(householdId)
+    );
+    mocks.getHouseholdById.mockImplementation(async (id: string) => ({ id, siteId: "site-a" }));
+    mocks.getScopeById.mockImplementation(async (id: string) => ({
+      stickerId: id,
+      householdId: id === "sticker-b" ? "household-b" : "household-a",
+      siteId: "site-a"
+    }));
+    mocks.generateDisplayCode.mockResolvedValue("EC-0001");
+    mocks.generatePublicCode.mockReturnValue("public-code-1");
+    mocks.createSticker.mockResolvedValue({ id: "sticker-new" });
+    mocks.updateSticker.mockResolvedValue({ id: "sticker-a" });
+  });
+
+  it("allows assigned caregivers and admins to create stickers, but rejects unassigned caregivers", async () => {
+    const input = {
+      householdId: "household-a",
+      name: "Contact",
+      isCritical: false,
+      stickerType: "EMERGENCY_CONTACT" as const,
+      runtimeMode: "DIRECT_REDIRECT" as const,
+      status: "ACTIVE" as const,
+      destination: { type: "PHONE" as const, value: "+6591234567" }
+    };
+
+    await expect(createStickerForUser(caregiver, input)).resolves.toEqual({ id: "sticker-new" });
+    await expect(createStickerForUser(caregiver, { ...input, householdId: "household-b" })).rejects.toMatchObject({
+      statusCode: 403
+    });
+    await expect(createStickerForUser(admin, { ...input, householdId: "household-b" })).resolves.toEqual({ id: "sticker-new" });
+  });
+
+  it("rejects a caregiver who guesses an unassigned sticker ID before mutation", async () => {
+    await expect(updateStickerForUser(caregiver, "sticker-b", { name: "Changed" })).rejects.toMatchObject({ statusCode: 403 });
+    expect(mocks.updateSticker).not.toHaveBeenCalled();
+  });
+});

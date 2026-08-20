@@ -3,8 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   getDataMode: vi.fn(),
   isDatabaseConfigured: vi.fn(),
-  canAccessAdminSurface: vi.fn(),
-  canViewHousehold: vi.fn(),
+  canAdministerHousehold: vi.fn(),
   listByIds: vi.fn(),
   listAll: vi.fn(),
   findDuplicateAddress: vi.fn(),
@@ -21,8 +20,7 @@ vi.mock("@/lib/db/database-mode", () => ({
 }));
 
 vi.mock("@/modules/auth/services/access-control.service", () => ({
-  canAccessAdminSurface: mocks.canAccessAdminSurface,
-  canViewHousehold: mocks.canViewHousehold
+  canAdministerHousehold: mocks.canAdministerHousehold
 }));
 
 vi.mock("@/modules/households/repositories/prisma-sites.repository", () => ({
@@ -82,8 +80,7 @@ describe("household-management.service", () => {
     vi.clearAllMocks();
     mocks.getDataMode.mockReturnValue("database");
     mocks.isDatabaseConfigured.mockReturnValue(true);
-    mocks.canAccessAdminSurface.mockImplementation((user: { role: string }) => user.role === "ADMIN");
-    mocks.canViewHousehold.mockReturnValue(true);
+    mocks.canAdministerHousehold.mockImplementation((user: { role: string }) => user.role === "ADMIN");
     mocks.listByIds.mockResolvedValue([
       { id: "site-bedok", code: "SGO-BEDOK", name: "SGO Bedok", region: "East" },
       { id: "site-tampines", code: "SGO-TAMP", name: "SGO Tampines", region: "East" }
@@ -246,6 +243,15 @@ describe("household-management.service", () => {
     expect(mocks.assignCaregiver).toHaveBeenCalledWith("household-1", "user-caregiver-1");
     expect(result.alreadyAssigned).toBe(false);
     expect(result.caregiver.email).toBe("maya.lim@example.org");
+  });
+
+  it("rejects caregiver assignment by an assigned caregiver", async () => {
+    const { assignCaregiverToHouseholdForUser } = await import("@/modules/households/services/household-management.service");
+
+    await expect(
+      assignCaregiverToHouseholdForUser(caregiverUser, "household-1", { email: "maya.lim@example.org" })
+    ).rejects.toMatchObject({ statusCode: 403 });
+    expect(mocks.assignCaregiver).not.toHaveBeenCalled();
   });
 
   it("tells admins when the caregiver has not signed up yet", async () => {

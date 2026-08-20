@@ -1,15 +1,23 @@
 import type { SessionUser } from "@/modules/auth/domain/access";
 
-export function canViewHousehold(user: SessionUser, householdId: string, siteId: string) {
-  if (user.role === "ADMIN") {
-    return true;
-  }
-
-  return user.householdIds.includes(householdId);
+export function isAdmin(user: SessionUser) {
+  return user.role === "ADMIN";
 }
 
-export function canReviewSignals(user: SessionUser) {
-  return user.role === "ADMIN";
+export function canViewHousehold(user: SessionUser, householdId: string) {
+  return isAdmin(user) || user.householdIds.includes(householdId);
+}
+
+export function canConfigureHousehold(user: SessionUser, householdId: string) {
+  return isAdmin(user) || user.householdIds.includes(householdId);
+}
+
+export function canAdministerHousehold(user: SessionUser) {
+  return isAdmin(user);
+}
+
+export function canReviewSignal(user: SessionUser) {
+  return isAdmin(user);
 }
 
 export function canAccessCaregiverSurface(user: SessionUser) {
@@ -17,17 +25,5 @@ export function canAccessCaregiverSurface(user: SessionUser) {
 }
 
 export function canAccessAdminSurface(user: SessionUser) {
-  return user.role === "ADMIN";
-}
-
-export function canManageHousehold(user: SessionUser, householdId: string, siteId: string) {
-  if (user.role === "ADMIN") {
-    return true;
-  }
-
-  if (user.role === "CAREGIVER") {
-    return user.householdIds.includes(householdId);
-  }
-
-  return false;
+  return isAdmin(user);
 }

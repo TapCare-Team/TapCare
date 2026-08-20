@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { followUpReviewRequestSchema } from "@/modules/households/contracts/review.contract";
 import { getCurrentUser } from "@/lib/auth";
-import { canReviewSignals } from "@/modules/auth/services/access-control.service";
+import { canReviewSignal } from "@/modules/auth/services/access-control.service";
 import { commonMessages, signalMessages } from "@/modules/shared/messages";
 import { isDomainError } from "@/modules/shared/errors";
 import { reviewFollowUpSignal } from "@/modules/signals/services/follow-up-review.service";
@@ -14,7 +14,7 @@ export async function POST(
   if (!user) {
     return NextResponse.json({ error: commonMessages.unauthorized }, { status: 401 });
   }
-  if (!canReviewSignals(user)) {
+  if (!canReviewSignal(user)) {
     return NextResponse.json({ error: commonMessages.forbidden }, { status: 403 });
   }
 

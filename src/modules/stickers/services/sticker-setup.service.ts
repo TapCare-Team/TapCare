@@ -1,5 +1,5 @@
 import type { SessionUser } from "@/modules/auth/domain/access";
-import { canManageHousehold } from "@/modules/auth/services/access-control.service";
+import { canConfigureHousehold } from "@/modules/auth/services/access-control.service";
 import type { Sticker } from "@/modules/stickers/domain/sticker";
 import { PrismaHouseholdsRepository } from "@/modules/households/repositories/prisma-households.repository";
 import { PrismaStickersRepository } from "@/modules/stickers/repositories/prisma-stickers.repository";
@@ -52,7 +52,7 @@ async function getManageableHousehold(user: SessionUser, householdId: string) {
     throw new NotFoundError(setupMessages.householdNotFound, "HOUSEHOLD_NOT_FOUND");
   }
 
-  if (!canManageHousehold(user, household.id, household.siteId)) {
+  if (!canConfigureHousehold(user, household.id)) {
     throw new ForbiddenError();
   }
 
@@ -65,7 +65,7 @@ async function getManageableStickerScope(user: SessionUser, stickerId: string) {
     throw new NotFoundError(setupMessages.stickerNotFound, "STICKER_NOT_FOUND");
   }
 
-  if (!canManageHousehold(user, scope.householdId, scope.siteId)) {
+  if (!canConfigureHousehold(user, scope.householdId)) {
     throw new ForbiddenError();
   }
 

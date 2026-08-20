@@ -1,6 +1,6 @@
 import { isDatabaseConfigured } from "@/lib/db/database-mode";
 import type { SessionUser } from "@/modules/auth/domain/access";
-import { canViewHousehold } from "@/modules/auth/services/access-control.service";
+import { canReviewSignal } from "@/modules/auth/services/access-control.service";
 import type { FollowUpReviewRequest } from "@/modules/households/contracts/review.contract";
 import { ConfigurationError, ForbiddenError, NotFoundError } from "@/modules/shared/errors";
 import { signalMessages } from "@/modules/shared/messages";
@@ -11,14 +11,14 @@ export async function reviewFollowUpSignal(user: SessionUser, signalId: string, 
     throw new ConfigurationError(signalMessages.databaseUnavailable, "SIGNAL_REVIEW_DATABASE_UNAVAILABLE");
   }
 
+  if (!canReviewSignal(user)) {
+    throw new ForbiddenError();
+  }
+
   const repository = getFollowUpStateRepository();
   const signal = await repository.getSignalStateById(signalId);
   if (!signal) {
     throw new NotFoundError(signalMessages.signalNotFound, "SIGNAL_NOT_FOUND");
-  }
-
-  if (!canViewHousehold(user, signal.householdId, signal.siteId)) {
-    throw new ForbiddenError();
   }
 
   const reviewedAt = new Date().toISOString();

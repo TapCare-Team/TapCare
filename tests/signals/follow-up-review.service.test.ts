@@ -55,7 +55,9 @@ describe("reviewFollowUpSignal", () => {
     ).rejects.toEqual(new NotFoundError(signalMessages.signalNotFound, "SIGNAL_NOT_FOUND"));
   });
 
-  it("rejects users who cannot view the signal household", async () => {
+  it.each(["REVIEWED", "SNOOZED", "DISMISSED", "RESOLVED"] as const)(
+    "rejects caregivers from %s even when assigned to the signal household",
+    async (status) => {
     mocks.getFollowUpStateRepository.mockReturnValue({
       getSignalStateById: vi.fn().mockResolvedValue({
         id: "signal-1",
@@ -66,12 +68,13 @@ describe("reviewFollowUpSignal", () => {
 
     await expect(
       reviewFollowUpSignal(
-        buildUser({ role: "CAREGIVER", householdIds: ["other-household"], siteIds: [] }),
+        buildUser({ role: "CAREGIVER", householdIds: ["household-1"], siteIds: [] }),
         "signal-1",
-        { status: "REVIEWED" }
+        { status }
       )
     ).rejects.toEqual(new ForbiddenError());
-  });
+    }
+  );
 
   it("persists a snoozed review with the expected mapped statuses", async () => {
     const applyReview = vi.fn().mockResolvedValue(undefined);

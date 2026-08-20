@@ -18,6 +18,14 @@ Privacy-safe operational analytics dashboard for TapCare's NFC and QR support sy
 - Separate admin analytics area
 - Explainable follow-up signals instead of opaque risk scores
 
+## Authorization
+
+`ADMIN` is a global TapCare administrator and can administer households, configure stickers, review follow-up signals, process access requests, and view analytics across all sites.
+
+`CAREGIVER` may view and configure stickers only for households with an active assignment. Caregivers cannot perform household administration, manage follow-up signals, process access requests, or access admin analytics.
+
+Sites are currently organizational metadata, not authorization boundaries. Site roles do not grant application permissions.
+
 ## Local development
 
 1. Copy `.env.example` to `.env`.

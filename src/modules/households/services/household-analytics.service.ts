@@ -152,7 +152,7 @@ export async function getSignalsForHouseholds(householdIds: string[]) {
 export async function getHouseholdDetail(user: SessionUser, householdId: string, filters?: HouseholdDetailFilters) {
   const { householdsRepository, eventsRepository } = getHouseholdAnalyticsRepositories();
   const household = await householdsRepository.getById(householdId);
-  if (!household || !canViewHousehold(user, household.id, household.siteId)) {
+  if (!household || !canViewHousehold(user, household.id)) {
     return null;
   }
 

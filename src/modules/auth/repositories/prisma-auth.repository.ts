@@ -5,7 +5,6 @@ import { verifyPassword } from "@/modules/auth/services/password.service";
 import { hashSessionToken } from "@/modules/auth/services/session-token.service";
 
 const sessionUserInclude = {
-  siteRoles: true,
   householdAssignments: true
 } as const;
 
@@ -13,14 +12,13 @@ function toSessionUser(user: {
   id: string;
   displayName: string;
   globalRole: SessionUser["role"];
-  siteRoles: Array<{ siteId: string }>;
   householdAssignments: Array<{ householdId: string; endedAt: Date | null }>;
 }): SessionUser {
   return {
     id: user.id,
     displayName: user.displayName,
     role: user.globalRole,
-    siteIds: user.siteRoles.map((role) => role.siteId),
+    siteIds: [],
     householdIds: user.householdAssignments
       .filter((assignment) => assignment.endedAt === null)
       .map((assignment) => assignment.householdId)

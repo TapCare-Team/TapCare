@@ -1,6 +1,6 @@
 import { getDataMode, isDatabaseConfigured } from "@/lib/db/database-mode";
 import type { SessionUser } from "@/modules/auth/domain/access";
-import { canAccessAdminSurface, canViewHousehold } from "@/modules/auth/services/access-control.service";
+import { canAdministerHousehold } from "@/modules/auth/services/access-control.service";
 import {
   assignCaregiverSchema,
   type AssignCaregiverInput
@@ -58,7 +58,7 @@ async function resolveAllowedSites(user: SessionUser) {
 }
 
 export async function listCreatableSitesForUser(user: SessionUser) {
-  if (!canAccessAdminSurface(user)) {
+  if (!canAdministerHousehold(user)) {
     throw new ForbiddenError();
   }
 
@@ -70,7 +70,7 @@ export async function createHouseholdForUser(user: SessionUser, rawInput: Create
     throw new ConfigurationError(householdMessages.databaseUnavailable, "HOUSEHOLD_DATABASE_UNAVAILABLE");
   }
 
-  if (!canAccessAdminSurface(user)) {
+  if (!canAdministerHousehold(user)) {
     throw new ForbiddenError();
   }
 
@@ -101,7 +101,7 @@ export async function findDuplicateHouseholdForUser(user: SessionUser, rawInput:
     throw new ConfigurationError(householdMessages.databaseUnavailable, "HOUSEHOLD_DATABASE_UNAVAILABLE");
   }
 
-  if (!canAccessAdminSurface(user)) {
+  if (!canAdministerHousehold(user)) {
     throw new ForbiddenError();
   }
 
@@ -124,7 +124,7 @@ export async function deleteHouseholdForUser(user: SessionUser, householdId: str
     throw new ConfigurationError(householdMessages.databaseUnavailable, "HOUSEHOLD_DATABASE_UNAVAILABLE");
   }
 
-  if (user.role !== "ADMIN") {
+  if (!canAdministerHousehold(user)) {
     throw new ForbiddenError();
   }
 
@@ -148,7 +148,7 @@ export async function assignCaregiverToHouseholdForUser(
     throw new ConfigurationError(householdMessages.databaseUnavailable, "HOUSEHOLD_DATABASE_UNAVAILABLE");
   }
 
-  if (!canAccessAdminSurface(user)) {
+  if (!canAdministerHousehold(user)) {
     throw new ForbiddenError();
   }
 
@@ -157,10 +157,6 @@ export async function assignCaregiverToHouseholdForUser(
 
   if (!household) {
     throw new NotFoundError(householdMessages.householdNotFound, "HOUSEHOLD_NOT_FOUND");
-  }
-
-  if (!canViewHousehold(user, household.id, household.siteId)) {
-    throw new ForbiddenError();
   }
 
   const caregiver = await prismaHouseholdsRepository.findCaregiverByEmail(input.email);
