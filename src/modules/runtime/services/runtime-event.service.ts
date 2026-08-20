@@ -2,7 +2,12 @@ import { logger } from "@/lib/logging/logger";
 import { getPublicRuntimeRepositories } from "@/modules/runtime/repositories/public-runtime.repository-provider";
 import type { RuntimeEventInput } from "@/modules/runtime/domain/public-runtime";
 
-export async function recordRuntimeEvent(params: RuntimeEventInput) {
+export type RuntimeEventPersistence = "best-effort" | "required";
+
+export async function recordRuntimeEvent(
+  params: RuntimeEventInput,
+  options: { persistence?: RuntimeEventPersistence } = {}
+) {
   const { eventsRepository } = getPublicRuntimeRepositories();
 
   const event = {
@@ -29,6 +34,10 @@ export async function recordRuntimeEvent(params: RuntimeEventInput) {
       eventType: params.eventType,
       error: error instanceof Error ? error.message : "unknown"
     });
+
+    if (options.persistence === "required") {
+      throw error;
+    }
   }
 
   return event;

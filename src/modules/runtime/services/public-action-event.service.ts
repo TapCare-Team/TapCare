@@ -71,13 +71,16 @@ export async function recordPublicActionClick(input: PublicActionEventInput) {
 
   const destinationType = destinationTypeForAction(record, input.actionKey);
 
-  return recordRuntimeEvent({
-    publicCode,
-    household: record.household,
-    sticker: record.sticker,
-    eventType: "PAGE_ACTION_CLICKED",
-    outcome: "SUCCESS",
-    destinationType,
-    metadata: { actionKey: input.actionKey }
-  });
+  return recordRuntimeEvent(
+    {
+      publicCode,
+      household: record.household,
+      sticker: record.sticker,
+      eventType: "PAGE_ACTION_CLICKED",
+      outcome: "SUCCESS",
+      destinationType,
+      metadata: { actionKey: input.actionKey }
+    },
+    { persistence: "required" }
+  );
 }

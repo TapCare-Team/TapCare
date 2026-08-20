@@ -118,4 +118,13 @@ describe("recordPublicActionClick", () => {
     });
     expect(mocks.createEvent).not.toHaveBeenCalled();
   });
+
+  it("propagates persistence failures for public action clicks", async () => {
+    mocks.getByPublicCode.mockResolvedValue(runtimeRecord());
+    mocks.createEvent.mockRejectedValue(new Error("database unavailable"));
+
+    await expect(recordPublicActionClick({ publicCode: "abc123", actionKey: "call" })).rejects.toThrow(
+      "database unavailable"
+    );
+  });
 });

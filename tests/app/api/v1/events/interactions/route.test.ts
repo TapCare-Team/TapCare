@@ -83,6 +83,14 @@ describe("POST /api/v1/events/interactions", () => {
     expect(response.status).toBe(410);
   });
 
+  it("returns an error when a valid public action cannot be persisted", async () => {
+    mocks.recordPublicActionClick.mockRejectedValue(new Error("database unavailable"));
+
+    const response = await postInteraction(JSON.stringify({ publicCode: "abc123", actionKey: "open_link" }));
+
+    expect(response.status).toBe(500);
+  });
+
   it("requires JSON and rejects cross-origin requests", async () => {
     const nonJsonResponse = await postInteraction(JSON.stringify({ publicCode: "abc123", actionKey: "open_link" }), {
       "Content-Type": "text/plain"

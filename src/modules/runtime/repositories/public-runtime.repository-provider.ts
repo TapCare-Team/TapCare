@@ -1,7 +1,6 @@
 import { getDataMode } from "@/lib/db/database-mode";
 import { MockAnalyticsRepository } from "@/modules/analytics/repositories/mock-analytics.repository";
 import { PrismaAnalyticsRepository } from "@/modules/analytics/repositories/prisma-analytics.repository";
-import { logger } from "@/lib/logging/logger";
 import type { InteractionEvent } from "@/modules/analytics/domain/analytics";
 import type { RuntimeRecord } from "@/modules/runtime/domain/public-runtime";
 import { MockPublicRuntimeRepository } from "@/modules/runtime/repositories/public-runtime.repository.mock";
@@ -31,16 +30,7 @@ export function getPublicRuntimeRepositories() {
           return mockAnalyticsRepository.createEvent(event);
         }
 
-        try {
-          return await prismaAnalyticsRepository.createEvent(event);
-        } catch (error) {
-          logger.warn("runtime_event_persist_failed", {
-            publicCode: event.publicCode ?? "unknown",
-            eventType: event.eventType,
-            error: error instanceof Error ? error.message : "unknown"
-          });
-          return event;
-        }
+        return prismaAnalyticsRepository.createEvent(event);
       }
     }
   };

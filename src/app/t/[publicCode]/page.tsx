@@ -25,7 +25,7 @@ function TelRedirectPage({ href, tracking }: { href: string; tracking: PublicAct
 }
 
 function ChecklistItem({ item, tracking }: { item: string; tracking: PublicActionTrackingContext }) {
-  const labelledLinkMatch = item.match(/^(.+?)\s*\|\s*(https?:\/\/\S+)$/);
+  const labelledLinkMatch = item.match(/^(.+?)\s*\|\s*(https:\/\/\S+)$/);
 
   if (labelledLinkMatch) {
     const [, label, rawHref] = labelledLinkMatch;
@@ -45,7 +45,7 @@ function ChecklistItem({ item, tracking }: { item: string; tracking: PublicActio
     );
   }
 
-  const urlMatch = item.match(/https?:\/\/\S+/);
+  const urlMatch = item.match(/https:\/\/\S+/);
 
   if (!urlMatch) {
     return <>{item}</>;
