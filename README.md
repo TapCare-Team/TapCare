@@ -60,6 +60,12 @@ npm run build
 
 See [docs/staging-deployment.md](docs/staging-deployment.md) for hosted staging setup, environment variables, Google OAuth callback configuration, database migration, and NFC sticker testing.
 
+## Physical NFC sticker workflow
+
+After creating a sticker, TapCare opens its physical setup panel. Copy the displayed canonical NFC URL (or scan its QR code), write that exact URL to the NFC tag, tap the tag to verify it, then confirm the test in TapCare. A tested tag must be reset with **Replace / reprogram tag** before its sticker can be deleted or moved to another household. The authenticated **Preview sticker** screen does not record analytics.
+
+Hosted deployments must set `PUBLIC_STICKER_BASE_URL` to the permanent HTTPS public sticker base URL. TapCare refuses to generate physical-tag URLs in production without it.
+
 ## Seeding
 
 Use the included seed script to populate a demo site, users, households, stickers, page configs, destination configs, and interaction events.

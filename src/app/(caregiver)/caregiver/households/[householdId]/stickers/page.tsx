@@ -7,13 +7,16 @@ import { Panel } from "@/components/shared/panel";
 import { requireUserWithRole } from "@/lib/auth";
 import { isDatabaseConfigured } from "@/lib/db/database-mode";
 import { getHouseholdDetail } from "@/modules/households/services/household-analytics.service";
+import { buildPublicStickerUrl } from "@/modules/stickers/services/public-sticker-url.service";
 
 export const dynamic = "force-dynamic";
 
 export default async function CaregiverStickerSetupPage({
-  params
+  params,
+  searchParams
 }: {
   params: { householdId: string };
+  searchParams?: { setupSticker?: string };
 }) {
   const user = await requireUserWithRole(["CAREGIVER"]);
   const detail = await getHouseholdDetail(user, params.householdId, { preset: "all" });
@@ -56,6 +59,9 @@ export default async function CaregiverStickerSetupPage({
         initialStickers={detail.household.stickers}
         canPersist={isDatabaseConfigured()}
         mode="manage"
+        physicalStickerUrls={Object.fromEntries(detail.household.stickers.map((sticker) => [sticker.id, buildPublicStickerUrl(sticker.publicCode)]))}
+        previewBasePath={`/caregiver/households/${detail.household.id}/stickers`}
+        setupStickerId={searchParams?.setupSticker}
       />
     </AppShell>
   );

@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   getScopeById: vi.fn(),
   createSticker: vi.fn(),
   updateSticker: vi.fn(),
+  setPhysicalTagTestedAt: vi.fn(),
   generateDisplayCode: vi.fn(),
   generatePublicCode: vi.fn()
 }));
@@ -23,6 +24,7 @@ vi.mock("@/modules/stickers/repositories/prisma-stickers.repository", () => ({
     getScopeById = mocks.getScopeById;
     create = mocks.createSticker;
     update = mocks.updateSticker;
+    setPhysicalTagTestedAt = mocks.setPhysicalTagTestedAt;
   }
 }));
 vi.mock("@/modules/stickers/services/sticker-code.service", () => ({
@@ -30,7 +32,12 @@ vi.mock("@/modules/stickers/services/sticker-code.service", () => ({
   generatePublicCode: mocks.generatePublicCode
 }));
 
-import { createStickerForUser, updateStickerForUser } from "@/modules/stickers/services/sticker-setup.service";
+import {
+  createStickerForUser,
+  markStickerPhysicalTagTestedForUser,
+  resetStickerPhysicalTagTestForUser,
+  updateStickerForUser
+} from "@/modules/stickers/services/sticker-setup.service";
 
 const caregiver = {
   id: "caregiver-a",
@@ -58,6 +65,7 @@ describe("sticker setup authorization", () => {
     mocks.generatePublicCode.mockReturnValue("public-code-1");
     mocks.createSticker.mockResolvedValue({ id: "sticker-new" });
     mocks.updateSticker.mockResolvedValue({ id: "sticker-a" });
+    mocks.setPhysicalTagTestedAt.mockResolvedValue({ id: "sticker-a" });
   });
 
   it("allows assigned caregivers and admins to create stickers, but rejects unassigned caregivers", async () => {
@@ -81,5 +89,13 @@ describe("sticker setup authorization", () => {
   it("rejects a caregiver who guesses an unassigned sticker ID before mutation", async () => {
     await expect(updateStickerForUser(caregiver, "sticker-b", { name: "Changed" })).rejects.toMatchObject({ statusCode: 403 });
     expect(mocks.updateSticker).not.toHaveBeenCalled();
+  });
+
+  it("allows assigned caregivers to mark or reset a physical tag, but rejects guessed sticker IDs", async () => {
+    await expect(markStickerPhysicalTagTestedForUser(caregiver, "sticker-a")).resolves.toEqual({ id: "sticker-a" });
+    await expect(resetStickerPhysicalTagTestForUser(caregiver, "sticker-a")).resolves.toEqual({ id: "sticker-a" });
+    await expect(markStickerPhysicalTagTestedForUser(caregiver, "sticker-b")).rejects.toMatchObject({ statusCode: 403 });
+    expect(mocks.setPhysicalTagTestedAt).toHaveBeenCalledWith("sticker-a", expect.any(Date));
+    expect(mocks.setPhysicalTagTestedAt).toHaveBeenCalledWith("sticker-a", null);
   });
 });

@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { StickerPrivacyGuidance } from "@/components/setup/sticker-privacy-guidance";
+import { PhysicalStickerSetupPanel } from "@/components/setup/physical-sticker-setup-panel";
 import type { DestinationType } from "@/modules/analytics/domain/analytics";
 import type { Household } from "@/modules/households/domain/household";
 import { findPublicStickerContentIssue } from "@/modules/privacy/sticker-content-policy";
@@ -21,6 +22,9 @@ type SetupManagerProps = {
   canPersist: boolean;
   mode?: "manage" | "create";
   afterCreateHref?: string;
+  physicalStickerUrls?: Record<string, string>;
+  previewBasePath?: string;
+  setupStickerId?: string;
 };
 
 type EditableSticker = {
@@ -614,7 +618,10 @@ export function StickerSetupManager({
   initialStickers,
   canPersist,
   mode = "manage",
-  afterCreateHref
+  afterCreateHref,
+  physicalStickerUrls = {},
+  previewBasePath,
+  setupStickerId
 }: SetupManagerProps) {
   const router = useRouter();
   const [stickers, setStickers] = useState<Record<string, EditableSticker>>(
@@ -627,11 +634,16 @@ export function StickerSetupManager({
   const [busyId, setBusyId] = useState<string | null>(null);
   const [deleteCandidateId, setDeleteCandidateId] = useState<string | null>(null);
   const [savedStickerId, setSavedStickerId] = useState<string | null>(null);
+  const [physicalSetupStickerId, setPhysicalSetupStickerId] = useState<string | null>(setupStickerId ?? null);
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
     setStickers(Object.fromEntries(initialStickers.map((sticker) => [sticker.id, stickerToFormState(sticker)])));
   }, [initialStickers]);
+
+  useEffect(() => {
+    setPhysicalSetupStickerId(setupStickerId ?? null);
+  }, [setupStickerId]);
 
   async function submitRequest(
     url: string,
@@ -674,16 +686,21 @@ export function StickerSetupManager({
     setBusyId("create");
 
     try {
-      await submitRequest(
-        "/api/v1/setup/stickers",
-        "POST",
-        "Unable to create sticker. Please check the details and try again.",
-        buildPayload(household.id, createForm)
-      );
+      const response = await fetch("/api/v1/setup/stickers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(buildPayload(household.id, createForm))
+      });
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(payload?.error ?? "Unable to create sticker. Please check the details and try again.");
+      }
+      const created = (await response.json()) as Sticker;
       setCreateForm(stickerToFormState());
       setSavedStickerId(null);
       if (afterCreateHref) {
-        router.replace(afterCreateHref);
+        router.replace(`${afterCreateHref}?setupSticker=${created.id}`);
+        return;
       }
       refreshWithMessage("Sticker created.");
     } catch (requestError) {
@@ -806,10 +823,34 @@ export function StickerSetupManager({
                   <span className="rounded-full border border-black/10 bg-white px-3 py-1">
                     {sticker.status}
                   </span>
+                  <span className="rounded-full border border-black/10 bg-white px-3 py-1">
+                    Physical tag: {sticker.physicalTagTestedAt ? "Tested" : "Not tested"}
+                  </span>
                 </div>
               </div>
               <div className="flex flex-wrap gap-3">
-                {deleteCandidateId === sticker.id ? (
+                {physicalStickerUrls[sticker.id] ? (
+                  <button
+                    type="button"
+                    onClick={() => setPhysicalSetupStickerId(sticker.id)}
+                    className="rounded-full border border-accent/30 bg-accentSoft px-4 py-2 text-sm text-accent transition hover:bg-white"
+                  >
+                    {sticker.physicalTagTestedAt ? "View physical setup" : "Set up physical sticker"}
+                  </button>
+                ) : null}
+                {previewBasePath ? (
+                  <a
+                    href={`${previewBasePath}/${sticker.id}/preview`}
+                    className="rounded-full border border-black/10 px-4 py-2 text-sm text-muted transition hover:bg-white"
+                  >
+                    Preview sticker
+                  </a>
+                ) : null}
+                {sticker.physicalTagTestedAt ? (
+                  <p className="max-w-xs self-center text-sm text-muted">
+                    Reset physical setup before deleting this tested sticker.
+                  </p>
+                ) : deleteCandidateId === sticker.id ? (
                   <>
                     <button
                       type="button"
@@ -840,6 +881,13 @@ export function StickerSetupManager({
                 )}
               </div>
             </div>
+            {physicalStickerUrls[sticker.id] && physicalSetupStickerId === sticker.id ? (
+              <PhysicalStickerSetupPanel
+                sticker={sticker}
+                nfcUrl={physicalStickerUrls[sticker.id]}
+                onChanged={() => refreshWithMessage("Physical tag setup updated.")}
+              />
+            ) : null}
             {deleteCandidateId === sticker.id ? (
               <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
                 This removes the sticker setup for &quot;{sticker.name}&quot;. Historical interaction events are kept for

@@ -28,7 +28,8 @@ const mockHouseholds: Household[] = [
         runtimeMode: "DIRECT_REDIRECT",
         status: "ACTIVE",
         name: "Bathroom emergency sticker",
-        isCritical: true
+        isCritical: true,
+        physicalTagTestedAt: null
       }
     ]
   },
@@ -51,7 +52,8 @@ const mockHouseholds: Household[] = [
         runtimeMode: "DIRECT_REDIRECT",
         status: "DISABLED",
         name: "Emergency contact sticker",
-        isCritical: true
+        isCritical: true,
+        physicalTagTestedAt: null
       }
     ]
   }
