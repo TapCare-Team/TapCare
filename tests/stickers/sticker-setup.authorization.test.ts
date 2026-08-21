@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   deleteSticker: vi.fn(),
   assignHousehold: vi.fn(),
   setPhysicalTagTestedAt: vi.fn(),
+  listByHouseholdId: vi.fn(),
   generateDisplayCode: vi.fn(),
   generatePublicCode: vi.fn()
 }));
@@ -29,6 +30,7 @@ vi.mock("@/modules/stickers/repositories/prisma-stickers.repository", () => ({
     delete = mocks.deleteSticker;
     assignHousehold = mocks.assignHousehold;
     setPhysicalTagTestedAt = mocks.setPhysicalTagTestedAt;
+    listByHouseholdId = mocks.listByHouseholdId;
   }
 }));
 vi.mock("@/modules/stickers/services/sticker-code.service", () => ({
@@ -40,6 +42,7 @@ import {
   assignStickerToHouseholdForUser,
   createStickerForUser,
   deleteStickerForUser,
+  getStickerForPreviewForUser,
   markStickerPhysicalTagTestedForUser,
   resetStickerPhysicalTagTestForUser,
   updateStickerForUser
@@ -73,6 +76,7 @@ describe("sticker setup authorization", () => {
     mocks.updateSticker.mockResolvedValue({ id: "sticker-a" });
     mocks.deleteSticker.mockResolvedValue(true);
     mocks.assignHousehold.mockResolvedValue({ id: "sticker-a", physicalTagTestedAt: null });
+    mocks.listByHouseholdId.mockResolvedValue([{ id: "sticker-a", householdId: "household-a" }]);
     mocks.setPhysicalTagTestedAt.mockResolvedValue({ id: "sticker-a" });
   });
 
@@ -112,5 +116,14 @@ describe("sticker setup authorization", () => {
     await assignStickerToHouseholdForUser(caregiver, "sticker-a", "household-a");
     expect(mocks.deleteSticker).toHaveBeenCalledWith("sticker-a");
     expect(mocks.assignHousehold).toHaveBeenCalledWith("sticker-a", "household-a", "site-a");
+  });
+
+  it("allows an assigned caregiver to preview a sticker from their household", async () => {
+    await expect(getStickerForPreviewForUser(caregiver, "household-a", "sticker-a")).resolves.toEqual({ id: "sticker-a", householdId: "household-a" });
+  });
+
+  it("denies a caregiver preview of an unassigned household sticker", async () => {
+    await expect(getStickerForPreviewForUser(caregiver, "household-b", "sticker-b")).rejects.toMatchObject({ statusCode: 403 });
+    expect(mocks.listByHouseholdId).not.toHaveBeenCalled();
   });
 });

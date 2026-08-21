@@ -1,13 +1,12 @@
 import { notFound } from "next/navigation";
 import { StickerPreview } from "@/components/setup/sticker-preview";
 import { AppShell } from "@/components/shared/app-shell";
-import { requireUserWithRole } from "@/lib/auth";
-import { getHouseholdDetail } from "@/modules/households/services/household-analytics.service";
+import { requireUser } from "@/lib/auth";
+import { getStickerForPreviewForUser } from "@/modules/stickers/services/sticker-setup.service";
 
 export default async function AdminStickerPreviewPage({ params }: { params: { householdId: string; stickerId: string } }) {
-  const user = await requireUserWithRole(["ADMIN"]);
-  const detail = await getHouseholdDetail(user, params.householdId, { preset: "all" });
-  const sticker = detail?.household.stickers.find((item) => item.id === params.stickerId);
-  if (!detail || !sticker) notFound();
+  const user = await requireUser();
+  const sticker = await getStickerForPreviewForUser(user, params.householdId, params.stickerId).catch(() => null);
+  if (!sticker) notFound();
   return <AppShell title="Sticker preview" subtitle="Preview only — no interaction analytics are recorded." nav={[{ href: `/households/${params.householdId}/stickers`, label: "Sticker setup", replace: true }]}><StickerPreview sticker={sticker} /></AppShell>;
 }

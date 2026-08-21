@@ -77,6 +77,21 @@ export async function listHouseholdStickersForUser(user: SessionUser, householdI
   return listHouseholdStickers(householdId);
 }
 
+export async function getStickerForPreviewForUser(user: SessionUser, householdId: string, stickerId: string) {
+  const scope = await getManageableStickerScope(user, stickerId);
+  if (scope.householdId !== householdId) {
+    throw new NotFoundError(setupMessages.stickerNotFound, "STICKER_NOT_FOUND");
+  }
+
+  const stickers = await listHouseholdStickersForUser(user, householdId);
+  const sticker = stickers.find((item) => item.id === stickerId);
+  if (!sticker) {
+    throw new NotFoundError(setupMessages.stickerNotFound, "STICKER_NOT_FOUND");
+  }
+
+  return sticker;
+}
+
 export async function createSticker(input: CreateStickerInput) {
   if (!isDatabaseConfigured()) {
     throw new ConfigurationError(setupMessages.databaseUnavailable, "SETUP_DATABASE_UNAVAILABLE");
