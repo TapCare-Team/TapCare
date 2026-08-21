@@ -8,16 +8,23 @@ export function PhysicalStickerSetupPanel({ sticker, nfcUrl, onChanged }: { stic
   const [confirmed, setConfirmed] = useState(false);
   const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
   const tested = Boolean(sticker.physicalTagTestedAt);
   async function change(method: "POST" | "DELETE") {
+    setError("");
     setBusy(true);
     try {
       const response = await fetch(`/api/v1/setup/stickers/${sticker.id}/physical-setup`, { method });
       if (!response.ok) {
-        throw new Error("Unable to update physical sticker setup.");
+        const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(payload?.error ?? "Unable to update physical sticker setup. Please try again.");
       }
       onChanged();
-    } finally { setBusy(false); }
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Unable to update physical sticker setup. Please try again.");
+    } finally {
+      setBusy(false);
+    }
   }
   return (
     <section className="space-y-3 rounded-2xl border border-accent/20 bg-accentSoft p-4">
@@ -54,6 +61,7 @@ export function PhysicalStickerSetupPanel({ sticker, nfcUrl, onChanged }: { stic
           </button>
         </>
       )}
+      {error ? <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p> : null}
     </section>
   );
 }

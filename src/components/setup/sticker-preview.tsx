@@ -1,4 +1,5 @@
 import type { Sticker } from "@/modules/stickers/domain/sticker";
+import { PublicStickerContent } from "@/components/runtime/public-sticker-content";
 
 export function StickerPreview({ sticker }: { sticker: Sticker }) {
   if (sticker.runtimeMode === "DIRECT_REDIRECT" && sticker.destination) {
@@ -12,13 +13,5 @@ export function StickerPreview({ sticker }: { sticker: Sticker }) {
     );
   }
 
-  if (!sticker.page) return null;
-  return (
-    <section className="space-y-4 rounded-3xl border border-black/5 bg-white p-6">
-      <h2 className="text-2xl font-semibold">{sticker.page.title}</h2>
-      {sticker.page.pageType === "CHECKLIST" ? <ul className="space-y-2">{sticker.page.content.checklistItems.map((item) => <li key={item}>• {item}</li>)}</ul> : null}
-      {sticker.page.pageType === "HELP_PROFILE" ? <dl className="space-y-2">{sticker.page.content.helpFields.map((field) => <div key={field.label}><dt className="text-sm text-muted">{field.label}</dt><dd>{field.value}</dd></div>)}</dl> : null}
-      {sticker.page.pageType === "RESOURCES" ? <ul className="space-y-3">{sticker.page.content.links.map((link) => <li key={link.href}><a href={link.href} className="text-accent underline">{link.label}</a></li>)}</ul> : null}
-    </section>
-  );
+  return sticker.page ? <PublicStickerContent page={sticker.page} /> : null;
 }

@@ -7,6 +7,8 @@ const mocks = vi.hoisted(() => ({
   getScopeById: vi.fn(),
   createSticker: vi.fn(),
   updateSticker: vi.fn(),
+  deleteSticker: vi.fn(),
+  assignHousehold: vi.fn(),
   setPhysicalTagTestedAt: vi.fn(),
   generateDisplayCode: vi.fn(),
   generatePublicCode: vi.fn()
@@ -24,6 +26,8 @@ vi.mock("@/modules/stickers/repositories/prisma-stickers.repository", () => ({
     getScopeById = mocks.getScopeById;
     create = mocks.createSticker;
     update = mocks.updateSticker;
+    delete = mocks.deleteSticker;
+    assignHousehold = mocks.assignHousehold;
     setPhysicalTagTestedAt = mocks.setPhysicalTagTestedAt;
   }
 }));
@@ -33,7 +37,9 @@ vi.mock("@/modules/stickers/services/sticker-code.service", () => ({
 }));
 
 import {
+  assignStickerToHouseholdForUser,
   createStickerForUser,
+  deleteStickerForUser,
   markStickerPhysicalTagTestedForUser,
   resetStickerPhysicalTagTestForUser,
   updateStickerForUser
@@ -65,6 +71,8 @@ describe("sticker setup authorization", () => {
     mocks.generatePublicCode.mockReturnValue("public-code-1");
     mocks.createSticker.mockResolvedValue({ id: "sticker-new" });
     mocks.updateSticker.mockResolvedValue({ id: "sticker-a" });
+    mocks.deleteSticker.mockResolvedValue(true);
+    mocks.assignHousehold.mockResolvedValue({ id: "sticker-a", physicalTagTestedAt: null });
     mocks.setPhysicalTagTestedAt.mockResolvedValue({ id: "sticker-a" });
   });
 
@@ -97,5 +105,12 @@ describe("sticker setup authorization", () => {
     await expect(markStickerPhysicalTagTestedForUser(caregiver, "sticker-b")).rejects.toMatchObject({ statusCode: 403 });
     expect(mocks.setPhysicalTagTestedAt).toHaveBeenCalledWith("sticker-a", expect.any(Date));
     expect(mocks.setPhysicalTagTestedAt).toHaveBeenCalledWith("sticker-a", null);
+  });
+
+  it("delegates deletion and reassignment through the protected repository operations", async () => {
+    await deleteStickerForUser(caregiver, "sticker-a");
+    await assignStickerToHouseholdForUser(caregiver, "sticker-a", "household-a");
+    expect(mocks.deleteSticker).toHaveBeenCalledWith("sticker-a");
+    expect(mocks.assignHousehold).toHaveBeenCalledWith("sticker-a", "household-a", "site-a");
   });
 });
