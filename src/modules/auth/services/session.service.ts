@@ -38,7 +38,7 @@ export function defaultRouteForUser(user: Pick<SessionUser, "role">) {
     return "/caregiver";
   }
 
-  return "/";
+  return "/admin";
 }
 
 export async function getCurrentUser(): Promise<SessionUser | null> {

@@ -18,7 +18,6 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const needsAuth =
-    pathname === "/" ||
     protectedPrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
 
   if (!needsAuth) {
@@ -40,7 +39,6 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/",
     "/caregiver/:path*",
     "/households/:path*",
     "/follow-up/:path*",
