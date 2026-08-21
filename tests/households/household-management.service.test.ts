@@ -272,4 +272,32 @@ describe("household-management.service", () => {
 
     expect(mocks.assignCaregiver).not.toHaveBeenCalled();
   });
+
+  it("lets admins end an active caregiver assignment but rejects caregivers", async () => {
+    const { unassignCaregiverFromHouseholdForUser } = await import("@/modules/households/services/household-management.service");
+    await unassignCaregiverFromHouseholdForUser(adminUser, "household-1", "user-caregiver-1");
+    expect(mocks.unassignCaregiver).toHaveBeenCalledWith("household-1", "user-caregiver-1");
+    await expect(unassignCaregiverFromHouseholdForUser(caregiverUser, "household-1", "user-caregiver-1")).rejects.toMatchObject({ statusCode: 403 });
+  });
+
+  it("returns a controlled error when no active caregiver assignment exists", async () => {
+    const { unassignCaregiverFromHouseholdForUser } = await import("@/modules/households/services/household-management.service");
+    mocks.unassignCaregiver.mockResolvedValueOnce(false);
+    await expect(unassignCaregiverFromHouseholdForUser(adminUser, "household-1", "missing")).rejects.toMatchObject({ statusCode: 404 });
+  });
+
+  it("updates an address with a rebuilt display value and protects admin-only fields", async () => {
+    const { updateHouseholdForUser } = await import("@/modules/households/services/household-management.service");
+    await updateHouseholdForUser(adminUser, "household-1", { addressLine1: "Blk 2 New Road", unitNumber: "#02-02", postalCode: "468002" });
+    expect(mocks.findDuplicateAddressExcludingHousehold).toHaveBeenCalledWith("site-bedok", "Blk 2 New Road, #02-02, 468002", "household-1");
+    expect(mocks.updateHouseholdAddress).toHaveBeenCalledWith("household-1", expect.objectContaining({ displayAddress: "Blk 2 New Road, #02-02, 468002" }));
+    await expect(updateHouseholdForUser(caregiverUser, "household-1", { addressLine1: "Blk 2 New Road" })).rejects.toMatchObject({ statusCode: 403 });
+  });
+
+  it("rejects duplicate edited addresses while allowing an unchanged address", async () => {
+    const { updateHouseholdForUser } = await import("@/modules/households/services/household-management.service");
+    mocks.findDuplicateAddressExcludingHousehold.mockResolvedValueOnce({ id: "household-2" });
+    await expect(updateHouseholdForUser(adminUser, "household-1", { addressLine1: "Blk 9 Duplicate Road" })).rejects.toMatchObject({ statusCode: 409 });
+    await expect(updateHouseholdForUser(adminUser, "household-1", { addressLine1: "Blk 18 Bedok South Road", unitNumber: "#05-123", postalCode: "460018" })).resolves.toBeDefined();
+  });
 });

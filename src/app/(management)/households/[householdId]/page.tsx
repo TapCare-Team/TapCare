@@ -11,6 +11,7 @@ import {
 } from "@/components/shared/recent-sticker-activity-list";
 import { SignalBadge } from "@/components/shared/signal-badge";
 import { FollowUpActions } from "@/components/admin/follow-up-actions";
+import { FollowUpReviewContext } from "@/components/admin/follow-up-review-context";
 import { requireUserWithRole } from "@/lib/auth";
 import { getSearchParamValue, normalizeActivityPreset } from "@/modules/households/domain/activity-range";
 import { getHouseholdDetail } from "@/modules/households/services/household-analytics.service";
@@ -72,6 +73,7 @@ export default async function HouseholdDetailPage({
                     <p className="font-medium">{signal.explanation}</p>
                   </div>
                   <p className="mt-2 text-sm text-muted">Status: {signal.review?.status ?? signal.status}</p>
+                  <FollowUpReviewContext signal={signal} />
                   <FollowUpActions signalId={signal.id} />
                 </div>
               ))

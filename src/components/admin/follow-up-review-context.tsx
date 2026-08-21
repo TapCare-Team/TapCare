@@ -1,0 +1,2 @@
+import type { FollowUpSignal } from "@/modules/signals/domain/follow-up-signal";
+export function FollowUpReviewContext({ signal }: { signal: FollowUpSignal }) { const review = signal.review; if (!review) return null; return <div className="mt-2 text-sm text-muted"><p>Review status: {review.status}</p>{review.reviewedAt ? <p>Reviewed {new Date(review.reviewedAt).toLocaleString()}</p> : null}{review.snoozedUntil ? <p>Snoozed until {new Date(review.snoozedUntil).toLocaleString()}</p> : null}{review.note ? <p>Note: {review.note}</p> : null}</div>; }

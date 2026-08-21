@@ -17,6 +17,7 @@ vi.mock("@/modules/signals/repositories/follow-up-state.repository-provider", ()
 }));
 
 import { reviewFollowUpSignal } from "@/modules/signals/services/follow-up-review.service";
+import { followUpReviewRequestSchema } from "@/modules/households/contracts/review.contract";
 
 function buildUser(overrides: Partial<SessionUser> = {}): SessionUser {
   return {
@@ -112,6 +113,10 @@ describe("reviewFollowUpSignal", () => {
       note: "Retry next week",
       snoozedUntil: "2025-04-17T09:00:00.000Z"
     });
+  });
+
+  it("rejects a snooze time in the past", () => {
+    expect(followUpReviewRequestSchema.safeParse({ status: "SNOOZED", snoozedUntil: "2025-04-09T09:00:00.000Z" }).success).toBe(false);
   });
 
   it("maps dismissed reviews to a closed review with dismissed signal status", async () => {

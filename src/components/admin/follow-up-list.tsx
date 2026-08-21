@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { SignalBadge } from "@/components/shared/signal-badge";
 import { FollowUpActions } from "@/components/admin/follow-up-actions";
+import { FollowUpReviewContext } from "@/components/admin/follow-up-review-context";
 import type { FollowUpSignal } from "@/modules/signals/domain/follow-up-signal";
 
 export function FollowUpList({ signals }: { signals: FollowUpSignal[] }) {
@@ -31,6 +32,7 @@ export function FollowUpList({ signals }: { signals: FollowUpSignal[] }) {
               minute: "2-digit"
             })}
           </p>
+          <FollowUpReviewContext signal={signal} />
           <FollowUpActions signalId={signal.id} />
         </div>
       ))}
