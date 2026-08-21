@@ -6,6 +6,7 @@ import {
   type AssignCaregiverInput
 } from "@/modules/households/contracts/household-caregiver-assignment.contract";
 import { createHouseholdSchema, type CreateHouseholdInput } from "@/modules/households/contracts/household-create.contract";
+import { updateHouseholdSchema, type UpdateHouseholdInput } from "@/modules/households/contracts/household-update.contract";
 import { MockHouseholdsRepository } from "@/modules/households/repositories/mock-households.repository";
 import { MockSitesRepository } from "@/modules/households/repositories/mock-sites.repository";
 import { PrismaHouseholdsRepository } from "@/modules/households/repositories/prisma-households.repository";
@@ -176,4 +177,24 @@ export async function assignCaregiverToHouseholdForUser(
     caregiver,
     alreadyAssigned: assignment.alreadyAssigned
   };
+}
+
+export async function unassignCaregiverFromHouseholdForUser(user: SessionUser, householdId: string, caregiverId: string) {
+  if (!isDatabaseConfigured()) throw new ConfigurationError(householdMessages.databaseUnavailable, "HOUSEHOLD_DATABASE_UNAVAILABLE");
+  if (!canAdministerHousehold(user)) throw new ForbiddenError();
+  const household = await prismaHouseholdsRepository.getById(householdId);
+  if (!household) throw new NotFoundError(householdMessages.householdNotFound, "HOUSEHOLD_NOT_FOUND");
+  const unassigned = await prismaHouseholdsRepository.unassignCaregiver(householdId, caregiverId);
+  if (!unassigned) throw new NotFoundError(householdMessages.caregiverNotFound, "CAREGIVER_ASSIGNMENT_NOT_FOUND");
+}
+
+export async function updateHouseholdForUser(user: SessionUser, householdId: string, rawInput: UpdateHouseholdInput) {
+  if (!isDatabaseConfigured()) throw new ConfigurationError(householdMessages.databaseUnavailable, "HOUSEHOLD_DATABASE_UNAVAILABLE");
+  if (!canAdministerHousehold(user)) throw new ForbiddenError();
+  const input = updateHouseholdSchema.parse(rawInput);
+  const household = await prismaHouseholdsRepository.getById(householdId);
+  if (!household) throw new NotFoundError(householdMessages.householdNotFound, "HOUSEHOLD_NOT_FOUND");
+  const displayAddress = buildDisplayAddress(input);
+  if (await prismaHouseholdsRepository.findDuplicateAddressExcludingHousehold(household.siteId, displayAddress, householdId)) throw new ConflictError(householdMessages.duplicateAddress, "HOUSEHOLD_DUPLICATE_ADDRESS");
+  return prismaHouseholdsRepository.updateHouseholdAddress(householdId, { ...input, displayAddress });
 }

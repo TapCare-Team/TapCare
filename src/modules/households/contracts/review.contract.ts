@@ -14,6 +14,9 @@ export const followUpReviewRequestSchema = z
         path: ["snoozedUntil"]
       });
     }
+    if (value.status === "SNOOZED" && value.snoozedUntil && new Date(value.snoozedUntil).getTime() <= Date.now()) {
+      context.addIssue({ code: z.ZodIssueCode.custom, message: "snoozedUntil must be in the future", path: ["snoozedUntil"] });
+    }
   });
 
 export type FollowUpReviewRequest = z.infer<typeof followUpReviewRequestSchema>;

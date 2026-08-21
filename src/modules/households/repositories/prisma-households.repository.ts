@@ -82,6 +82,16 @@ export class PrismaHouseholdsRepository {
     return household ? mapPrismaHousehold(household) : null;
   }
 
+  async findDuplicateAddressExcludingHousehold(siteId: string, displayAddress: string, householdId: string) {
+    const household = await prisma.household.findFirst({ where: { siteId, status: "ACTIVE", id: { not: householdId }, displayAddress: { equals: displayAddress, mode: "insensitive" } }, include: householdInclude });
+    return household ? mapPrismaHousehold(household) : null;
+  }
+
+  async updateHouseholdAddress(householdId: string, input: { addressLine1: string; addressLine2?: string; unitNumber?: string; postalCode?: string; displayAddress: string }) {
+    const household = await prisma.household.update({ where: { id: householdId }, data: input, include: householdInclude });
+    return mapPrismaHousehold(household);
+  }
+
   async create(input: {
     siteId: string;
     addressLine1: string;
@@ -186,5 +196,13 @@ export class PrismaHouseholdsRepository {
       household: await this.getById(householdId),
       alreadyAssigned: Boolean(existing)
     };
+  }
+
+  async unassignCaregiver(householdId: string, caregiverId: string) {
+    const result = await prisma.householdAssignment.updateMany({
+      where: { householdId, caregiverId, endedAt: null },
+      data: { endedAt: new Date() }
+    });
+    return result.count > 0;
   }
 }

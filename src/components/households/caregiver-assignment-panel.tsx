@@ -18,6 +18,7 @@ export function CaregiverAssignmentPanel({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [removeCandidate, setRemoveCandidate] = useState<Household["caregiverAssignments"][number] | null>(null);
 
   async function assignCaregiver() {
     setError("");
@@ -61,6 +62,19 @@ export function CaregiverAssignmentPanel({
     }
   }
 
+  async function removeCaregiver() {
+    if (!removeCandidate) return;
+    setError(""); setSuccess(""); setIsSubmitting(true);
+    try {
+      const response = await fetch(`/api/v1/admin/households/${householdId}/caregivers/${removeCandidate.caregiverId}`, { method: "DELETE" });
+      const payload = await response.json().catch(() => null) as { error?: string } | null;
+      if (!response.ok) { setError(payload?.error ?? "Unable to remove caregiver access."); return; }
+      setSuccess(`${removeCandidate.displayName} no longer has access to this household.`);
+      setRemoveCandidate(null); router.refresh();
+    } catch { setError("Unable to remove caregiver access. Please try again."); }
+    finally { setIsSubmitting(false); }
+  }
+
   return (
     <div className="space-y-4">
       <div className="space-y-3">
@@ -69,12 +83,14 @@ export function CaregiverAssignmentPanel({
         ) : (
           assignments.map((assignment) => (
             <div key={assignment.caregiverId} className="rounded-2xl border border-black/5 bg-white p-4">
-              <p className="font-medium">{assignment.displayName}</p>
+              <div className="flex items-center justify-between gap-3"><p className="font-medium">{assignment.displayName}</p><button type="button" onClick={() => setRemoveCandidate(assignment)} className="text-sm font-medium text-red-700">Remove access</button></div>
               <p className="text-sm text-muted">{assignment.email}</p>
             </div>
           ))
         )}
       </div>
+
+      {removeCandidate ? <div className="rounded-2xl border border-red-200 bg-red-50 p-4"><p className="font-medium">Remove {removeCandidate.displayName} from this household?</p><p className="mt-1 text-sm text-muted">They will immediately lose access to this household and its sticker configuration.</p><div className="mt-3 flex gap-3"><button type="button" onClick={() => setRemoveCandidate(null)} disabled={isSubmitting}>Cancel</button><button type="button" onClick={removeCaregiver} disabled={isSubmitting} className="rounded-full bg-red-700 px-4 py-2 text-sm text-white">{isSubmitting ? "Removing..." : "Remove access"}</button></div></div> : null}
 
       <div className="grid gap-3 rounded-2xl border border-black/5 bg-panel p-4 md:grid-cols-[1fr_auto]">
         <label className="space-y-2 text-sm text-muted">

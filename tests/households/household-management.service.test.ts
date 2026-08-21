@@ -11,7 +11,7 @@ const mocks = vi.hoisted(() => ({
   getById: vi.fn(),
   findCaregiverByEmail: vi.fn(),
   assignCaregiver: vi.fn(),
-  archive: vi.fn()
+  archive: vi.fn(), unassignCaregiver: vi.fn(), findDuplicateAddressExcludingHousehold: vi.fn(), updateHouseholdAddress: vi.fn()
 }));
 
 vi.mock("@/lib/db/database-mode", () => ({
@@ -45,6 +45,7 @@ vi.mock("@/modules/households/repositories/prisma-households.repository", () => 
     findCaregiverByEmail = mocks.findCaregiverByEmail;
     assignCaregiver = mocks.assignCaregiver;
     archive = mocks.archive;
+    unassignCaregiver = mocks.unassignCaregiver; findDuplicateAddressExcludingHousehold = mocks.findDuplicateAddressExcludingHousehold; updateHouseholdAddress = mocks.updateHouseholdAddress;
   }
 }));
 
@@ -128,6 +129,7 @@ describe("household-management.service", () => {
       }
     });
     mocks.archive.mockResolvedValue(true);
+    mocks.unassignCaregiver.mockResolvedValue(true); mocks.findDuplicateAddressExcludingHousehold.mockResolvedValue(null); mocks.updateHouseholdAddress.mockImplementation(async (_id, input) => ({ ...mocks.getById(), ...input }));
     mocks.create.mockImplementation(async (input: Record<string, unknown>) => ({
       id: "household-new",
       siteId: input.siteId,

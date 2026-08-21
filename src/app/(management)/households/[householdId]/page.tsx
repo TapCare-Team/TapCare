@@ -10,6 +10,7 @@ import {
   RecentStickerActivityList
 } from "@/components/shared/recent-sticker-activity-list";
 import { SignalBadge } from "@/components/shared/signal-badge";
+import { FollowUpActions } from "@/components/admin/follow-up-actions";
 import { requireUserWithRole } from "@/lib/auth";
 import { getSearchParamValue, normalizeActivityPreset } from "@/modules/households/domain/activity-range";
 import { getHouseholdDetail } from "@/modules/households/services/household-analytics.service";
@@ -54,6 +55,7 @@ export default async function HouseholdDetailPage({
             householdId={detail.household.id}
             householdLabel={detail.household.displayAddress}
           />
+          <Link href={`/households/${detail.household.id}/edit`} className="rounded-full border border-black/10 px-4 py-2 text-sm">Edit household</Link>
         </div>
       </Panel>
 
@@ -69,6 +71,8 @@ export default async function HouseholdDetailPage({
                     <SignalBadge signalType={signal.signalType} />
                     <p className="font-medium">{signal.explanation}</p>
                   </div>
+                  <p className="mt-2 text-sm text-muted">Status: {signal.review?.status ?? signal.status}</p>
+                  <FollowUpActions signalId={signal.id} />
                 </div>
               ))
             )}
