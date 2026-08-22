@@ -36,7 +36,7 @@ export default async function SignupPage({
   return (
     <main className="flex min-h-screen items-center justify-center bg-white px-6 py-10">
       <section className="w-full max-w-sm">
-        <p className="text-center text-sm font-semibold uppercase tracking-[0.28em] text-accent">TapCare</p>
+        <Link href="/" className="block text-center text-sm font-semibold uppercase tracking-[0.28em] text-accent">TapCare</Link>
         <h1 className="mt-10 text-center text-4xl font-semibold tracking-normal text-ink">Create an account</h1>
         <p className="mt-3 text-center text-sm text-muted">
           New accounts start as caregivers and only see households assigned to them.

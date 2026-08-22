@@ -29,7 +29,7 @@ export default async function WrongAccountPage({
   return (
     <main className="flex min-h-screen items-center justify-center bg-panel px-6 py-10">
       <section className="w-full max-w-lg rounded-3xl border border-black/5 bg-white p-8 shadow-sm">
-        <p className="text-sm font-semibold uppercase tracking-[0.28em] text-accent">TapCare</p>
+        <Link href="/" className="block text-sm font-semibold uppercase tracking-[0.28em] text-accent">TapCare</Link>
         <h1 className="mt-5 text-3xl font-semibold tracking-normal text-ink">Wrong account type</h1>
         <p className="mt-4 text-sm leading-6 text-muted">
           You are currently signed in as {user.displayName} with {accountLabels[user.role]}. This page needs{" "}

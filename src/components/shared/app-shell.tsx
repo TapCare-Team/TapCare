@@ -9,7 +9,7 @@ type AppShellProps = {
   homeHref?: string;
 };
 
-export function AppShell({ title, subtitle, children, nav, homeHref = "/" }: AppShellProps) {
+export function AppShell({ title, subtitle, children, nav, homeHref = "/admin" }: AppShellProps) {
   return (
     <div className="min-h-screen">
       <header className="border-b border-black/5 bg-white/70 backdrop-blur">

@@ -18,7 +18,7 @@ export default function ResetPasswordPage({
   return (
     <div className="flex min-h-screen items-center justify-center px-6 py-10">
       <div className="w-full max-w-md rounded-3xl border border-black/5 bg-white p-8 shadow-panel">
-        <p className="text-sm uppercase tracking-[0.3em] text-muted">TapCare</p>
+        <Link href="/" className="text-sm uppercase tracking-[0.3em] text-muted">TapCare</Link>
         <h1 className="mt-3 text-3xl font-semibold">Choose a new password</h1>
         <p className="mt-2 text-sm text-muted">
           Use a strong password. Reset links expire and can only be used once.
