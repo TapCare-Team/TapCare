@@ -1,0 +1,826 @@
+.hero {
+  position: relative;
+  min-height: 88vh;
+  padding: 88px 24px 90px;
+  overflow: clip;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+
+  background-image:
+    linear-gradient(
+      180deg,
+      rgba(247, 244, 236, 0.68) 0%,
+      rgba(247, 244, 236, 0.52) 45%,
+      rgba(247, 244, 236, 0.78) 100%
+    ),
+    url("/home/tapcare-hero.png");
+
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.heroCopy {
+  position: relative;
+  z-index: 4;
+  max-width: 980px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.heroPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border: 1px solid rgba(47, 109, 90, 0.1);
+  border-radius: 999px;
+  background: rgba(232, 238, 228, 0.9);
+  color: #426b5c;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.heroCopy h1 {
+  margin-top: 30px;
+  color: #16382f;
+  font-size: clamp(4rem, 8vw, 7.4rem);
+  line-height: 0.9;
+  letter-spacing: -0.07em;
+  font-weight: 650;
+}
+
+.heroCopy h1 em {
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 400;
+  font-style: italic;
+  letter-spacing: -0.06em;
+}
+
+.heroSubtitle {
+  max-width: 670px;
+  margin: 30px auto 0;
+  color: #63766e;
+  font-size: 18px;
+  line-height: 1.7;
+}
+
+.heroActions {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 30px;
+}
+
+.heroPrimary,
+.heroSecondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 0 24px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 650;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    background 180ms ease;
+}
+
+.heroPrimary {
+  color: white;
+  background: #2f6d5a;
+  box-shadow: 0 12px 28px rgba(47, 109, 90, 0.17);
+}
+
+.heroPrimary:hover {
+  transform: translateY(-2px);
+  background: #285e4e;
+  box-shadow: 0 16px 34px rgba(47, 109, 90, 0.22);
+}
+
+.heroSecondary {
+  color: #284d42;
+  border: 1px solid rgba(23, 60, 53, 0.1);
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+}
+
+.heroSecondary:hover {
+  transform: translateY(-2px);
+  background: white;
+}
+
+.heroVisual {
+  position: relative;
+  width: min(1120px, 100%);
+  height: min(560px, 56vw);
+  min-height: 420px;
+  margin: 64px auto 0;
+  overflow: hidden;
+
+  border: 1px solid rgba(29, 68, 56, 0.06);
+  border-radius: 42px;
+
+  background:
+    radial-gradient(
+      circle at 74% 21%,
+      rgba(255, 255, 255, 0.9),
+      transparent 26%
+    ),
+    linear-gradient(
+      130deg,
+      #e6ebdd 0%,
+      #d6e0d1 49%,
+      #eee5d3 100%
+    );
+
+  box-shadow:
+    0 50px 110px rgba(38, 65, 55, 0.13),
+    0 15px 35px rgba(38, 65, 55, 0.07);
+
+  isolation: isolate;
+}
+
+.heroGlowOne {
+  position: absolute;
+  top: -26%;
+  right: -6%;
+  width: 50%;
+  aspect-ratio: 1;
+  border-radius: 999px;
+  background: rgba(255, 248, 226, 0.78);
+  filter: blur(20px);
+}
+
+.heroGlowTwo {
+  position: absolute;
+  bottom: -36%;
+  left: 12%;
+  width: 45%;
+  aspect-ratio: 1;
+  border-radius: 999px;
+  background: rgba(86, 123, 104, 0.22);
+  filter: blur(34px);
+}
+
+/* Cabinet */
+
+.heroCabinet {
+  position: absolute;
+  left: -3%;
+  bottom: -5%;
+  width: 55%;
+  height: 73%;
+
+  border: 1px solid rgba(29, 68, 56, 0.08);
+  border-radius: 34px 34px 0 0;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.17),
+      transparent 50%
+    ),
+    #bdc8b4;
+
+  box-shadow:
+    20px 20px 60px rgba(49, 74, 62, 0.12);
+}
+
+.heroCabinetLabel {
+  position: absolute;
+  left: 11%;
+  top: 13%;
+
+  color: rgba(52, 84, 72, 0.68);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.heroCabinetLine {
+  position: absolute;
+  top: 26%;
+  left: 10%;
+  right: 10%;
+  height: 1px;
+  background: rgba(29, 68, 56, 0.1);
+}
+
+/* Plant doodle/object */
+
+.heroPlant {
+  position: absolute;
+  left: 10%;
+  bottom: 7%;
+  width: 115px;
+  height: 150px;
+}
+
+.heroPlant div {
+  position: absolute;
+  bottom: 0;
+  left: 28px;
+
+  width: 62px;
+  height: 58px;
+
+  border-radius: 16px 16px 26px 26px;
+  background: #7d927c;
+  box-shadow: 0 14px 28px rgba(44, 75, 59, 0.14);
+}
+
+.heroPlant span {
+  position: absolute;
+  bottom: 45px;
+  left: 50%;
+
+  width: 44px;
+  height: 76px;
+
+  border-radius: 100% 0 100% 0;
+
+  background: #6f8971;
+  transform-origin: bottom center;
+}
+
+.heroPlant span:nth-child(1) {
+  transform: rotate(-45deg);
+}
+
+.heroPlant span:nth-child(2) {
+  transform: rotate(-17deg) scale(0.9);
+}
+
+.heroPlant span:nth-child(3) {
+  transform: rotate(18deg) scale(0.88);
+}
+
+.heroPlant span:nth-child(4) {
+  transform: rotate(45deg) scale(0.75);
+}
+
+/* Sticker */
+
+.heroStickerWrap {
+  position: absolute;
+  z-index: 5;
+  left: 39%;
+  top: 44%;
+
+  width: 130px;
+  height: 130px;
+
+  transform: rotate(-5deg);
+  animation: heroStickerFloat 5s ease-in-out infinite;
+}
+
+.heroSticker {
+  position: relative;
+  z-index: 2;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  width: 100%;
+  height: 100%;
+
+  border: 1px solid rgba(27, 65, 53, 0.07);
+  border-radius: 30px;
+
+  color: #2f6d5a;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 1),
+      rgba(250, 247, 235, 0.95)
+    );
+
+  box-shadow:
+    0 28px 60px rgba(39, 70, 57, 0.19),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.8);
+}
+
+.heroSticker span {
+  margin-top: 6px;
+
+  color: #315c4e;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.17em;
+  text-transform: uppercase;
+}
+
+.heroStickerShadow {
+  position: absolute;
+  z-index: 1;
+  left: 12%;
+  right: 4%;
+  bottom: -14px;
+
+  height: 22px;
+
+  border-radius: 50%;
+  background: rgba(33, 62, 50, 0.18);
+  filter: blur(10px);
+}
+
+/* Phone */
+
+.heroPhone {
+  position: absolute;
+  z-index: 4;
+
+  top: 8%;
+  right: 10%;
+
+  width: 255px;
+  height: 84%;
+
+  padding: 6px;
+
+  border: 7px solid #17382f;
+  border-radius: 45px;
+
+  background: #17382f;
+
+  transform: rotate(4deg);
+
+  box-shadow:
+    0 50px 95px rgba(25, 54, 44, 0.23),
+    0 16px 35px rgba(25, 54, 44, 0.14);
+
+  animation: heroPhoneFloat 6.2s ease-in-out infinite;
+}
+
+.heroPhoneScreen {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+
+  border-radius: 34px;
+
+  background:
+    radial-gradient(
+      circle at 50% 15%,
+      rgba(229, 239, 225, 0.8),
+      transparent 28%
+    ),
+    #faf8f1;
+}
+
+.heroPhoneIsland {
+  position: absolute;
+  left: 50%;
+  top: 9px;
+
+  width: 72px;
+  height: 17px;
+
+  border-radius: 999px;
+
+  background: #17382f;
+
+  transform: translateX(-50%);
+}
+
+.heroPhoneHeader {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+
+  padding: 45px 22px 0;
+
+  color: #567469;
+
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.heroTinyLogo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 25px;
+  height: 25px;
+
+  border-radius: 999px;
+
+  color: white;
+  background: #2f6d5a;
+}
+
+.heroPhoneContent {
+  position: absolute;
+  left: 24px;
+  right: 24px;
+  top: 50%;
+
+  transform: translateY(-44%);
+}
+
+.heroActionIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 56px;
+  height: 56px;
+
+  border-radius: 999px;
+
+  color: #875f38;
+  background: #eedcc2;
+}
+
+.heroActionIcon svg {
+  width: 27px;
+  height: 27px;
+}
+
+.heroPhoneContent > p {
+  margin-top: 22px;
+
+  color: #819088;
+  font-size: 11px;
+}
+
+.heroPhoneContent h3 {
+  margin-top: 2px;
+
+  color: #173c35;
+
+  font-size: 25px;
+  line-height: 1.1;
+  font-weight: 650;
+  letter-spacing: -0.04em;
+}
+
+.heroPhoneDescription {
+  display: block;
+
+  margin-top: 10px;
+
+  color: #71817a;
+
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.heroPhoneButton {
+  margin-top: 22px;
+  padding: 12px;
+
+  border-radius: 999px;
+
+  color: white;
+  background: #2f6d5a;
+
+  font-size: 11px;
+  font-weight: 650;
+  text-align: center;
+}
+
+.heroPhoneBar {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+
+  width: 70px;
+  height: 4px;
+
+  border-radius: 999px;
+
+  background: rgba(23, 56, 47, 0.15);
+
+  transform: translateX(-50%);
+}
+
+/* Doodle annotation */
+
+.heroNote {
+  position: absolute;
+  z-index: 6;
+
+  top: 16%;
+  left: 49%;
+
+  color: #547365;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 14px;
+  font-style: italic;
+
+  transform: rotate(-4deg);
+}
+
+.heroNote svg {
+  display: block;
+
+  width: 115px;
+  height: 60px;
+
+  margin: -4px 0 0 22px;
+}
+
+/* Small floating label */
+
+.heroFloatingTag {
+  position: absolute;
+  z-index: 7;
+
+  right: 33%;
+  bottom: 9%;
+
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  padding: 9px 13px;
+
+  border: 1px solid rgba(25, 60, 49, 0.06);
+  border-radius: 999px;
+
+  color: #577267;
+  background: rgba(255, 253, 246, 0.85);
+
+  font-size: 10px;
+  font-weight: 650;
+
+  box-shadow: 0 12px 28px rgba(40, 69, 57, 0.1);
+
+  backdrop-filter: blur(10px);
+}
+
+.heroFloatingDot {
+  width: 6px;
+  height: 6px;
+
+  border-radius: 999px;
+
+  background: #e2ac62;
+}
+
+/* Foreground blur = depth */
+
+.heroForeground {
+  position: absolute;
+  z-index: 10;
+
+  left: -6%;
+  bottom: -16%;
+
+  width: 29%;
+  height: 42%;
+
+  border-radius: 50%;
+
+  background: #789078;
+
+  filter: blur(18px);
+
+  opacity: 0.26;
+
+  pointer-events: none;
+}
+
+.heroScrollHint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 11px;
+
+  margin-top: 36px;
+
+  color: #819088;
+
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.heroScrollHint div {
+  width: 1px;
+  height: 34px;
+
+  background: linear-gradient(
+    to bottom,
+    rgba(47, 109, 90, 0.45),
+    transparent
+  );
+}
+
+@keyframes heroPhoneFloat {
+  0%,
+  100% {
+    transform: rotate(4deg) translateY(0);
+  }
+
+  50% {
+    transform: rotate(3.4deg) translateY(-7px);
+  }
+}
+
+@keyframes heroStickerFloat {
+  0%,
+  100% {
+    transform: rotate(-5deg) translateY(0);
+  }
+
+  50% {
+    transform: rotate(-4deg) translateY(-6px);
+  }
+}
+
+@media (max-width: 800px) {
+  .hero {
+    padding-top: 56px;
+  }
+
+  .heroCopy h1 {
+    font-size: clamp(3.6rem, 15vw, 5.5rem);
+  }
+
+  .heroSubtitle {
+    max-width: 540px;
+    font-size: 16px;
+  }
+
+  .heroVisual {
+    height: 500px;
+    min-height: 0;
+    border-radius: 30px;
+  }
+
+  .heroCabinet {
+    width: 68%;
+  }
+
+  .heroStickerWrap {
+    left: 28%;
+    top: 50%;
+    width: 105px;
+    height: 105px;
+  }
+
+  .heroPhone {
+    right: 5%;
+    top: 8%;
+    width: 220px;
+    height: 82%;
+  }
+
+  .heroNote {
+    display: none;
+  }
+
+  .heroFloatingTag {
+    right: 38%;
+  }
+}
+
+@media (max-width: 560px) {
+  .hero {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+
+  .heroVisual {
+    height: 440px;
+    margin-top: 48px;
+  }
+
+  .heroCabinet {
+    left: -15%;
+    width: 78%;
+  }
+
+  .heroPlant {
+    transform: scale(0.8);
+    transform-origin: bottom left;
+  }
+
+  .heroStickerWrap {
+    left: 23%;
+    top: 50%;
+    width: 92px;
+    height: 92px;
+  }
+
+  .heroSticker {
+    border-radius: 23px;
+  }
+
+  .heroPhone {
+    right: 2%;
+    top: 9%;
+    width: 185px;
+    height: 80%;
+    border-width: 6px;
+    border-radius: 38px;
+  }
+
+  .heroPhoneScreen {
+    border-radius: 29px;
+  }
+
+  .heroPhoneContent {
+    left: 19px;
+    right: 19px;
+  }
+
+  .heroPhoneContent h3 {
+    font-size: 21px;
+  }
+
+  .heroFloatingTag {
+    right: 31%;
+    bottom: 6%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .heroPhone,
+  .heroStickerWrap {
+    animation: none;
+  }
+
+  .heroPrimary,
+  .heroSecondary {
+    transition: none;
+  }
+}
+
+.serifAccent {
+  font-family: Georgia, "Times New Roman", serif;
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: -0.055em;
+}
+
+.floatCard {
+  animation: floatCard 5.5s ease-in-out infinite;
+}
+
+.floatSticker {
+  animation: floatSticker 4.5s ease-in-out infinite;
+}
+
+.doodle {
+  stroke-dasharray: 180;
+  stroke-dashoffset: 180;
+  animation: drawDoodle 1.6s ease 0.5s forwards;
+}
+
+@keyframes floatCard {
+  0%,
+  100% {
+    transform: translateY(0) rotate(2deg);
+  }
+
+  50% {
+    transform: translateY(-8px) rotate(1deg);
+  }
+}
+
+@keyframes floatSticker {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-8deg);
+  }
+
+  50% {
+    transform: translateY(-7px) rotate(-6deg);
+  }
+}
+
+@keyframes drawDoodle {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .floatCard,
+  .floatSticker,
+  .doodle {
+    animation: none;
+  }
+
+  .doodle {
+    stroke-dashoffset: 0;
+  }
+}
