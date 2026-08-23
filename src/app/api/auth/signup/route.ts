@@ -4,6 +4,8 @@ import { createUserSession, signupCaregiver } from "@/lib/auth";
 import { signupSchema } from "@/modules/auth/contracts/login.contract";
 import { SESSION_COOKIE_NAME, SESSION_MAX_AGE_SECONDS } from "@/modules/auth/domain/session";
 import { defaultRouteForUser } from "@/modules/auth/services/session.service";
+import { checkSignupIpLimit } from "@/lib/rate-limit/limiters";
+import { rateLimitedResponse, requestIp } from "@/lib/rate-limit/request";
 
 function wantsJson(request: Request) {
   return request.headers.get("accept")?.includes("application/json");
@@ -45,6 +47,11 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.redirect(new URL("/signup?error=invalid", request.url));
+  }
+
+  const ipLimit = await checkSignupIpLimit(requestIp(request));
+  if (!ipLimit.allowed) {
+    return rateLimitedResponse(ipLimit);
   }
 
   try {

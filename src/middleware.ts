@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { SESSION_COOKIE_NAME } from "@/modules/auth/domain/session";
 
+const PUBLIC_CLIENT_COOKIE_NAME = "tapcare_public_client";
+const PUBLIC_CLIENT_HEADER_NAME = "x-tapcare-public-client";
+const PUBLIC_CLIENT_MAX_AGE_SECONDS = 60 * 60 * 24 * 180;
+
 const protectedPrefixes = [
   "/caregiver",
   "/households",
@@ -16,6 +20,27 @@ const protectedPrefixes = [
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  if (pathname.startsWith("/t/")) {
+    const publicClientId = request.cookies.get(PUBLIC_CLIENT_COOKIE_NAME)?.value || crypto.randomUUID();
+    const requestHeaders = new Headers(request.headers);
+    // Never trust a caller-provided header; middleware supplies the value that
+    // is also persisted in the first-party cookie.
+    requestHeaders.set(PUBLIC_CLIENT_HEADER_NAME, publicClientId);
+    const response = NextResponse.next({ request: { headers: requestHeaders } });
+
+    if (!request.cookies.has(PUBLIC_CLIENT_COOKIE_NAME)) {
+      response.cookies.set(PUBLIC_CLIENT_COOKIE_NAME, publicClientId, {
+        httpOnly: true,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+        path: "/",
+        maxAge: PUBLIC_CLIENT_MAX_AGE_SECONDS
+      });
+    }
+
+    return response;
+  }
 
   const needsAuth =
     protectedPrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
@@ -47,6 +72,7 @@ export const config = {
     "/wrong-account",
     "/api/v1/caregiver/:path*",
     "/api/v1/setup/:path*",
-    "/api/v1/admin/:path*"
+    "/api/v1/admin/:path*",
+    "/t/:path*"
   ]
 };

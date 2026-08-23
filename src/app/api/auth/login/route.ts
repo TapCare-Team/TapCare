@@ -4,6 +4,8 @@ import { authenticateUser, createUserSession } from "@/lib/auth";
 import { loginSchema } from "@/modules/auth/contracts/login.contract";
 import { SESSION_COOKIE_NAME, SESSION_MAX_AGE_SECONDS } from "@/modules/auth/domain/session";
 import { defaultRouteForUser } from "@/modules/auth/services/session.service";
+import { checkLoginAccountLimit, checkLoginIpLimit } from "@/lib/rate-limit/limiters";
+import { rateLimitedResponse, requestIp } from "@/lib/rate-limit/request";
 
 export async function POST(request: Request) {
   const formData = await request.formData();
@@ -14,6 +16,16 @@ export async function POST(request: Request) {
 
   if (!parsed.success) {
     return NextResponse.redirect(new URL("/login?error=invalid", request.url));
+  }
+
+  const ipLimit = await checkLoginIpLimit(requestIp(request));
+  if (!ipLimit.allowed) {
+    return rateLimitedResponse(ipLimit);
+  }
+
+  const accountLimit = await checkLoginAccountLimit(parsed.data.email);
+  if (!accountLimit.allowed) {
+    return rateLimitedResponse(accountLimit);
   }
 
   const user = await authenticateUser(parsed.data.email, parsed.data.password);

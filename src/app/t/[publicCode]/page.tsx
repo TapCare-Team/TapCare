@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import Script from "next/script";
+import { headers } from "next/headers";
 import { PublicStickerContent } from "@/components/runtime/public-sticker-content";
 import {
   type PublicActionTrackingContext,
@@ -30,7 +31,7 @@ export default async function PublicStickerPage({
 }: {
   params: { publicCode: string };
 }) {
-  const resolution = await loadPublicRuntime(params.publicCode);
+  const resolution = await loadPublicRuntime(params.publicCode, headers().get("x-tapcare-public-client") ?? undefined);
 
   if (resolution.kind === "NOT_FOUND") {
     notFound();

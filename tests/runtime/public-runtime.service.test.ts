@@ -3,7 +3,8 @@ import type { RuntimeRecord } from "@/modules/runtime/domain/public-runtime";
 
 const mocks = vi.hoisted(() => ({
   getByPublicCode: vi.fn(),
-  recordRuntimeEvent: vi.fn()
+  recordRuntimeEvent: vi.fn(),
+  shouldRecordStickerOpened: vi.fn()
 }));
 
 vi.mock("@/modules/runtime/repositories/public-runtime.repository-provider", () => ({
@@ -16,6 +17,10 @@ vi.mock("@/modules/runtime/repositories/public-runtime.repository-provider", () 
 
 vi.mock("@/modules/runtime/services/runtime-event.service", () => ({
   recordRuntimeEvent: mocks.recordRuntimeEvent
+}));
+
+vi.mock("@/modules/runtime/services/sticker-open-deduplication.service", () => ({
+  shouldRecordStickerOpened: mocks.shouldRecordStickerOpened
 }));
 
 import { resolvePublicRuntime } from "@/modules/runtime/services/public-runtime.service";
@@ -47,6 +52,7 @@ describe("resolvePublicRuntime analytics events", () => {
   beforeEach(() => {
     vi.resetAllMocks();
     mocks.recordRuntimeEvent.mockResolvedValue(undefined);
+    mocks.shouldRecordStickerOpened.mockResolvedValue(true);
   });
 
   it("records redirect events for direct redirect stickers", async () => {
@@ -105,5 +111,15 @@ describe("resolvePublicRuntime analytics events", () => {
       eventType: "PAGE_RENDERED",
       outcome: "SUCCESS"
     });
+  });
+
+  it("still resolves the sticker while skipping analytics duplicates", async () => {
+    mocks.getByPublicCode.mockResolvedValue(runtimeRecord());
+    mocks.shouldRecordStickerOpened.mockResolvedValue(false);
+
+    const resolution = await resolvePublicRuntime("public-code-1", "same-public-client");
+
+    expect(resolution.kind).toBe("DIRECT_REDIRECT");
+    expect(mocks.recordRuntimeEvent).not.toHaveBeenCalled();
   });
 });

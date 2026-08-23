@@ -8,6 +8,7 @@ Privacy-safe operational analytics dashboard for TapCare's NFC and QR support sy
 - TypeScript
 - Tailwind CSS
 - Prisma + PostgreSQL
+- Upstash Redis for disposable rate limits and deduplication
 - Vitest
 - ESLint
 
@@ -37,6 +38,12 @@ Sites are currently organizational metadata, not authorization boundaries. Site 
 7. Run the app with `npm run dev`.
 
 Database mode is the default and requires a non-empty `DATABASE_URL`. The seeded PostgreSQL setup above is the preferred development path because it exercises the production persistence layer.
+
+## Redis coordination state
+
+PostgreSQL is TapCare's durable source of truth. Upstash Redis is disposable, short-lived coordination state only: authentication rate limits and duplicate-event suppression. It never stores users, caregiver assignments, household permissions, sticker configuration, sessions, interaction-event history, or follow-up state. A Redis flush therefore does not destroy meaningful application state.
+
+On Vercel, create an Upstash Redis database and set `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`. Redis failures fail open: sign-in and public sticker functionality continue, with temporarily reduced abuse protection or duplicate analytics.
 
 For read and authentication flows that explicitly need local mock data, set:
 

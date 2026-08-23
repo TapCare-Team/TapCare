@@ -3,6 +3,7 @@ import type { PublicRuntimeResolution, RuntimeRecord } from "@/modules/runtime/d
 import { getPublicRuntimeRepositories } from "@/modules/runtime/repositories/public-runtime.repository-provider";
 import { isValidPublicCode, normalizePublicCode } from "@/modules/runtime/services/public-code.service";
 import { recordRuntimeEvent } from "@/modules/runtime/services/runtime-event.service";
+import { shouldRecordStickerOpened } from "@/modules/runtime/services/sticker-open-deduplication.service";
 
 function logStickerOpened(record: RuntimeRecord) {
   logger.info("sticker_opened", {
@@ -60,7 +61,7 @@ function normalizeContactDestinationUrl(destination: RuntimeRecord["sticker"]["d
   }
 }
 
-export async function resolvePublicRuntime(publicCode: string): Promise<PublicRuntimeResolution> {
+export async function resolvePublicRuntime(publicCode: string, publicClientId?: string): Promise<PublicRuntimeResolution> {
   const normalized = normalizePublicCode(publicCode);
 
   if (!isValidPublicCode(normalized)) {
@@ -112,13 +113,16 @@ export async function resolvePublicRuntime(publicCode: string): Promise<PublicRu
   }
 
   logStickerOpened(record);
-  await recordRuntimeEvent({
-    publicCode: normalized,
-    household: record.household,
-    sticker: record.sticker,
-    eventType: "STICKER_OPENED",
-    outcome: "SUCCESS"
-  });
+  const recordAnalytics = await shouldRecordStickerOpened(normalized, publicClientId);
+  if (recordAnalytics) {
+    await recordRuntimeEvent({
+      publicCode: normalized,
+      household: record.household,
+      sticker: record.sticker,
+      eventType: "STICKER_OPENED",
+      outcome: "SUCCESS"
+    });
+  }
 
   if (record.sticker.runtimeMode === "DIRECT_REDIRECT" && record.sticker.destination) {
     const destinationUrl = normalizeContactDestinationUrl(record.sticker.destination);
@@ -129,14 +133,16 @@ export async function resolvePublicRuntime(publicCode: string): Promise<PublicRu
         stickerId: record.sticker.id,
         outcome: "INVALID_DESTINATION"
       });
-      await recordRuntimeEvent({
-        publicCode: normalized,
-        household: record.household,
-        sticker: record.sticker,
-        eventType: "STICKER_OPENED",
-        outcome: "FAILED",
-        failureReason: "INVALID_DESTINATION"
-      });
+      if (recordAnalytics) {
+        await recordRuntimeEvent({
+          publicCode: normalized,
+          household: record.household,
+          sticker: record.sticker,
+          eventType: "STICKER_OPENED",
+          outcome: "FAILED",
+          failureReason: "INVALID_DESTINATION"
+        });
+      }
       return {
         kind: "DISABLED",
         publicCode: normalized,
@@ -151,14 +157,16 @@ export async function resolvePublicRuntime(publicCode: string): Promise<PublicRu
       stickerId: record.sticker.id,
       destinationType: record.sticker.destination.type
     });
-    await recordRuntimeEvent({
-      publicCode: normalized,
-      household: record.household,
-      sticker: record.sticker,
-      eventType: "REDIRECT_ISSUED",
-      outcome: "SUCCESS",
-      destinationType: record.sticker.destination.type
-    });
+    if (recordAnalytics) {
+      await recordRuntimeEvent({
+        publicCode: normalized,
+        household: record.household,
+        sticker: record.sticker,
+        eventType: "REDIRECT_ISSUED",
+        outcome: "SUCCESS",
+        destinationType: record.sticker.destination.type
+      });
+    }
     return {
       kind: "DIRECT_REDIRECT",
       publicCode: normalized,
@@ -169,13 +177,15 @@ export async function resolvePublicRuntime(publicCode: string): Promise<PublicRu
   }
 
   if (record.sticker.runtimeMode === "RENDER_PAGE" && record.sticker.page) {
-    await recordRuntimeEvent({
-      publicCode: normalized,
-      household: record.household,
-      sticker: record.sticker,
-      eventType: "PAGE_RENDERED",
-      outcome: "SUCCESS"
-    });
+    if (recordAnalytics) {
+      await recordRuntimeEvent({
+        publicCode: normalized,
+        household: record.household,
+        sticker: record.sticker,
+        eventType: "PAGE_RENDERED",
+        outcome: "SUCCESS"
+      });
+    }
     return {
       kind: "RENDER_PAGE",
       publicCode: normalized,

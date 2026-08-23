@@ -3,6 +3,8 @@ import { requestPasswordReset } from "@/lib/auth";
 import { forgotPasswordSchema } from "@/modules/auth/contracts/login.contract";
 import { sendPasswordResetEmail } from "@/modules/auth/services/password-reset-email.service";
 import { authMessages } from "@/modules/shared/messages";
+import { checkPasswordResetAccountLimit, checkPasswordResetIpLimit } from "@/lib/rate-limit/limiters";
+import { rateLimitedResponse, requestIp } from "@/lib/rate-limit/request";
 
 function resetUrlForRequest(request: Request, token: string) {
   const configuredBaseUrl = process.env.APP_BASE_URL?.trim();
@@ -21,6 +23,16 @@ export async function POST(request: Request) {
       },
       { status: 400 }
     );
+  }
+
+  const ipLimit = await checkPasswordResetIpLimit(requestIp(request));
+  if (!ipLimit.allowed) {
+    return rateLimitedResponse(ipLimit);
+  }
+
+  const accountLimit = await checkPasswordResetAccountLimit(parsed.data.email);
+  if (!accountLimit.allowed) {
+    return rateLimitedResponse(accountLimit);
   }
 
   const result = await requestPasswordReset(parsed.data);
