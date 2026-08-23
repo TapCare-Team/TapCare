@@ -144,7 +144,7 @@ function HeroScene() {
           aria-hidden="true"
         >
           <path
-            d="M6 17C43 6 80 12 111 45M98 37l13 8-4-15"
+            d="M112 10C91 17 73 32 25 56M38 44L25 56L42 58"
             stroke="currentColor"
             strokeWidth="2"
             strokeLinecap="round"
@@ -326,8 +326,8 @@ export default function HomePage() {
               <div
                 key={action.label}
                 className={`py-8 sm:px-7 lg:py-10 ${index > 0
-                    ? "border-t border-[#173c35]/10 sm:border-t-0 sm:border-l"
-                    : ""
+                  ? "border-t border-[#173c35]/10 sm:border-t-0 sm:border-l"
+                  : ""
                   } ${index === 2
                     ? "sm:border-l-0 sm:border-t lg:border-l lg:border-t-0"
                     : ""

@@ -1,4 +1,4 @@
-export const TAPCARE_SUPPORT_EMAIL = "tapcare1234@gmail.com";
+export const TAPCARE_SUPPORT_EMAIL = "tapcaresupport@gmail.com";
 
 export function SupportContact({
   className = "text-center text-sm text-muted"
