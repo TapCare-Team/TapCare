@@ -34,7 +34,7 @@ export default async function AdminInteractionEventsPage() {
       title="Interaction details"
       subtitle={`Recorded sticker interactions from the last ${summary.windowHours} hours.`}
       nav={[
-        { href: "/", label: "Manage households" },
+        { href: "/admin", label: "Manage households" },
         { href: "/admin/analytics", label: "Analytics" }
       ]}
     >

@@ -72,7 +72,7 @@ export default async function AdminAnalyticsPage() {
     <AppShell
       title="Admin Analytics"
       subtitle="Recent runtime health and sticker interaction monitoring for TapCare."
-      nav={[{ href: "/", label: "Manage households" }]}
+      nav={[{ href: "/admin", label: "Manage households" }]}
     >
       <div className="grid gap-4 md:grid-cols-4">
         <StatCard
