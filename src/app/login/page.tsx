@@ -26,6 +26,10 @@ function getErrorMessage(error?: string | string[]) {
     return "Email or password is incorrect.";
   }
 
+  if (value === "rate_limited") {
+    return "Too many sign-in attempts. Please try again later.";
+  }
+
   return "";
 }
 

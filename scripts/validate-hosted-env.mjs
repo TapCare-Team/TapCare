@@ -18,3 +18,15 @@ if (dataMode === "mock") {
 if (!process.env.DATABASE_URL?.trim()) {
   throw new Error(`DATABASE_URL is required when VERCEL_ENV=${vercelEnvironment}.`);
 }
+
+const redisUrl =
+  process.env.UPSTASH_REDIS_REST_URL?.trim();
+
+const redisToken =
+  process.env.UPSTASH_REDIS_REST_TOKEN?.trim();
+
+if (!redisUrl || !redisToken) {
+  throw new Error(
+    `Upstash Redis credentials are required when VERCEL_ENV=${vercelEnvironment}.`
+  );
+}

@@ -2,13 +2,41 @@ import { NextResponse } from "next/server";
 import type { RateLimitResult } from "@/lib/rate-limit/limiters";
 
 export function requestIp(request: Request) {
-  return request.headers.get("x-forwarded-for") ?? request.headers.get("x-real-ip");
+  const forwardedFor = request.headers.get("x-forwarded-for");
+  if (forwardedFor) {
+    return forwardedFor.split(",")[0]?.trim() || null;
+  }
+
+  return request.headers.get("x-real-ip");
+}
+
+function retryAfterSeconds(result: RateLimitResult) {
+  return result.retryAfterSeconds ?? 60;
 }
 
 export function rateLimitedResponse(result: RateLimitResult) {
-  const retryAfter = result.retryAfterSeconds ?? 60;
   return NextResponse.json(
     { error: "Too many attempts. Please try again later." },
-    { status: 429, headers: { "Retry-After": String(retryAfter) } }
+    {
+      status: 429,
+      headers: {
+        "Retry-After": String(retryAfterSeconds(result))
+      }
+    }
   );
+}
+
+export function rateLimitedRedirect(
+  result: RateLimitResult,
+  request: Request,
+  destination: string
+) {
+  const response = NextResponse.redirect(new URL(destination, request.url));
+
+  response.headers.set(
+    "Retry-After",
+    String(retryAfterSeconds(result))
+  );
+
+  return response;
 }
