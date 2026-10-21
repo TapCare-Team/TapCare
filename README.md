@@ -29,6 +29,15 @@ Sites are currently organizational metadata, not authorization boundaries. Site 
 
 ## Local development
 
+Use Node.js 22, selected by `.nvmrc`. With nvm installed, run:
+
+```bash
+nvm install
+nvm use
+```
+
+Node.js 16 cannot run the current test tooling. Run the setup and verification commands below after switching Node versions.
+
 1. Copy `.env.example` to `.env`.
 2. Start PostgreSQL with `docker compose up -d`.
 3. Install dependencies with `npm install`.
@@ -36,6 +45,8 @@ Sites are currently organizational metadata, not authorization boundaries. Site 
 5. Apply migrations with `npm run prisma:migrate`.
 6. Seed demo data with `npm run db:seed`.
 7. Run the app with `npm run dev`.
+
+Keep credentials in `.env` or `.env.local`. Environment files are ignored by Git; `.env.example` remains tracked as the configuration template. Never put real credentials in the template.
 
 Database mode is the default and requires a non-empty `DATABASE_URL`. The seeded PostgreSQL setup above is the preferred development path because it exercises the production persistence layer.
 
