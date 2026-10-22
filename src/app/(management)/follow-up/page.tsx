@@ -24,7 +24,7 @@ export default async function FollowUpQueuePage({
     <AppShell
       title="Follow-up Queue"
       subtitle="Review the recent reasons for follow-up, then decide whether outreach is needed."
-      nav={[{ href: "/", label: "Households" }, { href: "/admin/analytics", label: "Analytics" }]}
+      nav={[{ href: "/admin", label: "Households" }, { href: "/admin/analytics", label: "Analytics" }]}
     >
       <Panel title="Households needing review" eyebrow="Follow-up">
         <div className="mb-5">

@@ -35,7 +35,7 @@ export function DeleteHouseholdButton({
         return;
       }
 
-      router.push("/");
+      router.push("/admin");
       router.refresh();
     } catch {
       setError("Unable to delete household. Please refresh the page and try again.");

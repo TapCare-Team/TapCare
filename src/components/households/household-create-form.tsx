@@ -178,7 +178,7 @@ export function HouseholdCreateForm({
         return;
       }
 
-      router.replace("/");
+      router.replace("/admin");
       router.refresh();
     } catch {
       setError("Unable to create household. Please refresh the page and try again.");

@@ -44,7 +44,7 @@ export default async function HouseholdDetailPage({
     <AppShell
       title={detail.household.displayAddress}
       subtitle="Review household activity, sticker status, and reasons this household may need follow-up."
-      nav={[{ href: "/", label: "Household list", replace: true }]}
+      nav={[{ href: "/admin", label: "Household list", replace: true }]}
     >
       <Panel title="Household actions" eyebrow="Admin">
         <div className="flex flex-wrap items-center justify-between gap-4">

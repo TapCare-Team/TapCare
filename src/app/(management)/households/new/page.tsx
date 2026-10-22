@@ -15,7 +15,7 @@ export default async function NewHouseholdPage() {
     <AppShell
       title="Add household"
       subtitle="Add a household before setting up stickers."
-      nav={[{ href: "/", label: "Household list", replace: true }]}
+      nav={[{ href: "/admin", label: "Household list", replace: true }]}
     >
       <Panel title="Household details" eyebrow="Admin setup">
         {!isDatabaseConfigured() ? (
